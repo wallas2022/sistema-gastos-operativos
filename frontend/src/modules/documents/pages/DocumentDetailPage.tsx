@@ -27,12 +27,39 @@ function formatValue(value: unknown) {
   return String(value);
 }
 
+type EditableLineItem = {
+  id?: string;
+  lineNumber?: number;
+  article?: string | null;
+  description?: string | null;
+  quantity?: number | string | null;
+  unitPrice?: number | string | null;
+  lineSubtotal?: number | string | null;
+  lineTax?: number | string | null;
+  lineTotal?: number | string | null;
+  total?: number | string | null;
+  taxIncluded?: boolean | null;
+  confidence?: number | null;
+};
+
+function getLineItems(data: OcrResultResponse): EditableLineItem[] {
+  const ocrResult = data.ocrResult as any;
+
+  return (
+    ocrResult?.extractedLineItems ??
+    ocrResult?.lineItems ??
+    ocrResult?.items ??
+    []
+  );
+}
+
 export default function DocumentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [documentData, setDocumentData] = useState<OcrResultResponse | null>(null);
   const [editableFields, setEditableFields] = useState<OcrField[]>([]);
+  const [editableItems, setEditableItems] = useState<EditableLineItem[]>([]);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [processingOcr, setProcessingOcr] = useState(false);
@@ -54,6 +81,7 @@ export default function DocumentDetailPage() {
       const data = await getDocumentById(id);
       setDocumentData(data);
       setEditableFields(data.ocrResult?.extractedFields ?? []);
+      setEditableItems(getLineItems(data));
     } catch (error) {
       console.error("Error cargando detalle del documento:", error);
       setErrorMessage("No se pudo cargar el detalle del documento.");
@@ -72,6 +100,55 @@ export default function DocumentDetailPage() {
       prev.map((field) =>
         field.id === fieldId ? { ...field, finalValue: value } : field
       )
+    );
+  };
+
+  const handleItemChange = (
+    index: number,
+    field: keyof EditableLineItem,
+    value: string
+  ) => {
+    setEditableItems((prev) =>
+      prev.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              [field]: value,
+            }
+          : item
+      )
+    );
+  };
+
+  const handleAddItem = () => {
+    setEditableItems((prev) => [
+      ...prev,
+      {
+        lineNumber: prev.length + 1,
+        article: "",
+        description: "",
+        quantity: 1,
+        unitPrice: 0,
+        lineSubtotal: null,
+        lineTax: null,
+        lineTotal: 0,
+        taxIncluded: false,
+        confidence: 0,
+      },
+    ]);
+  };
+
+  const handleDeleteItem = (index: number) => {
+    const confirmDelete = window.confirm("¿Deseas eliminar esta línea del detalle?");
+    if (!confirmDelete) return;
+
+    setEditableItems((prev) =>
+      prev
+        .filter((_, itemIndex) => itemIndex !== index)
+        .map((item, itemIndex) => ({
+          ...item,
+          lineNumber: itemIndex + 1,
+        }))
     );
   };
 
@@ -136,20 +213,23 @@ export default function DocumentDetailPage() {
       await confirmOcrDocument(id, comment);
       setSuccessMessage("Documento confirmado correctamente.");
       await loadData();
-   } catch (error: any) {
-  console.error("Error confirmando documento:", error);
+    } catch (error: any) {
+      console.error("Error confirmando documento:", error);
 
-  if (error.response) {
-    console.error("STATUS:", error.response.status);
-    console.error("DATA BACKEND:", error.response.data);
-    console.error("MESSAGE:", error.response.data?.message);
-  }
+      if (error.response) {
+        console.error("STATUS:", error.response.status);
+        console.error("DATA BACKEND:", error.response.data);
+        console.error("MESSAGE:", error.response.data?.message);
+      }
 
-  alert(
-    error.response?.data?.message ??
-    "No se pudo confirmar el documento"
-  );
-} finally {
+      const backendMessage = error.response?.data?.message;
+      const message = Array.isArray(backendMessage)
+        ? backendMessage.join(". ")
+        : backendMessage ?? "No se pudo confirmar el documento";
+
+      setErrorMessage(message);
+      alert(message);
+    } finally {
       setConfirming(false);
     }
   };
@@ -290,6 +370,7 @@ export default function DocumentDetailPage() {
                           value={field.finalValue ?? ""}
                           onChange={(e) => handleFieldChange(field.id, e.target.value)}
                           placeholder="Valor final"
+                          disabled={isConfirmed}
                         />
                       </Stack>
                     </Box>
@@ -304,6 +385,125 @@ export default function DocumentDetailPage() {
                     Guardar cambios
                   </Button>
                 </Stack>
+              )}
+            </Box>
+
+            <Box borderWidth="1px" borderRadius="2xl" bg="white" p={5}>
+              <Flex justify="space-between" align="center" mb={4} gap={3} wrap="wrap">
+                <Heading size="md">Detalle de factura</Heading>
+
+                <Button
+                  size="sm"
+                  colorPalette="blue"
+                  variant="outline"
+                  onClick={handleAddItem}
+                  disabled={isConfirmed}
+                >
+                  Agregar línea
+                </Button>
+              </Flex>
+
+              {!hasOcrResult || editableItems.length === 0 ? (
+                <Text color="gray.500">
+                  No hay líneas de detalle detectadas para esta factura.
+                </Text>
+              ) : (
+                <Box overflowX="auto">
+                  <Box
+                    as="table"
+                    width="100%"
+                    borderWidth="1px"
+                    borderRadius="xl"
+                    overflow="hidden"
+                    style={{ borderCollapse: "collapse" }}
+                  >
+                    <Box as="thead" bg="gray.50">
+                      <Box as="tr">
+                        <Box as="th" p={3} textAlign="left" borderBottomWidth="1px">#</Box>
+                        <Box as="th" p={3} textAlign="left" borderBottomWidth="1px">Descripción</Box>
+                        <Box as="th" p={3} textAlign="left" borderBottomWidth="1px">Cantidad</Box>
+                        <Box as="th" p={3} textAlign="left" borderBottomWidth="1px">Precio unitario</Box>
+                        <Box as="th" p={3} textAlign="left" borderBottomWidth="1px">Total línea</Box>
+                        <Box as="th" p={3} textAlign="left" borderBottomWidth="1px">Confianza</Box>
+                        <Box as="th" p={3} textAlign="center" borderBottomWidth="1px">Acción</Box>
+                      </Box>
+                    </Box>
+
+                    <Box as="tbody">
+                      {editableItems.map((item, index) => {
+                        const lineTotal = item.lineTotal ?? item.total ?? "";
+
+                        return (
+                          <Box as="tr" key={item.id ?? index}>
+                            <Box as="td" p={3} borderBottomWidth="1px">
+                              {item.lineNumber ?? index + 1}
+                            </Box>
+
+                            <Box as="td" p={3} borderBottomWidth="1px" minW="220px">
+                              <Input
+                                value={item.description ?? ""}
+                                onChange={(e) =>
+                                  handleItemChange(index, "description", e.target.value)
+                                }
+                                disabled={isConfirmed}
+                                placeholder="Descripción"
+                              />
+                            </Box>
+
+                            <Box as="td" p={3} borderBottomWidth="1px" minW="110px">
+                              <Input
+                                value={item.quantity ?? ""}
+                                onChange={(e) =>
+                                  handleItemChange(index, "quantity", e.target.value)
+                                }
+                                disabled={isConfirmed}
+                                placeholder="Cantidad"
+                              />
+                            </Box>
+
+                            <Box as="td" p={3} borderBottomWidth="1px" minW="130px">
+                              <Input
+                                value={item.unitPrice ?? ""}
+                                onChange={(e) =>
+                                  handleItemChange(index, "unitPrice", e.target.value)
+                                }
+                                disabled={isConfirmed}
+                                placeholder="Precio"
+                              />
+                            </Box>
+
+                            <Box as="td" p={3} borderBottomWidth="1px" minW="130px">
+                              <Input
+                                value={lineTotal}
+                                onChange={(e) =>
+                                  handleItemChange(index, "lineTotal", e.target.value)
+                                }
+                                disabled={isConfirmed}
+                                placeholder="Total"
+                              />
+                            </Box>
+
+                            <Box as="td" p={3} borderBottomWidth="1px">
+                              {formatValue(item.confidence)}
+                            </Box>
+
+                            <Box as="td" p={3} borderBottomWidth="1px" textAlign="center">
+                              <Button
+                                size="sm"
+                                colorPalette="red"
+                                variant="outline"
+                                onClick={() => handleDeleteItem(index)}
+                                disabled={isConfirmed}
+                              >
+                                Eliminar
+                              </Button>
+                            </Box>
+                          </Box>
+                        );
+                      })}
+                    </Box>
+                  </Box>
+                </Box>
               )}
             </Box>
 

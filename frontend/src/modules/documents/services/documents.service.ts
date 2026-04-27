@@ -87,8 +87,19 @@ export interface OcrResultResponse {
   updatedAt: string;
   ocrResult?: OcrResultData | null;
   confirmation?: any | null;
+}export interface UpdateLineItemPayload {
+  id?: string;
+  lineNumber: number;
+  article?: string | null;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  lineSubtotal?: number | null;
+  lineTax?: number | null;
+  lineTotal: number;
+  taxIncluded?: boolean | null;
+  confidence?: number | null;
 }
-
 export type OcrResult = OcrResultResponse;
 
 export const uploadDocument = async (file: File) => {
@@ -160,3 +171,14 @@ export const isImageMime = (mimeType?: string | null) =>
 export const buildObjectUrl = (blob: Blob): string => {
   return URL.createObjectURL(blob);
 };
+
+export async function updateOcrLineItems(
+  documentId: string,
+  items: UpdateLineItemPayload[],
+) {
+  const response = await api.put(`/ocr/${documentId}/items`, {
+    items,
+  });
+
+  return response.data;
+}

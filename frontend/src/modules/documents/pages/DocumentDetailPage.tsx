@@ -21,6 +21,7 @@ import {
   type OcrResultResponse,
 } from "../services/documents.service";
 import DocumentPreview from "../../../shared/components/DocumentPreview";
+import { updateOcrLineItems } from "../services/documents.service";
 
 function formatValue(value: unknown) {
   if (value === null || value === undefined || value === "") return "-";
@@ -172,19 +173,24 @@ export default function DocumentDetailPage() {
     }
   };
 
-  const handleSaveFields = async () => {
-    if (!id) return;
+ const handleSaveChanges = async () => {
+  if (!id) return;
 
-    try {
-      setSavingFields(true);
-      setErrorMessage("");
-      setSuccessMessage("");
+  try {
+    setSavingFields(true);
+    setErrorMessage("");
+    setSuccessMessage("");
 
-      await updateOcrFields(
+    // 1. Guardar campos OCR editados
+  await updateOcrFields(
         id,
         editableFields.map((field) => ({
           id: field.id,
-          fieldValue: field.finalValue ?? "",
+          fieldValue:
+            field.finalValue ??
+            field.normalizedValue ??
+            field.detectedValue ??
+            "",
           confidence:
             field.confidence === null || field.confidence === undefined
               ? null
@@ -192,15 +198,47 @@ export default function DocumentDetailPage() {
         }))
       );
 
-      setSuccessMessage("Campos OCR actualizados correctamente.");
-      await loadData();
-    } catch (error) {
-      console.error("Error guardando campos:", error);
-      setErrorMessage("No se pudieron guardar los cambios.");
-    } finally {
-      setSavingFields(false);
-    }
-  };
+    // 2. Guardar detalle de factura / items editados
+    await updateOcrLineItems(
+      id,
+      editableItems.map((item, index) => ({
+        id: item.id,
+        lineNumber: index + 1,
+        article: item.article ?? null,
+        description: item.description ?? "",
+        quantity: Number(item.quantity ?? 0),
+        unitPrice: Number(item.unitPrice ?? 0),
+        lineSubtotal:
+          item.lineSubtotal === null || item.lineSubtotal === undefined
+            ? null
+            : Number(item.lineSubtotal),
+        lineTax:
+          item.lineTax === null || item.lineTax === undefined
+            ? null
+            : Number(item.lineTax),
+        lineTotal: Number(item.lineTotal ?? item.total ?? 0),
+        taxIncluded: item.taxIncluded ?? false,
+        confidence: Number(item.confidence ?? 100),
+      }))
+    );
+
+    setSuccessMessage("Campos y detalle de factura actualizados correctamente.");
+
+    await loadData();
+  } catch (error: any) {
+    console.error("Error guardando cambios:", error);
+
+    const backendMessage = error.response?.data?.message;
+    const message = Array.isArray(backendMessage)
+      ? backendMessage.join(". ")
+      : backendMessage ?? "No se pudieron guardar los cambios.";
+
+    setErrorMessage(message);
+    alert(message);
+  } finally {
+    setSavingFields(false);
+  }
+};
 
   const handleConfirm = async () => {
     if (!id) return;
@@ -375,15 +413,14 @@ export default function DocumentDetailPage() {
                       </Stack>
                     </Box>
                   ))}
-
-                  <Button
-                    colorPalette="blue"
-                    onClick={handleSaveFields}
-                    loading={savingFields}
-                    disabled={isConfirmed}
-                  >
-                    Guardar cambios
-                  </Button>
+                <Button
+                  colorPalette="blue"
+                  onClick={handleSaveChanges}
+                  loading={savingFields}
+                  disabled={isConfirmed}
+                >
+                  Guardar cambios
+                </Button>
                 </Stack>
               )}
             </Box>

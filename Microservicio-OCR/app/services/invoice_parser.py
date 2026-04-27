@@ -83,71 +83,57 @@ def normalize_authorization(value: Optional[str]) -> Optional[str]:
 # ============================================================
 # Moneda
 # ============================================================
-def detect_currency(raw_text: str) -> Dict[str, Optional[str]]:
-    text = raw_text.upper()
+def detect_currency(text: str) -> Dict[str, Any]:
+    upper = text.upper()
 
-    if (
-        "Q" in text
-        or "QUETZAL" in text
-        or "QUETZALES" in text
-        or "GUATEMALA" in text
-        or re.search(r"\d+\.\d{2}\s*G\b", text)
-    ):
+    country = detect_country(text)
+
+    # El Salvador normalmente usa USD
+    if country == "SV":
+        return {
+            "code": "USD",
+            "symbol": "$",
+        }
+
+    # Guatemala usa GTQ
+    if re.search(r"\bQUETZAL\b|\bQUETZALES\b|\bGTQ\b|Q\s*\d+", upper):
         return {
             "code": "GTQ",
             "symbol": "Q",
-            "decimalSeparator": ".",
-            "thousandSeparator": ",",
+        }
+
+    # Si encuentra símbolo dólar
+    if "$" in text:
+        return {
+            "code": "USD",
+            "symbol": "$",
         }
 
     return {
-        "code": None,
-        "symbol": None,
-        "decimalSeparator": ".",
-        "thousandSeparator": ",",
+        "code": "GTQ",
+        "symbol": "Q",
     }
 # ============================================================
 # Totales
 # ============================================================
-def extract_total(text: str) -> Optional[float]:
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
-    candidates: List[float] = []
-
-    forbidden_words = [
-        "CTA",
-        "CUENTA",
-        "REFERENCIA",
-        "AUTORIZA",
-        "AUTORIZACION",
-        "TC#",
-        "TARJETA",
-        "TARJETAS",
-        "CAMBIO",
-        "IMPUESTO",
-        "IVA",
-        "NIT",
-        "DTE",
-        "SERIE",
+def extract_total(text: str):
+    patterns = [
+        r"TOTAL\s+A\s+PAGAR[:\s]*\$?\s*Q?\s*0*(\d+(?:\.\d{2})?)",
+        r"TOTAL[:\s]*\$?\s*Q?\s*0*(\d+(?:\.\d{2})?)",
+        r"TOTAL\s*\n\s*\$?\s*Q?\s*0*(\d+(?:\.\d{2})?)",
+        r"TOTAL\s+A\s+PAGAR[:\s]*\$?\s*Q?\s*0*(\d+(?:,\d{3})*(?:\.\d{2})?)",
     ]
 
-    for i, line in enumerate(lines):
-        upper = line.upper()
+    upper = text.upper()
 
-        # Solo aceptar bloques explícitos de total
-        if upper in ["TOTAL", "TOTAL:", "TOTA", "TOTA:"]:
-            for next_line in lines[i + 1:i + 4]:
-                next_upper = next_line.upper()
-
-                if any(word in next_upper for word in forbidden_words):
-                    continue
-
-                amount = normalize_amount(next_line)
-
-                if amount is not None and 0 < amount < 100000:
-                    candidates.append(amount)
-
-    if candidates:
-        return max(candidates)
+    for pattern in patterns:
+        match = re.search(pattern, upper, re.IGNORECASE)
+        if match:
+            value = match.group(1).replace(",", "")
+            try:
+                return round(float(value), 2)
+            except ValueError:
+                return None
 
     return None
 
@@ -464,9 +450,13 @@ def extract_invoice_fields(raw_text: str) -> Dict[str, Any]:
     # -------------------------
     # Moneda
     # -------------------------
+    country_detected = detect_country(text)
     currency = detect_currency(text)
+    currency = detect_currency_by_country(country_detected, text)
     currency_code = currency["code"]
     currency_symbol = currency["symbol"]
+
+    
 
     # -------------------------
     # Totales
@@ -561,8 +551,8 @@ def extract_invoice_fields(raw_text: str) -> Dict[str, Any]:
         "success": success,
         "processStatus": process_status,
         "confidenceAvg": confidence_avg,
-        "documentContext": {
-            "countryDetected": "GT",
+       "documentContext": {
+            "countryDetected": country_detected,
             "languageDetected": "es",
             "documentType": document_type,
             "currency": {
@@ -583,3 +573,251 @@ def extract_invoice_fields(raw_text: str) -> Dict[str, Any]:
         },
         "errorMessage": None if success else "No se pudieron extraer campos del documento",
     }
+
+
+def detect_document_context(text: str) -> dict:
+    upper = text.upper()
+
+    country = None
+    currency_code = None
+    currency_symbol = None
+
+    # Detectar El Salvador
+    if (
+        "TIPO DTE" in upper
+        or "CODIGO DE GENERACION" in upper
+        or "CÓDIGO DE GENERACIÓN" in upper
+        or "FACTURA DE CONSUMIDOR FINAL" in upper
+        or re.search(r"\b\d{4}-\d{6}-\d{3}-\d\b", text)
+    ):
+        country = "SV"
+        currency_code = "USD"
+        currency_symbol = "$"
+
+    # Detectar Guatemala
+    elif (
+        "FEL" in upper
+        or "DOCUMENTO TRIBUTARIO ELECTRÓNICO" in upper
+        or "DOCUMENTO TRIBUTARIO ELECTRONICO" in upper
+        or "NUMERO DE AUTORIZACION" in upper
+        or "NÚMERO DE AUTORIZACIÓN" in upper
+        or "DTE" in upper
+        or "QUETZAL" in upper
+        or " GTQ" in upper
+        or "Q" in upper
+    ):
+        country = "GT"
+        currency_code = "GTQ"
+        currency_symbol = "Q"
+
+    # Si no logró país, pero ve dólar
+    if currency_code is None and "$" in text:
+        currency_code = "USD"
+        currency_symbol = "$"
+
+    # Si no logró moneda, pero ve Q o Quetzal
+    if currency_code is None and ("Q" in upper or "QUETZAL" in upper):
+        currency_code = "GTQ"
+        currency_symbol = "Q"
+
+    return {
+        "countryDetected": country,
+        "languageDetected": "es",
+        "documentType": "FACTURA",
+        "currency": {
+            "code": currency_code,
+            "symbol": currency_symbol,
+            "decimalSeparator": ".",
+            "thousandSeparator": ",",
+        },
+    }
+
+
+def detect_country(text: str) -> str | None:
+    text_upper = normalize_line(text)
+
+    country_rules = [
+        {
+            "code": "GT",
+            "keywords": [
+                "GUATEMALA",
+                "FEL",
+                "DOCUMENTO TRIBUTARIO ELECTRONICO",
+                "NIT",
+                "INFILE",
+                "AINNOVA",
+                "SAT",
+            ],
+        },
+        {
+            "code": "SV",
+            "keywords": [
+                "EL SALVADOR",
+                "SAN SALVADOR",
+                "DTE",
+                "TIPO DTE",
+                "FACTURA DE CONSUMIDOR FINAL",
+                "CODIGO DE GENERACION",
+                "NUMERO DE CONTROL",
+                "SELLO DE RECEPCION",
+                "MINISTERIO DE HACIENDA",
+            ],
+        },
+        {
+            "code": "HN",
+            "keywords": [
+                "HONDURAS",
+                "RTN",
+                "CAI",
+                "SAR",
+                "FACTURA CONSUMIDOR FINAL",
+                "RANGO AUTORIZADO",
+                "FECHA LIMITE DE EMISION",
+                "REGISTRO TRIBUTARIO NACIONAL",
+            ],
+        },
+        {
+            "code": "NI",
+            "keywords": [
+                "NICARAGUA",
+                "RUC",
+                "DGI",
+                "CORDOBA",
+                "CÓRDOBA",
+                "MANAGUA",
+                "FACTURA DE CONTADO",
+                "FACTURA DE CREDITO",
+                "FACTURA DE CRÉDITO",
+            ],
+        },
+        {
+            "code": "CR",
+            "keywords": [
+                "COSTA RICA",
+                "CEDULA JURIDICA",
+                "CÉDULA JURÍDICA",
+                "CLAVE NUMERICA",
+                "CLAVE NUMÉRICA",
+                "COMPROBANTE ELECTRONICO",
+                "COMPROBANTE ELECTRÓNICO",
+                "HACIENDA",
+                "SAN JOSE",
+                "SAN JOSÉ",
+            ],
+        },
+    ]
+
+    scores = {}
+
+    for rule in country_rules:
+        score = 0
+        for keyword in rule["keywords"]:
+            if keyword in text_upper:
+                score += 1
+
+        scores[rule["code"]] = score
+
+    # Reglas adicionales por patrones
+    if re.search(r"\bRTN\b", text_upper) or re.search(r"\bCAI\b", text_upper):
+        scores["HN"] += 2
+
+    if re.search(r"\bRUC\b", text_upper) or re.search(r"\bDGI\b", text_upper):
+        scores["NI"] += 2
+
+    if re.search(r"CODIGO DE GENERACION|CÓDIGO DE GENERACIÓN|TIPO DTE", text_upper):
+        scores["SV"] += 2
+
+    if re.search(r"CLAVE NUMERICA|CLAVE NUMÉRICA|CEDULA JURIDICA|CÉDULA JURÍDICA", text_upper):
+        scores["CR"] += 2
+
+    if re.search(r"DOCUMENTO TRIBUTARIO ELECTRONICO|DOCUMENTO TRIBUTARIO ELECTRÓNICO|FEL", text_upper):
+        scores["GT"] += 1
+
+    best_country = max(scores, key=scores.get)
+
+    if scores[best_country] <= 0:
+        return None
+
+    return best_country
+
+
+
+def detect_currency_by_country(country_code: str | None, text: str = "") -> dict:
+    text_upper = normalize_line(text)
+
+    currency_map = {
+        "GT": {
+            "code": "GTQ",
+            "symbol": "Q",
+            "decimalSeparator": ".",
+            "thousandSeparator": ",",
+        },
+        "SV": {
+            "code": "USD",
+            "symbol": "$",
+            "decimalSeparator": ".",
+            "thousandSeparator": ",",
+        },
+        "HN": {
+            "code": "HNL",
+            "symbol": "L",
+            "decimalSeparator": ".",
+            "thousandSeparator": ",",
+        },
+        "NI": {
+            "code": "NIO",
+            "symbol": "C$",
+            "decimalSeparator": ".",
+            "thousandSeparator": ",",
+        },
+        "CR": {
+            "code": "CRC",
+            "symbol": "₡",
+            "decimalSeparator": ".",
+            "thousandSeparator": ",",
+        },
+    }
+
+    # Si se detecta símbolo claro en el texto, puede reforzar la moneda
+    if "C$" in text_upper:
+        return currency_map["NI"]
+
+    if "₡" in text or "COLONES" in text_upper:
+        return currency_map["CR"]
+
+    if "L." in text_upper or "LEMPIRA" in text_upper or "LEMPIRAS" in text_upper:
+        return currency_map["HN"]
+
+    if "QUETZAL" in text_upper or "QUETZALES" in text_upper:
+        return currency_map["GT"]
+
+    if "US$" in text_upper or "USD" in text_upper or "DOLAR" in text_upper or "DÓLAR" in text_upper:
+        return currency_map["SV"]
+
+    if country_code in currency_map:
+        return currency_map[country_code]
+
+    return {
+        "code": None,
+        "symbol": None,
+        "decimalSeparator": ".",
+        "thousandSeparator": ",",
+    }
+
+
+def normalize_line(value: str) -> str:
+    if value is None:
+        return ""
+
+    return (
+        str(value)
+        .upper()
+        .replace("Á", "A")
+        .replace("É", "E")
+        .replace("Í", "I")
+        .replace("Ó", "O")
+        .replace("Ú", "U")
+        .replace("Ñ", "N")
+        .replace("×", "X")
+        .strip()
+    )

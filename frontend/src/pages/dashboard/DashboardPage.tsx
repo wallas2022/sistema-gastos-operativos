@@ -3,280 +3,419 @@ import {
   Box,
   Button,
   Flex,
+  Grid,
   Heading,
   HStack,
-  SimpleGrid,
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { Link } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
+import {
+  ArrowRight,
+  BarChart3,
+  ClipboardCheck,
+  ClipboardList,
+  FileSearch,
+  GitBranch,
+  Landmark,
+  LayoutDashboard,
+  LineChart,
+  ReceiptText,
+  ShieldCheck,
+  Users,
+  WalletCards,
+} from "lucide-react";
 
-const kpis = [
+const stats = [
   {
     label: "Solicitudes pendientes",
     value: "18",
     description: "Solicitudes de gasto en proceso",
+    color: "blue",
+    icon: ClipboardList,
   },
   {
     label: "Aprobaciones pendientes",
     value: "11",
     description: "Pendientes de autorización",
+    color: "purple",
+    icon: ClipboardCheck,
   },
   {
     label: "Liquidaciones abiertas",
     value: "9",
-    description: "Procesos pendientes de cierre",
+    description: "Expedientes financieros activos",
+    color: "green",
+    icon: ReceiptText,
   },
   {
     label: "Presupuesto ejecutado",
     value: "Q 6,700,000",
     description: "67% del presupuesto anual",
+    color: "orange",
+    icon: BarChart3,
   },
 ];
 
 const modules = [
   {
-    name: "Planificación y Normativa",
-    status: "Diseño",
-    description: "Reglas, políticas y simulación de gastos.",
+    title: "Planificación y Normativa",
+    code: "MPN",
+    description:
+      "Registro inteligente de gastos, políticas, simulador y validación presupuestaria.",
     path: "/planificacion-normativa",
+    icon: ShieldCheck,
+    color: "blue",
   },
   {
-    name: "Trazabilidad de Flujos",
-    status: "Diseño",
-    description: "Aprobaciones, estados, SLA y bitácora.",
-    path: "/trazabilidad-flujos",
+    title: "Trazabilidad de Flujos",
+    code: "MOTF",
+    description:
+      "Autorizaciones, estados, escalamientos SLA y bitácora de eventos.",
+    path: "/monitor-estados",
+    icon: GitBranch,
+    color: "purple",
   },
   {
-    name: "Rendición y Conciliación",
-    status: "En integración",
-    description: "Liquidaciones, comprobantes y OCR.",
+    title: "Rendición y Conciliación Financiera",
+    code: "MRCF",
+    description:
+      "Carga OCR, liquidaciones, anticipos y cierres certificados.",
     path: "/rendicion-conciliacion",
+    icon: WalletCards,
+    color: "green",
   },
   {
-    name: "Control Presupuestario",
-    status: "Diseño",
-    description: "Presupuesto proyectado, ejecutado y desvíos.",
+    title: "Control Presupuestario e Inteligencia",
+    code: "MCPIN",
+    description:
+      "Dashboards de ejecución, análisis histórico, APIs y proyección de desvíos.",
     path: "/control-presupuestario",
+    icon: LineChart,
+    color: "orange",
   },
   {
-    name: "Gobernanza y Configuración",
-    status: "Diseño",
-    description: "Empresas, centros de costo, roles y reglas.",
+    title: "Gobernanza y Configuración",
+    code: "MGCE",
+    description:
+      "Empresas, centros de costo, matriz de roles y auditoría del sistema.",
     path: "/gobernanza-configuracion",
+    icon: Landmark,
+    color: "cyan",
   },
   {
-    name: "Reportes y Analítica",
-    status: "Diseño",
-    description: "KPIs, exportaciones y análisis financiero.",
-    path: "/reportes-analitica",
+    title: "Usuarios y Control de Accesos",
+    code: "Transversal",
+    description:
+      "Usuarios, roles, permisos, delegaciones y bitácora de accesos.",
+    path: "/usuarios-accesos",
+    icon: Users,
+    color: "gray",
   },
 ];
 
-const activities = [
+const quickActions = [
   {
-    title: "OCR confirmado",
-    description: "Documento FEL-001 procesado y confirmado para liquidación.",
-    time: "Hace 10 min",
+    label: "Nueva solicitud de gasto",
+    path: "/solicitudes-gastos/nueva",
+    icon: ClipboardList,
   },
   {
-    title: "Solicitud enviada",
-    description: "Nueva solicitud de gasto registrada por el área Comercial.",
-    time: "Hace 35 min",
+    label: "Subir comprobante OCR",
+    path: "/rendicion-conciliacion/ocr/documentos",
+    icon: FileSearch,
   },
   {
-    title: "Aprobación pendiente",
-    description: "Solicitud SG-2026-0008 espera autorización de Gerencia.",
-    time: "Hace 1 h",
+    label: "Nueva liquidación",
+    path: "/rendicion-conciliacion/liquidaciones/nueva",
+    icon: ReceiptText,
   },
   {
-    title: "Presupuesto actualizado",
-    description: "Centro de costo Administración recibió ajuste presupuestario.",
-    time: "Hoy",
+    label: "Ver autorizaciones",
+    path: "/autorizaciones",
+    icon: ClipboardCheck,
   },
 ];
 
 export function DashboardPage() {
   return (
-    <Box>
+    <VStack align="stretch" gap="6">
       <Flex
         justify="space-between"
-        align={{ base: "flex-start", md: "center" }}
-        gap="4"
-        mb="6"
+        align={{ base: "start", md: "center" }}
         direction={{ base: "column", md: "row" }}
+        gap="4"
       >
         <Box>
+          <HStack mb="2">
+            <Badge colorPalette="blue" variant="subtle">
+              Vista general
+            </Badge>
+            <Badge colorPalette="green" variant="subtle">
+              Sistema operativo
+            </Badge>
+          </HStack>
+
           <Heading size="lg">Dashboard General</Heading>
+
           <Text color="gray.500" mt="1">
-            Vista ejecutiva del sistema de gestión y control presupuestario de
-            gastos operativos.
+            Vista central del comportamiento de solicitudes, aprobaciones,
+            liquidaciones, documentos OCR y ejecución presupuestaria.
           </Text>
         </Box>
 
-        <HStack>
-          <Link to="/rendicion-conciliacion/ocr/documentos">
-            <Button colorPalette="blue">Subir comprobante OCR</Button>
-          </Link>
-
-          <Link to="/planificacion-normativa">
-            <Button variant="outline">Nueva solicitud</Button>
-          </Link>
-        </HStack>
+        <RouterLink to="/rendicion-conciliacion/ocr/documentos">
+          <Button colorPalette="blue">
+            <FileSearch size={18} />
+            Ir a documentos OCR
+          </Button>
+        </RouterLink>
       </Flex>
 
-      <SimpleGrid columns={{ base: 1, md: 2, xl: 4 }} gap="4" mb="6">
-        {kpis.map((item) => (
-          <Box
-            key={item.label}
-            bg="white"
-            p="5"
-            rounded="xl"
-            border="1px solid"
-            borderColor="gray.200"
-          >
-            <Text fontSize="sm" color="gray.500">
-              {item.label}
-            </Text>
-            <Text fontSize="2xl" fontWeight="bold" mt="2">
-              {item.value}
-            </Text>
-            <Text fontSize="sm" color="gray.500" mt="1">
-              {item.description}
-            </Text>
-          </Box>
+      <Grid
+        templateColumns={{
+          base: "1fr",
+          md: "repeat(2, 1fr)",
+          xl: "repeat(4, 1fr)",
+        }}
+        gap="4"
+      >
+        {stats.map((item) => (
+          <StatCard key={item.label} {...item} />
         ))}
-      </SimpleGrid>
+      </Grid>
 
-      <SimpleGrid columns={{ base: 1, xl: 3 }} gap="4">
+      <Grid templateColumns={{ base: "1fr", xl: "1.6fr 1fr" }} gap="5">
         <Box
-          gridColumn={{ base: "span 1", xl: "span 2" }}
           bg="white"
-          p="5"
-          rounded="xl"
           border="1px solid"
           borderColor="gray.200"
+          rounded="2xl"
+          p="5"
         >
-          <Flex justify="space-between" align="center" mb="4">
+          <Flex justify="space-between" align="center" mb="5">
             <Box>
-              <Heading size="md">Estado de módulos</Heading>
+              <Heading size="md">Mapa funcional del sistema</Heading>
               <Text fontSize="sm" color="gray.500">
-                Mapa funcional del sistema y avance visual de integración.
+                Organización general de los módulos definidos para el sistema.
               </Text>
             </Box>
+
+            <LayoutDashboard size={24} color="#2563eb" />
           </Flex>
 
-          <SimpleGrid columns={{ base: 1, md: 2 }} gap="4">
-            {modules.map((module) => (
-              <Link key={module.name} to={module.path}>
-                <Box
-                  p="4"
-                  rounded="lg"
-                  border="1px solid"
-                  borderColor="gray.200"
-                  _hover={{
-                    borderColor: "blue.300",
-                    bg: "blue.50",
-                  }}
-                >
-                  <Flex justify="space-between" align="flex-start" gap="3">
-                    <Box>
-                      <Text fontWeight="semibold">{module.name}</Text>
-                      <Text fontSize="sm" color="gray.500" mt="1">
-                        {module.description}
-                      </Text>
-                    </Box>
-
-                    <Badge
-                      colorPalette={
-                        module.status === "En integración" ? "green" : "gray"
-                      }
-                    >
-                      {module.status}
-                    </Badge>
-                  </Flex>
-                </Box>
-              </Link>
+          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap="4">
+            {modules.map((item) => (
+              <ModuleCard key={item.title} {...item} />
             ))}
-          </SimpleGrid>
+          </Grid>
         </Box>
 
-        <VStack align="stretch" gap="4">
+        <VStack align="stretch" gap="5">
           <Box
             bg="white"
-            p="5"
-            rounded="xl"
             border="1px solid"
             borderColor="gray.200"
-          >
-            <Heading size="md">Actividad reciente</Heading>
-            <VStack align="stretch" gap="4" mt="4">
-              {activities.map((activity) => (
-                <Box
-                  key={activity.title}
-                  borderLeft="3px solid"
-                  borderColor="blue.500"
-                  pl="3"
-                >
-                  <Flex justify="space-between" gap="3">
-                    <Text fontWeight="semibold" fontSize="sm">
-                      {activity.title}
-                    </Text>
-                    <Text fontSize="xs" color="gray.400">
-                      {activity.time}
-                    </Text>
-                  </Flex>
-                  <Text fontSize="sm" color="gray.500" mt="1">
-                    {activity.description}
-                  </Text>
-                </Box>
-              ))}
-            </VStack>
-          </Box>
-
-          <Box
-            bg="white"
+            rounded="2xl"
             p="5"
-            rounded="xl"
-            border="1px solid"
-            borderColor="gray.200"
           >
             <Heading size="md">Accesos rápidos</Heading>
 
-            <VStack align="stretch" gap="2" mt="4">
-              <Link to="/planificacion-normativa">
-                <Button w="100%" justifyContent="flex-start" variant="ghost">
-                  Nueva solicitud de gasto
-                </Button>
-              </Link>
+            <Text fontSize="sm" color="gray.500" mt="1" mb="5">
+              Acciones frecuentes para operar el sistema.
+            </Text>
 
-              <Link to="/rendicion-conciliacion">
-                <Button w="100%" justifyContent="flex-start" variant="ghost">
-                  Nueva liquidación
-                </Button>
-              </Link>
+            <VStack align="stretch" gap="3">
+              {quickActions.map((item) => {
+                const Icon = item.icon;
 
-              <Link to="/rendicion-conciliacion/ocr/documentos">
-                <Button w="100%" justifyContent="flex-start" variant="ghost">
-                  Subir comprobante OCR
-                </Button>
-              </Link>
+                return (
+                  <RouterLink key={item.path} to={item.path}>
+                    <Flex
+                      align="center"
+                      justify="space-between"
+                      border="1px solid"
+                      borderColor="gray.100"
+                      rounded="xl"
+                      p="3"
+                      _hover={{
+                        bg: "blue.50",
+                        borderColor: "blue.200",
+                      }}
+                    >
+                      <HStack>
+                        <Box
+                          w="36px"
+                          h="36px"
+                          rounded="lg"
+                          bg="blue.50"
+                          color="blue.600"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <Icon size={18} />
+                        </Box>
 
-              <Link to="/trazabilidad-flujos">
-                <Button w="100%" justifyContent="flex-start" variant="ghost">
-                  Ver autorizaciones
-                </Button>
-              </Link>
+                        <Text fontSize="sm" fontWeight="medium">
+                          {item.label}
+                        </Text>
+                      </HStack>
 
-              <Link to="/control-presupuestario">
-                <Button w="100%" justifyContent="flex-start" variant="ghost">
-                  Ver presupuesto
-                </Button>
-              </Link>
+                      <ArrowRight size={17} />
+                    </Flex>
+                  </RouterLink>
+                );
+              })}
             </VStack>
           </Box>
+
+          <Box
+            bg="blue.600"
+            color="white"
+            rounded="2xl"
+            p="5"
+            position="relative"
+            overflow="hidden"
+          >
+            <Box
+              position="absolute"
+              right="-30px"
+              top="-30px"
+              w="120px"
+              h="120px"
+              rounded="full"
+              bg="whiteAlpha.200"
+            />
+
+            <Heading size="md">OCR integrado al proceso</Heading>
+
+            <Text fontSize="sm" mt="2" color="whiteAlpha.900">
+              El módulo OCR ya queda ubicado dentro de Rendición y Conciliación
+              Financiera como soporte para comprobar gastos ejecutados y crear
+              liquidaciones.
+            </Text>
+
+            <RouterLink to="/rendicion-conciliacion/ocr/documentos">
+              <Button mt="5" bg="white" color="blue.700" variant="solid">
+                Ver documentos OCR
+              </Button>
+            </RouterLink>
+          </Box>
         </VStack>
-      </SimpleGrid>
+      </Grid>
+    </VStack>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  description,
+  color,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  description: string;
+  color: string;
+  icon: React.ElementType;
+}) {
+  return (
+    <Box
+      bg="white"
+      border="1px solid"
+      borderColor="gray.200"
+      rounded="2xl"
+      p="5"
+    >
+      <Flex justify="space-between" align="start">
+        <Box>
+          <Text fontSize="sm" color="gray.500">
+            {label}
+          </Text>
+
+          <Heading size="lg" mt="2">
+            {value}
+          </Heading>
+
+          <Text fontSize="sm" color="gray.500" mt="2">
+            {description}
+          </Text>
+        </Box>
+
+        <Box
+          w="42px"
+          h="42px"
+          rounded="xl"
+          bg={`${color}.50`}
+          color={`${color}.600`}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Icon size={21} />
+        </Box>
+      </Flex>
     </Box>
+  );
+}
+
+function ModuleCard({
+  title,
+  code,
+  description,
+  path,
+  icon: Icon,
+  color,
+}: {
+  title: string;
+  code: string;
+  description: string;
+  path: string;
+  icon: React.ElementType;
+  color: string;
+}) {
+  return (
+    <RouterLink to={path}>
+      <Box
+        border="1px solid"
+        borderColor="gray.100"
+        rounded="2xl"
+        p="4"
+        h="100%"
+        _hover={{
+          borderColor: `${color}.300`,
+          bg: `${color}.50`,
+          transform: "translateY(-2px)",
+        }}
+        transition="all 0.2s ease"
+      >
+        <Flex justify="space-between" align="start" mb="4">
+          <Box
+            w="44px"
+            h="44px"
+            rounded="xl"
+            bg={`${color}.50`}
+            color={`${color}.600`}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Icon size={22} />
+          </Box>
+
+          <Badge colorPalette={color === "gray" ? "gray" : color} variant="subtle">
+            {code}
+          </Badge>
+        </Flex>
+
+        <Text fontWeight="semibold">{title}</Text>
+
+        <Text fontSize="sm" color="gray.500" mt="2" lineHeight="1.6">
+          {description}
+        </Text>
+      </Box>
+    </RouterLink>
   );
 }

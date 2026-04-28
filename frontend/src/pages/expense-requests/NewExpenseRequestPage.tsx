@@ -1,138 +1,137 @@
-import { useMemo, useState } from "react";
-import type { Dispatch, ElementType, ReactNode, SetStateAction } from "react";
 import {
   Badge,
   Box,
   Button,
   Checkbox,
+  Field,
   Flex,
   Grid,
   Heading,
   HStack,
   Input,
-  NativeSelect,
+  NumberInput,
+  Select,
   Text,
   Textarea,
   VStack,
+  createListCollection,
 } from "@chakra-ui/react";
-import { Link as RouterLink } from "react-router-dom";
 import {
   ArrowLeft,
   Calculator,
-  Car,
   CheckCircle2,
   ClipboardList,
   FileText,
-  Hotel,
+  Plane,
+  Plus,
   Save,
   Send,
   ShieldCheck,
-  Soup,
   WalletCards,
 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
 
-const travelPolicies = {
-  operador: [
-    {
-      id: "alimentacion",
-      label: "Alimentación",
-      rate: 90,
-      unit: "por día",
-      icon: Soup,
-    },
-    {
-      id: "transporte",
-      label: "Transporte local",
-      rate: 75,
-      unit: "por día",
-      icon: Car,
-    },
-    {
-      id: "alojamiento",
-      label: "Alojamiento básico",
-      rate: 280,
-      unit: "por noche",
-      icon: Hotel,
-    },
+const expenseTypes = createListCollection({
+  items: [
+    { label: "Gasto de viaje", value: "travel" },
+    { label: "Pago a proveedor", value: "provider" },
+    { label: "Gasto administrativo", value: "admin" },
+    { label: "Gasto extraordinario", value: "extraordinary" },
   ],
-  jefe: [
-    {
-      id: "alimentacion",
-      label: "Alimentación",
-      rate: 125,
-      unit: "por día",
-      icon: Soup,
-    },
-    {
-      id: "transporte",
-      label: "Transporte local",
-      rate: 100,
-      unit: "por día",
-      icon: Car,
-    },
-    {
-      id: "alojamiento",
-      label: "Alojamiento estándar",
-      rate: 420,
-      unit: "por noche",
-      icon: Hotel,
-    },
+});
+
+const requesterRoles = createListCollection({
+  items: [
+    { label: "Operador", value: "operador" },
+    { label: "Jefe", value: "jefe" },
+    { label: "Gerente", value: "gerente" },
+    { label: "Directivo", value: "directivo" },
   ],
-  gerente: [
-    {
-      id: "alimentacion",
-      label: "Alimentación",
-      rate: 160,
-      unit: "por día",
-      icon: Soup,
-    },
-    {
-      id: "alojamiento",
-      label: "Alojamiento superior",
-      rate: 650,
-      unit: "por noche",
-      icon: Hotel,
-    },
-    {
-      id: "vehiculo",
-      label: "Alquiler de vehículo",
-      rate: 400,
-      unit: "por día",
-      icon: Car,
-    },
+});
+
+const destinations = createListCollection({
+  items: [
+    { label: "Ciudad de Guatemala", value: "guatemala" },
+    { label: "Interior del país", value: "interior" },
+    { label: "Internacional", value: "internacional" },
   ],
-  directivo: [
-    {
-      id: "alimentacion",
-      label: "Alimentación ejecutiva",
-      rate: 220,
-      unit: "por día",
-      icon: Soup,
-    },
-    {
-      id: "alojamiento",
-      label: "Alojamiento ejecutivo",
-      rate: 950,
-      unit: "por noche",
-      icon: Hotel,
-    },
-    {
-      id: "vehiculo",
-      label: "Alquiler de vehículo",
-      rate: 650,
-      unit: "por día",
-      icon: Car,
-    },
-  ],
+});
+
+const travelItems = [
+  {
+    key: "lodging",
+    label: "Alojamiento",
+    description: "Hotel u hospedaje autorizado según destino y rol.",
+    base: 450,
+  },
+  {
+    key: "food",
+    label: "Alimentación",
+    description: "Monto diario para comidas según política interna.",
+    base: 175,
+  },
+  {
+    key: "vehicle",
+    label: "Alquiler de vehículo",
+    description: "Disponible según justificación y nivel de autorización.",
+    base: 350,
+  },
+  {
+    key: "transport",
+    label: "Transporte local",
+    description: "Taxi, parqueo, transporte público o movilidad local.",
+    base: 125,
+  },
+  {
+    key: "fuel",
+    label: "Combustible",
+    description: "Aplica cuando se autoriza uso de vehículo.",
+    base: 200,
+  },
+];
+
+const roleMultiplier: Record<string, number> = {
+  operador: 1,
+  jefe: 1.15,
+  gerente: 1.35,
+  directivo: 1.6,
 };
 
 export function NewExpenseRequestPage() {
-  const [expenseType, setExpenseType] = useState("");
-  const [requesterRole, setRequesterRole] = useState("operador");
-  const [travelDays, setTravelDays] = useState(1);
+  const [expenseType, setExpenseType] = useState<string[]>(["travel"]);
+  const [role, setRole] = useState<string[]>(["operador"]);
+  const [destination, setDestination] = useState<string[]>(["guatemala"]);
+  const [days, setDays] = useState("1");
   const [selectedItems, setSelectedItems] = useState<string[]>([
-    "alimentacion",
+    "lodging",
+    "food",
   ]);
+
+  const currentExpenseType = expenseType[0] ?? "travel";
+  const currentRole = role[0] ?? "operador";
+  const currentDestination = destination[0] ?? "guatemala";
+
+  const estimatedAmount = useMemo(() => {
+    const numberOfDays = Number(days) || 1;
+    const multiplier = roleMultiplier[currentRole] ?? 1;
+
+    if (currentExpenseType !== "travel") {
+      return 0;
+    }
+
+    return travelItems
+      .filter((item) => selectedItems.includes(item.key))
+      .reduce((sum, item) => sum + item.base * numberOfDays * multiplier, 0);
+  }, [currentExpenseType, currentRole, days, selectedItems]);
+
+  const toggleItem = (itemKey: string) => {
+    setSelectedItems((previous) =>
+      previous.includes(itemKey)
+        ? previous.filter((key) => key !== itemKey)
+        : [...previous, itemKey]
+    );
+  };
 
   return (
     <VStack align="stretch" gap="6">
@@ -143,212 +142,249 @@ export function NewExpenseRequestPage() {
         gap="4"
       >
         <Box>
-          <RouterLink to="/solicitudes-gastos">
-            <Button size="sm" variant="ghost" mb="3">
-              <ArrowLeft size={16} />
-              Volver
-            </Button>
-          </RouterLink>
+          <HStack mb="2">
+            <Badge colorPalette="blue" variant="subtle">
+              MPN
+            </Badge>
+            <Badge colorPalette="green" variant="subtle">
+              Nueva solicitud
+            </Badge>
+          </HStack>
 
-          <Heading size="lg">Nueva Solicitud de Gasto</Heading>
+          <Heading size="lg">Nueva solicitud de gasto</Heading>
+
           <Text color="gray.500" mt="1">
-            Registro inicial del gasto con validación de política y presupuesto
-            antes de enviarlo a autorización.
+            Registro inicial de gasto con validación de política, cálculo
+            estimado y verificación presupuestaria previa.
           </Text>
         </Box>
 
-        <HStack>
+        <RouterLink to="/planificacion-normativa">
           <Button variant="outline">
-            <Save size={18} />
-            Guardar borrador
+            <ArrowLeft size={18} />
+            Volver al módulo
           </Button>
-
-          <Button colorPalette="blue">
-            <Send size={18} />
-            Enviar a autorización
-          </Button>
-        </HStack>
+        </RouterLink>
       </Flex>
 
-      <Grid templateColumns={{ base: "1fr", xl: "1.4fr 1fr" }} gap="5">
+      <Grid templateColumns={{ base: "1fr", xl: "1.4fr 0.8fr" }} gap="5">
         <VStack align="stretch" gap="5">
-          <Box
-            bg="white"
-            border="1px solid"
-            borderColor="gray.200"
-            rounded="2xl"
-            p="5"
+          <SectionCard
+            title="Datos generales de la solicitud"
+            description="Información principal para clasificar y enrutar la solicitud."
+            icon={ClipboardList}
           >
-            <Flex align="center" gap="3" mb="5">
-              <Box
-                w="42px"
-                h="42px"
-                rounded="xl"
-                bg="blue.50"
-                color="blue.600"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <ClipboardList size={21} />
-              </Box>
+            <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap="4">
+              <Field.Root>
+                <Field.Label>Tipo de gasto</Field.Label>
+                <Select.Root
+                  collection={expenseTypes}
+                  value={expenseType}
+                  onValueChange={(details) => setExpenseType(details.value)}
+                >
+                  <Select.HiddenSelect />
+                  <Select.Control>
+                    <Select.Trigger>
+                      <Select.ValueText placeholder="Seleccione tipo de gasto" />
+                    </Select.Trigger>
+                    <Select.IndicatorGroup>
+                      <Select.Indicator />
+                    </Select.IndicatorGroup>
+                  </Select.Control>
+                  <Select.Positioner>
+                    <Select.Content>
+                      {expenseTypes.items.map((item) => (
+                        <Select.Item item={item} key={item.value}>
+                          {item.label}
+                          <Select.ItemIndicator />
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Positioner>
+                </Select.Root>
+              </Field.Root>
 
-              <Box>
-                <Heading size="md">Datos generales</Heading>
-                <Text fontSize="sm" color="gray.500">
-                  Información principal de la solicitud.
-                </Text>
-              </Box>
-            </Flex>
+              <Field.Root>
+                <Field.Label>Rol del solicitante</Field.Label>
+                <Select.Root
+                  collection={requesterRoles}
+                  value={role}
+                  onValueChange={(details) => setRole(details.value)}
+                >
+                  <Select.HiddenSelect />
+                  <Select.Control>
+                    <Select.Trigger>
+                      <Select.ValueText placeholder="Seleccione rol" />
+                    </Select.Trigger>
+                    <Select.IndicatorGroup>
+                      <Select.Indicator />
+                    </Select.IndicatorGroup>
+                  </Select.Control>
+                  <Select.Positioner>
+                    <Select.Content>
+                      {requesterRoles.items.map((item) => (
+                        <Select.Item item={item} key={item.value}>
+                          {item.label}
+                          <Select.ItemIndicator />
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Positioner>
+                </Select.Root>
+              </Field.Root>
 
-            <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap="4">
-              <Field label="Código de solicitud">
-                <Input value="SOL-0004" readOnly />
-              </Field>
+              <Field.Root>
+                <Field.Label>Empresa / unidad de negocio</Field.Label>
+                <Input placeholder="Servicios Compartidos" />
+              </Field.Root>
 
-              <Field label="Fecha de solicitud">
-                <Input type="date" defaultValue="2026-04-28" />
-              </Field>
+              <Field.Root>
+                <Field.Label>Centro de costo</Field.Label>
+                <Input placeholder="Administración / Finanzas" />
+              </Field.Root>
 
-              <Field label="Tipo de gasto">
-                <NativeSelect.Root>
-                  <NativeSelect.Field
-                    value={expenseType}
-                    onChange={(event) => {
-                      setExpenseType(event.target.value);
-                      setSelectedItems(["alimentacion"]);
-                    }}
-                  >
-                    <option value="" disabled>
-                      Selecciona un tipo
-                    </option>
-                    <option value="operativo">Gasto operativo</option>
-                    <option value="proveedor">Pago a proveedor</option>
-                    <option value="viaje">Gasto de viaje / viáticos</option>
-                    <option value="compra">Compra de insumos</option>
-                    <option value="servicio">Servicio externo</option>
-                  </NativeSelect.Field>
-                  <NativeSelect.Indicator />
-                </NativeSelect.Root>
-              </Field>
+              <Field.Root gridColumn={{ base: "auto", md: "span 2" }}>
+                <Field.Label>Concepto de la solicitud</Field.Label>
+                <Input placeholder="Ej. Gastos operativos por visita técnica" />
+              </Field.Root>
 
-              <Field label="Prioridad">
-                <NativeSelect.Root>
-                  <NativeSelect.Field defaultValue="normal">
-                    <option value="baja">Baja</option>
-                    <option value="normal">Normal</option>
-                    <option value="alta">Alta</option>
-                    <option value="urgente">Urgente</option>
-                  </NativeSelect.Field>
-                  <NativeSelect.Indicator />
-                </NativeSelect.Root>
-              </Field>
-
-              <Field label="Monto estimado">
-                <Input placeholder="Ej. 3500.00" />
-              </Field>
-
-              <Field label="Moneda">
-                <NativeSelect.Root>
-                  <NativeSelect.Field defaultValue="GTQ">
-                    <option value="GTQ">Quetzales GTQ</option>
-                    <option value="USD">Dólares USD</option>
-                  </NativeSelect.Field>
-                  <NativeSelect.Indicator />
-                </NativeSelect.Root>
-              </Field>
-
-              <Field label="Empresa">
-                <Input placeholder="Ej. Servicios Compartidos" />
-              </Field>
-
-              <Field label="Área / Departamento">
-                <Input placeholder="Ej. Administración" />
-              </Field>
-
-              <Field label="Centro de costo">
-                <Input placeholder="Ej. CC-ADM-001" />
-              </Field>
-
-              <Field label="Cuenta presupuestaria">
-                <Input placeholder="Ej. 6101 - Gastos administrativos" />
-              </Field>
-            </Grid>
-
-            <Box mt="4">
-              <Field label="Concepto del gasto">
-                <Input placeholder="Ej. Compra de suministros administrativos" />
-              </Field>
-            </Box>
-
-            <Box mt="4">
-              <Field label="Justificación">
+              <Field.Root gridColumn={{ base: "auto", md: "span 2" }}>
+                <Field.Label>Justificación</Field.Label>
                 <Textarea
-                  rows={4}
-                  placeholder="Describe por qué se requiere realizar este gasto."
+                  placeholder="Explique el motivo del gasto y su relación con la operación."
+                  minH="110px"
                 />
-              </Field>
-            </Box>
-          </Box>
+              </Field.Root>
+            </Grid>
+          </SectionCard>
 
-          {expenseType === "viaje" && (
-            <TravelExpenseSection
-              requesterRole={requesterRole}
-              setRequesterRole={setRequesterRole}
-              travelDays={travelDays}
-              setTravelDays={setTravelDays}
-              selectedItems={selectedItems}
-              setSelectedItems={setSelectedItems}
-            />
+          {currentExpenseType === "travel" && (
+            <SectionCard
+              title="Detalle de gasto de viaje"
+              description="Seleccione los rubros necesarios para calcular el monto estimado según rol, destino y días."
+              icon={Plane}
+            >
+              <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap="4" mb="5">
+                <Field.Root>
+                  <Field.Label>Destino</Field.Label>
+                  <Select.Root
+                    collection={destinations}
+                    value={destination}
+                    onValueChange={(details) => setDestination(details.value)}
+                  >
+                    <Select.HiddenSelect />
+                    <Select.Control>
+                      <Select.Trigger>
+                        <Select.ValueText placeholder="Seleccione destino" />
+                      </Select.Trigger>
+                      <Select.IndicatorGroup>
+                        <Select.Indicator />
+                      </Select.IndicatorGroup>
+                    </Select.Control>
+                    <Select.Positioner>
+                      <Select.Content>
+                        {destinations.items.map((item) => (
+                          <Select.Item item={item} key={item.value}>
+                            {item.label}
+                            <Select.ItemIndicator />
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Positioner>
+                  </Select.Root>
+                </Field.Root>
+
+                <Field.Root>
+                  <Field.Label>Cantidad de días</Field.Label>
+                  <NumberInput.Root
+                    min={1}
+                    value={days}
+                    onValueChange={(details) => setDays(details.value)}
+                  >
+                    <NumberInput.Control />
+                    <NumberInput.Input />
+                  </NumberInput.Root>
+                </Field.Root>
+
+                <Field.Root>
+                  <Field.Label>Fecha estimada de salida</Field.Label>
+                  <Input type="date" />
+                </Field.Root>
+              </Grid>
+
+              <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap="4">
+                {travelItems.map((item) => (
+                  <Box
+                    key={item.key}
+                    border="1px solid"
+                    borderColor={
+                      selectedItems.includes(item.key) ? "blue.200" : "gray.100"
+                    }
+                    bg={selectedItems.includes(item.key) ? "blue.50" : "white"}
+                    rounded="2xl"
+                    p="4"
+                    cursor="pointer"
+                    onClick={() => toggleItem(item.key)}
+                  >
+                    <Flex justify="space-between" align="start" gap="3">
+                      <Box>
+                        <Text fontWeight="semibold">{item.label}</Text>
+                        <Text fontSize="sm" color="gray.500" mt="1">
+                          {item.description}
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold" mt="3">
+                          Base diaria: Q {item.base.toFixed(2)}
+                        </Text>
+                      </Box>
+
+                      <Checkbox.Root
+                        checked={selectedItems.includes(item.key)}
+                        onCheckedChange={() => toggleItem(item.key)}
+                      >
+                        <Checkbox.HiddenInput />
+                        <Checkbox.Control />
+                      </Checkbox.Root>
+                    </Flex>
+                  </Box>
+                ))}
+              </Grid>
+            </SectionCard>
           )}
 
-          <Box
-            bg="white"
-            border="1px solid"
-            borderColor="gray.200"
-            rounded="2xl"
-            p="5"
-          >
-            <Flex align="center" gap="3" mb="5">
-              <Box
-                w="42px"
-                h="42px"
-                rounded="xl"
-                bg="purple.50"
-                color="purple.600"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <FileText size={21} />
-              </Box>
-
-              <Box>
-                <Heading size="md">Documentación previa</Heading>
-                <Text fontSize="sm" color="gray.500">
-                  Documentos de soporte opcionales antes de la ejecución.
-                </Text>
-              </Box>
-            </Flex>
-
-            <Box
-              border="1px dashed"
-              borderColor="gray.300"
-              rounded="2xl"
-              p="6"
-              textAlign="center"
-              bg="gray.50"
+          {currentExpenseType === "provider" && (
+            <SectionCard
+              title="Detalle de pago a proveedor"
+              description="Campos específicos para gastos relacionados con proveedores, servicios externos o compras operativas."
+              icon={FileText}
             >
-              <Text fontWeight="semibold">Adjuntar cotización o respaldo</Text>
-              <Text fontSize="sm" color="gray.500" mt="1">
-                PDF, imagen o documento relacionado con la solicitud.
-              </Text>
+              <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap="4">
+                <Field.Root>
+                  <Field.Label>Proveedor</Field.Label>
+                  <Input placeholder="Nombre del proveedor" />
+                </Field.Root>
 
-              <Button variant="outline" mt="4">
-                Seleccionar archivo
-              </Button>
-            </Box>
-          </Box>
+                <Field.Root>
+                  <Field.Label>NIT / Identificación</Field.Label>
+                  <Input placeholder="Ingrese NIT del proveedor" />
+                </Field.Root>
+
+                <Field.Root>
+                  <Field.Label>Número de proforma / referencia</Field.Label>
+                  <Input placeholder="PRO-0001" />
+                </Field.Root>
+
+                <Field.Root>
+                  <Field.Label>Fecha estimada de pago</Field.Label>
+                  <Input type="date" />
+                </Field.Root>
+
+                <Field.Root gridColumn={{ base: "auto", md: "span 2" }}>
+                  <Field.Label>Servicio o compra solicitada</Field.Label>
+                  <Textarea placeholder="Detalle del servicio, compra o gasto solicitado." />
+                </Field.Root>
+              </Grid>
+            </SectionCard>
+          )}
         </VStack>
 
         <VStack align="stretch" gap="5">
@@ -359,50 +395,40 @@ export function NewExpenseRequestPage() {
             rounded="2xl"
             p="5"
           >
-            <Flex align="center" gap="3" mb="5">
-              <Box
-                w="42px"
-                h="42px"
-                rounded="xl"
-                bg="green.50"
-                color="green.600"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <ShieldCheck size={21} />
+            <HStack mb="4">
+              <Box color="blue.600">
+                <Calculator size={22} />
               </Box>
-
-              <Box>
-                <Heading size="md">Validación de política</Heading>
-                <Text fontSize="sm" color="gray.500">
-                  Resultado preliminar según normativa configurada.
-                </Text>
-              </Box>
-            </Flex>
+              <Heading size="md">Resumen estimado</Heading>
+            </HStack>
 
             <VStack align="stretch" gap="3">
-              <ValidationItem
-                title="Tipo de gasto permitido"
-                description="El gasto seleccionado está habilitado para esta área."
-                status={expenseType ? "Cumple" : "Pendiente"}
-                color={expenseType ? "green" : "yellow"}
-              />
-
-              <ValidationItem
-                title="Límite por jerarquía"
-                description="El monto está dentro del rango autorizado para el solicitante."
-                status="Cumple"
-                color="green"
-              />
-
-              <ValidationItem
-                title="Documentación requerida"
-                description="Para este tipo de gasto puede requerirse respaldo."
-                status="Pendiente"
-                color="yellow"
-              />
+              <SummaryRow label="Tipo de gasto" value={getSelectedLabel(expenseTypes.items, currentExpenseType)} />
+              <SummaryRow label="Rol" value={getSelectedLabel(requesterRoles.items, currentRole)} />
+              {currentExpenseType === "travel" && (
+                <>
+                  <SummaryRow label="Destino" value={getSelectedLabel(destinations.items, currentDestination)} />
+                  <SummaryRow label="Días" value={days || "1"} />
+                  <SummaryRow label="Rubros seleccionados" value={String(selectedItems.length)} />
+                </>
+              )}
             </VStack>
+
+            <Box
+              mt="5"
+              p="4"
+              rounded="2xl"
+              bg="blue.50"
+              border="1px solid"
+              borderColor="blue.100"
+            >
+              <Text fontSize="sm" color="blue.700">
+                Monto estimado
+              </Text>
+              <Heading size="xl" color="blue.700" mt="1">
+                Q {estimatedAmount.toLocaleString("es-GT", { minimumFractionDigits: 2 })}
+              </Heading>
+            </Box>
           </Box>
 
           <Box
@@ -412,112 +438,58 @@ export function NewExpenseRequestPage() {
             rounded="2xl"
             p="5"
           >
-            <Flex align="center" gap="3" mb="5">
-              <Box
-                w="42px"
-                h="42px"
-                rounded="xl"
-                bg="blue.50"
-                color="blue.600"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <WalletCards size={21} />
+            <HStack mb="4">
+              <Box color="green.600">
+                <ShieldCheck size={22} />
               </Box>
-
-              <Box>
-                <Heading size="md">Validación presupuestaria</Heading>
-                <Text fontSize="sm" color="gray.500">
-                  Disponibilidad estimada del centro de costo.
-                </Text>
-              </Box>
-            </Flex>
+              <Heading size="md">Validaciones</Heading>
+            </HStack>
 
             <VStack align="stretch" gap="3">
-              <BudgetRow label="Presupuesto mensual" value="Q 25,000.00" />
-              <BudgetRow label="Ejecutado actual" value="Q 14,800.00" />
-              <BudgetRow label="Disponible" value="Q 10,200.00" strong />
-              <BudgetRow label="Solicitud actual" value="Q 3,500.00" />
-
-              <Box bg="green.50" color="green.700" rounded="xl" p="4" mt="2">
-                <HStack align="start">
-                  <CheckCircle2 size={20} />
-                  <Box>
-                    <Text fontWeight="semibold">Presupuesto disponible</Text>
-                    <Text fontSize="sm">
-                      La solicitud puede avanzar a autorización.
-                    </Text>
-                  </Box>
-                </HStack>
-              </Box>
+              <ValidationStatus title="Política aplicada" status="Correcto" />
+              <ValidationStatus title="Presupuesto disponible" status="Correcto" />
+              <ValidationStatus title="Flujo de autorización" status="Definido" />
+              <ValidationStatus title="Documentos requeridos" status="Pendiente" />
             </VStack>
           </Box>
 
-          <Box bg="blue.600" color="white" rounded="2xl" p="5">
-            <HStack align="start" gap="3">
-              <Calculator size={24} />
-              <Box>
-                <Heading size="sm">Simulación del gasto</Heading>
-                <Text fontSize="sm" mt="2" color="blue.50">
-                  El sistema estima el impacto de esta solicitud antes de
-                  afectar el presupuesto operativo disponible.
-                </Text>
-              </Box>
-            </HStack>
-          </Box>
+          <HStack gap="3">
+            <Button variant="outline" flex="1">
+              <Save size={18} />
+              Guardar borrador
+            </Button>
+
+            <Button colorPalette="blue" flex="1">
+              <Send size={18} />
+              Enviar solicitud
+            </Button>
+          </HStack>
         </VStack>
       </Grid>
     </VStack>
   );
 }
 
-function TravelExpenseSection({
-  requesterRole,
-  setRequesterRole,
-  travelDays,
-  setTravelDays,
-  selectedItems,
-  setSelectedItems,
+function SectionCard({
+  title,
+  description,
+  icon: Icon,
+  children,
 }: {
-  requesterRole: string;
-  setRequesterRole: (value: string) => void;
-  travelDays: number;
-  setTravelDays: (value: number) => void;
-  selectedItems: string[];
-  setSelectedItems: Dispatch<SetStateAction<string[]>>;
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
 }) {
-  const policies =
-    travelPolicies[requesterRole as keyof typeof travelPolicies] ?? [];
-
-  const totalTravelAmount = useMemo(() => {
-    return policies
-      .filter((item) => selectedItems.includes(item.id))
-      .reduce((sum, item) => {
-        const quantity =
-          item.id === "alojamiento" ? Math.max(travelDays - 1, 1) : travelDays;
-
-        return sum + item.rate * quantity;
-      }, 0);
-  }, [policies, selectedItems, travelDays]);
-
-  const toggleItem = (id: string) => {
-    setSelectedItems((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id]
-    );
-  };
-
   return (
     <Box
       bg="white"
       border="1px solid"
-      borderColor="blue.200"
+      borderColor="gray.200"
       rounded="2xl"
       p="5"
     >
-      <Flex align="center" gap="3" mb="5">
+      <HStack align="start" gap="3" mb="5">
         <Box
           w="42px"
           h="42px"
@@ -528,232 +500,68 @@ function TravelExpenseSection({
           alignItems="center"
           justifyContent="center"
         >
-          <WalletCards size={21} />
+          <Icon size={21} />
         </Box>
 
         <Box>
-          <HStack>
-            <Heading size="md">Configuración de viáticos</Heading>
-            <Badge colorPalette="blue">Formulario dinámico</Badge>
-          </HStack>
-          <Text fontSize="sm" color="gray.500">
-            Los conceptos disponibles cambian según el rol del solicitante y los
-            días estimados de viaje.
+          <Heading size="md">{title}</Heading>
+          <Text fontSize="sm" color="gray.500" mt="1">
+            {description}
           </Text>
         </Box>
-      </Flex>
+      </HStack>
 
-      <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap="4">
-        <Field label="Rol del solicitante">
-          <NativeSelect.Root>
-            <NativeSelect.Field
-              value={requesterRole}
-              onChange={(event) => {
-                setRequesterRole(event.target.value);
-                setSelectedItems(["alimentacion"]);
-              }}
-            >
-              <option value="operador">Operador</option>
-              <option value="jefe">Jefe</option>
-              <option value="gerente">Gerente</option>
-              <option value="directivo">Directivo</option>
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        </Field>
-
-        <Field label="Cantidad de días de viaje">
-          <Input
-            type="number"
-            min={1}
-            value={travelDays}
-            onChange={(event) => {
-              const value = Number(event.target.value);
-              setTravelDays(value > 0 ? value : 1);
-            }}
-          />
-        </Field>
-
-        <Field label="Ciudad origen">
-          <Input placeholder="Ej. Guatemala" />
-        </Field>
-
-        <Field label="Ciudad destino">
-          <Input placeholder="Ej. Quetzaltenango" />
-        </Field>
-
-        <Field label="Fecha de salida">
-          <Input type="date" />
-        </Field>
-
-        <Field label="Fecha de retorno">
-          <Input type="date" />
-        </Field>
-      </Grid>
-
-      <Box mt="5">
-        <Text fontWeight="semibold" mb="3">
-          Conceptos permitidos según rol
-        </Text>
-
-        <VStack align="stretch" gap="3">
-          {policies.map((item) => {
-            const Icon = item.icon;
-            const checked = selectedItems.includes(item.id);
-            const quantity =
-              item.id === "alojamiento"
-                ? Math.max(travelDays - 1, 1)
-                : travelDays;
-
-            const subtotal = item.rate * quantity;
-
-            return (
-              <Flex
-                key={item.id}
-                justify="space-between"
-                align={{ base: "start", md: "center" }}
-                direction={{ base: "column", md: "row" }}
-                gap="3"
-                border="1px solid"
-                borderColor={checked ? "blue.200" : "gray.100"}
-                bg={checked ? "blue.50" : "white"}
-                rounded="xl"
-                p="4"
-              >
-                <HStack align="start" gap="3">
-                  <Checkbox.Root
-                    checked={checked}
-                    onCheckedChange={() => toggleItem(item.id)}
-                  >
-                    <Checkbox.HiddenInput />
-                    <Checkbox.Control />
-                  </Checkbox.Root>
-
-                  <Box
-                    w="38px"
-                    h="38px"
-                    rounded="xl"
-                    bg="white"
-                    color="blue.600"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    border="1px solid"
-                    borderColor="gray.100"
-                  >
-                    <Icon size={18} />
-                  </Box>
-
-                  <Box>
-                    <Text fontWeight="semibold">{item.label}</Text>
-                    <Text fontSize="sm" color="gray.500">
-                      Q {item.rate.toLocaleString("es-GT")}.00 {item.unit} ×{" "}
-                      {quantity}
-                    </Text>
-                  </Box>
-                </HStack>
-
-                <Text fontWeight="bold">
-                  Q {subtotal.toLocaleString("es-GT")}.00
-                </Text>
-              </Flex>
-            );
-          })}
-        </VStack>
-      </Box>
-
-      <Flex
-        mt="5"
-        bg="blue.600"
-        color="white"
-        rounded="2xl"
-        p="5"
-        justify="space-between"
-        align={{ base: "start", md: "center" }}
-        direction={{ base: "column", md: "row" }}
-        gap="3"
-      >
-        <Box>
-          <Text fontSize="sm" color="blue.100">
-            Total estimado de viáticos
-          </Text>
-          <Heading size="lg">
-            Q {totalTravelAmount.toLocaleString("es-GT")}.00
-          </Heading>
-        </Box>
-
-        <Badge colorPalette="green" size="lg">
-          Dentro de política
-        </Badge>
-      </Flex>
-    </Box>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <Box>
-      <Text fontSize="sm" fontWeight="medium" mb="2">
-        {label}
-      </Text>
       {children}
     </Box>
   );
 }
 
-function ValidationItem({
-  title,
-  description,
-  status,
-  color,
-}: {
-  title: string;
-  description: string;
-  status: string;
-  color: string;
-}) {
+function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <Box border="1px solid" borderColor="gray.100" rounded="xl" p="4">
-      <Flex justify="space-between" align="start" gap="3">
-        <Box>
-          <Text fontWeight="semibold">{title}</Text>
-          <Text fontSize="sm" color="gray.500">
-            {description}
-          </Text>
-        </Box>
-
-        <Badge colorPalette={color}>{status}</Badge>
-      </Flex>
-    </Box>
+    <Flex justify="space-between" gap="3">
+      <Text fontSize="sm" color="gray.500">
+        {label}
+      </Text>
+      <Text fontSize="sm" fontWeight="semibold" textAlign="right">
+        {value}
+      </Text>
+    </Flex>
   );
 }
 
-function BudgetRow({
-  label,
-  value,
-  strong = false,
+function ValidationStatus({
+  title,
+  status,
 }: {
-  label: string;
-  value: string;
-  strong?: boolean;
+  title: string;
+  status: string;
 }) {
   return (
     <Flex
       justify="space-between"
       align="center"
-      borderBottom="1px solid"
+      border="1px solid"
       borderColor="gray.100"
-      py="2"
+      rounded="xl"
+      p="3"
     >
-      <Text
-        fontSize="sm"
-        color={strong ? "gray.900" : "gray.500"}
-        fontWeight={strong ? "bold" : "normal"}
-      >
-        {label}
-      </Text>
+      <HStack>
+        <CheckCircle2 size={17} color="#16a34a" />
+        <Text fontSize="sm" fontWeight="medium">
+          {title}
+        </Text>
+      </HStack>
 
-      <Text fontWeight={strong ? "bold" : "semibold"}>{value}</Text>
+      <Badge colorPalette={status === "Pendiente" ? "yellow" : "green"}>
+        {status}
+      </Badge>
     </Flex>
   );
+}
+
+function getSelectedLabel(
+  items: { label: string; value: string }[],
+  value: string
+) {
+  return items.find((item) => item.value === value)?.label ?? value;
 }

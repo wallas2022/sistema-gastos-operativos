@@ -1,17 +1,12 @@
-import {
-  Badge,
-  Box,
-  Flex,
-  Image,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
-import { NavLink } from "react-router-dom";
+import { Badge, Box, Flex, Image, Text, VStack } from "@chakra-ui/react";
+import { NavLink, useLocation } from "react-router-dom";
+import { useState } from "react";
 import {
   Activity,
   BarChart3,
-  Building2,
   ChartLine,
+  ChevronDown,
+  ChevronRight,
   ClipboardCheck,
   ClipboardList,
   FileCheck,
@@ -19,25 +14,20 @@ import {
   FileText,
   FolderArchive,
   GitBranch,
-  Home,
-  Landmark,
   LayoutDashboard,
   LineChart,
-  LockKeyhole,
   Network,
   PieChart,
   ReceiptText,
   Route,
   Scale,
-  Settings,
   ShieldCheck,
   SlidersHorizontal,
   TrendingUp,
-  Users,
   WalletCards,
 } from "lucide-react";
 
-type MenuItem = {
+type MenuChild = {
   label: string;
   path: string;
   icon: React.ElementType;
@@ -46,27 +36,34 @@ type MenuItem = {
 
 type MenuGroup = {
   title: string;
-  items: MenuItem[];
+  icon: React.ElementType;
+  path?: string;
+  children?: MenuChild[];
+};
+
+type SidebarProps = {
+  isCollapsed?: boolean;
 };
 
 const menuGroups: MenuGroup[] = [
   {
-    title: "Inicio",
-    items: [
-      {
-        label: "Dashboard",
-        path: "/",
-        icon: LayoutDashboard,
-      },
-    ],
+    title: "Dashboard",
+    path: "/",
+    icon: LayoutDashboard,
   },
   {
     title: "Planificación y Normativa",
-    items: [
+    icon: ShieldCheck,
+    children: [
       {
-        label: "Planificación y Normativa",
+        label: "Panel del módulo",
         path: "/planificacion-normativa",
         icon: ShieldCheck,
+      },
+      {
+        label: "Nueva solicitud",
+        path: "/solicitudes-gastos/nueva",
+        icon: ClipboardCheck,
       },
       {
         label: "Solicitudes de gastos",
@@ -92,34 +89,36 @@ const menuGroups: MenuGroup[] = [
   },
   {
     title: "Trazabilidad de Flujos",
-    items: [
+    icon: GitBranch,
+    children: [
       {
         label: "Centro de autorizaciones",
-        path: "/autorizaciones",
+        path: "/trazabilidad-flujos/autorizaciones",
         icon: ClipboardCheck,
       },
       {
         label: "Monitor de estados",
-        path: "/monitor-estados",
+        path: "/trazabilidad-flujos/monitor-estados",
         icon: Route,
       },
       {
         label: "Escalamientos SLA",
-        path: "/escalamientos-sla",
+        path: "/trazabilidad-flujos/escalamientos",
         icon: GitBranch,
       },
       {
         label: "Bitácora de eventos",
-        path: "/bitacora-eventos",
+        path: "/trazabilidad-flujos/bitacora",
         icon: Activity,
       },
     ],
   },
   {
     title: "Rendición y Conciliación Financiera",
-    items: [
+    icon: WalletCards,
+    children: [
       {
-        label: "Rendición y conciliación",
+        label: "Panel del módulo",
         path: "/rendicion-conciliacion",
         icon: WalletCards,
       },
@@ -148,9 +147,10 @@ const menuGroups: MenuGroup[] = [
   },
   {
     title: "Control Presupuestario e Inteligencia",
-    items: [
+    icon: BarChart3,
+    children: [
       {
-        label: "Control presupuestario",
+        label: "Panel del módulo",
         path: "/control-presupuestario",
         icon: BarChart3,
       },
@@ -174,141 +174,171 @@ const menuGroups: MenuGroup[] = [
         path: "/proyeccion-desvios",
         icon: TrendingUp,
       },
-    ],
-  },
-  {
-    title: "Gobernanza y Configuración",
-    items: [
-      {
-        label: "Gobernanza y configuración",
-        path: "/gobernanza-configuracion",
-        icon: Settings,
-      },
-      {
-        label: "Empresas y unidades",
-        path: "/empresas-unidades",
-        icon: Building2,
-      },
-      {
-        label: "Centros de costo",
-        path: "/centros-costo",
-        icon: Landmark,
-      },
-      {
-        label: "Matriz de roles",
-        path: "/matriz-roles",
-        icon: Users,
-      },
-      {
-        label: "Auditoría del sistema",
-        path: "/auditoria-sistema",
-        icon: Activity,
-      },
-    ],
-  },
-  {
-    title: "Seguridad y Usuarios",
-    items: [
-      {
-        label: "Usuarios y accesos",
-        path: "/usuarios-accesos",
-        icon: Users,
-      },
-      {
-        label: "Roles y permisos",
-        path: "/roles-permisos",
-        icon: LockKeyhole,
-      },
-      {
-        label: "Delegaciones temporales",
-        path: "/delegaciones-temporales",
-        icon: GitBranch,
-      },
-      {
-        label: "Bitácora de accesos",
-        path: "/bitacora-accesos",
-        icon: Activity,
-      },
-    ],
-  },
-  {
-    title: "Reportes y Analítica",
-    items: [
       {
         label: "Reportes y analítica",
         path: "/reportes-analitica",
         icon: LineChart,
       },
-      {
-        label: "KPIs ejecutivos",
-        path: "/kpis-ejecutivos",
-        icon: BarChart3,
-      },
-      {
-        label: "Reportes de auditoría",
-        path: "/reportes-auditoria",
-        icon: FileCheck,
-      },
-      {
-        label: "Exportaciones",
-        path: "/exportaciones",
-        icon: FileText,
-      },
     ],
   },
 ];
 
-export function Sidebar() {
+export function Sidebar({ isCollapsed = false }: SidebarProps) {
+  const location = useLocation();
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    "Planificación y Normativa": true,
+    "Trazabilidad de Flujos": true,
+    "Rendición y Conciliación Financiera": true,
+    "Control Presupuestario e Inteligencia": true,
+  });
+
+  const toggleGroup = (title: string) => {
+    setOpenGroups((previous) => ({
+      ...previous,
+      [title]: !previous[title],
+    }));
+  };
+
+  const isGroupActive = (group: MenuGroup) => {
+    if (group.path) {
+      return location.pathname === group.path;
+    }
+
+    return group.children?.some((child) =>
+      location.pathname.startsWith(child.path)
+    );
+  };
+
   return (
     <Box
-      w="280px"
+      w={isCollapsed ? "88px" : "280px"}
       minH="100vh"
       bg="white"
       borderRight="1px solid"
       borderColor="gray.200"
-      px="4"
+      px={isCollapsed ? "3" : "4"}
       py="5"
       position="fixed"
       left="0"
       top="0"
       overflowY="auto"
+      transition="width 0.2s ease"
     >
-      <Flex align="center" gap="3" mb="8">
+      <Flex
+        align="center"
+        justify={isCollapsed ? "center" : "flex-start"}
+        mb="8"
+      >
         <Image
-          src="/logo-servicios-compartidos.jpg"
+          src="/images/logo-servicios-compartidos.jpg"
           alt="Servicios Compartidos"
-          maxW="180px"
+          maxW={isCollapsed ? "46px" : "180px"}
+          maxH={isCollapsed ? "46px" : "70px"}
           objectFit="contain"
+          transition="all 0.2s ease"
         />
       </Flex>
 
-      <VStack align="stretch" gap="6">
-        {menuGroups.map((group) => (
-          <Box key={group.title}>
-            <Text
-              fontSize="xs"
-              fontWeight="bold"
-              color="gray.400"
-              textTransform="uppercase"
-              mb="2"
-              px="2"
-            >
-              {group.title}
-            </Text>
+      <VStack align="stretch" gap="2">
+        {menuGroups.map((group) => {
+          const Icon = group.icon;
+          const activeGroup = isGroupActive(group);
+          const isOpen = openGroups[group.title];
 
-            <VStack align="stretch" gap="1">
-              {group.items.map((item) => (
-                <SidebarItem key={item.path} item={item} />
-              ))}
-            </VStack>
-          </Box>
-        ))}
+          if (group.path) {
+            return (
+              <NavLink
+                key={group.title}
+                to={group.path}
+                title={isCollapsed ? group.title : undefined}
+              >
+                {({ isActive }) => (
+                  <Flex
+                    align="center"
+                    justify={isCollapsed ? "center" : "flex-start"}
+                    gap="3"
+                    px={isCollapsed ? "0" : "3"}
+                    py="2.5"
+                    rounded="xl"
+                    color={isActive ? "blue.700" : "gray.700"}
+                    bg={isActive ? "blue.50" : "transparent"}
+                    fontWeight={isActive ? "semibold" : "medium"}
+                    _hover={{
+                      bg: "blue.50",
+                      color: "blue.700",
+                    }}
+                    transition="all 0.2s ease"
+                    minH="42px"
+                  >
+                    <Icon size={isCollapsed ? 21 : 18} />
+                    {!isCollapsed && <Text fontSize="sm">{group.title}</Text>}
+                  </Flex>
+                )}
+              </NavLink>
+            );
+          }
+
+          return (
+            <Box key={group.title}>
+              <Flex
+                align="center"
+                justify={isCollapsed ? "center" : "space-between"}
+                gap="3"
+                px={isCollapsed ? "0" : "3"}
+                py="2.5"
+                rounded="xl"
+                cursor="pointer"
+                color={activeGroup ? "blue.700" : "gray.700"}
+                bg={activeGroup ? "blue.50" : "transparent"}
+                fontWeight={activeGroup ? "semibold" : "medium"}
+                _hover={{
+                  bg: "blue.50",
+                  color: "blue.700",
+                }}
+                transition="all 0.2s ease"
+                minH="42px"
+                title={isCollapsed ? group.title : undefined}
+                onClick={() => toggleGroup(group.title)}
+              >
+                <Flex
+                  align="center"
+                  justify={isCollapsed ? "center" : "flex-start"}
+                  gap="3"
+                >
+                  <Icon size={isCollapsed ? 21 : 18} />
+
+                  {!isCollapsed && (
+                    <Text fontSize="sm" lineHeight="1.2">
+                      {group.title}
+                    </Text>
+                  )}
+                </Flex>
+
+                {!isCollapsed &&
+                  (isOpen ? (
+                    <ChevronDown size={17} />
+                  ) : (
+                    <ChevronRight size={17} />
+                  ))}
+              </Flex>
+
+              {!isCollapsed && isOpen && group.children && (
+                <VStack align="stretch" gap="1" mt="1" pl="3">
+                  {group.children.map((child) => (
+                    <SidebarChildItem key={child.path} item={child} />
+                  ))}
+                </VStack>
+              )}
+            </Box>
+          );
+        })}
       </VStack>
     </Box>
   );
 }
 
-function SidebarItem({ item }: { item: MenuItem }) {
+function SidebarChildItem({ item }: { item: MenuChild }) {
   const Icon = item.icon;
 
   return (
@@ -322,22 +352,24 @@ function SidebarItem({ item }: { item: MenuItem }) {
           py="2.5"
           rounded="xl"
           fontSize="sm"
-          fontWeight={isActive ? "semibold" : "medium"}
-          color={isActive ? "blue.700" : "gray.700"}
+          color={isActive ? "blue.700" : "gray.600"}
           bg={isActive ? "blue.50" : "transparent"}
+          fontWeight={isActive ? "semibold" : "medium"}
           _hover={{
-            bg: isActive ? "blue.50" : "gray.50",
+            bg: "gray.50",
             color: "blue.700",
           }}
           transition="all 0.2s ease"
+          minH="40px"
         >
           <Flex align="center" gap="3">
             <Box
-              color={isActive ? "blue.600" : "gray.500"}
+              color={isActive ? "blue.600" : "gray.400"}
               display="flex"
               alignItems="center"
+              justifyContent="center"
             >
-              <Icon size={17} />
+              <Icon size={16} />
             </Box>
 
             <Text>{item.label}</Text>

@@ -12,6 +12,7 @@ import { OcrService } from './ocr.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UpdateDocumentFieldsDto } from './dto/update-fields.dto';
 import { ConfirmOcrDto } from './dto/confirm-ocr.dto';
+import { UpdateLineItemsDto } from './dto/i´date-line-items.dto';
 
 
 @UseGuards(JwtAuthGuard)
@@ -48,5 +49,13 @@ export class OcrController {
       req.user.userId,
       dto.comment,
     );
+  }
+
+  @Put(':documentId/items')
+  updateLineItems(
+    @Param('documentId') documentId: string,
+    @Body() dto: UpdateLineItemsDto,
+  ) {
+    return this.ocrService.updateLineItems(documentId, dto);
   }
 }

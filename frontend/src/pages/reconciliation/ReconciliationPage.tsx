@@ -24,53 +24,43 @@ export function ReconciliationPage() {
 
           <Link to="/rendicion-conciliacion/ocr/documentos">
             <Button mt="4" colorPalette="blue">
-              Ir a OCR
+              Subir comprobante OCR
             </Button>
           </Link>
         </Box>
 
-        <Box
-          bg="white"
-          p="5"
-          rounded="xl"
-          border="1px solid"
-          borderColor="gray.200"
-        >
-          <Text fontWeight="semibold">Conciliador de anticipos</Text>
+        <ModuleCard
+          title="Conciliador de anticipos"
+          description="Cálculo automático del balance entre anticipo entregado, gasto ejecutado y reintegro."
+        />
 
-          <Text fontSize="sm" color="gray.500" mt="2">
-            Cálculo de saldos a favor, reintegros y diferencias.
-          </Text>
-        </Box>
+        <ModuleCard
+          title="Alertas de liquidación pendiente"
+          description="Bloqueo preventivo de nuevas solicitudes si existen cierres atrasados."
+        />
 
-        <Box
-          bg="white"
-          p="5"
-          rounded="xl"
-          border="1px solid"
-          borderColor="gray.200"
-        >
-          <Text fontWeight="semibold">Alertas de liquidación pendiente</Text>
-
-          <Text fontSize="sm" color="gray.500" mt="2">
-            Control preventivo de cierres vencidos.
-          </Text>
-        </Box>
-
-        <Box
-          bg="white"
-          p="5"
-          rounded="xl"
-          border="1px solid"
-          borderColor="gray.200"
-        >
-          <Text fontWeight="semibold">Certificación de cierre</Text>
-
-          <Text fontSize="sm" color="gray.500" mt="2">
-            Expediente digital firmado para auditoría y archivo.
-          </Text>
-        </Box>
+        <ModuleCard
+          title="Certificación de cierre"
+          description="Generación de expediente técnico digital firmado para archivo corporativo."
+        />
       </SimpleGrid>
     </PageContainer>
+  );
+}
+
+function ModuleCard({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <Box bg="white" p="5" rounded="xl" border="1px solid" borderColor="gray.200">
+      <Text fontWeight="semibold">{title}</Text>
+      <Text fontSize="sm" color="gray.500" mt="2">
+        {description}
+      </Text>
+    </Box>
   );
 }

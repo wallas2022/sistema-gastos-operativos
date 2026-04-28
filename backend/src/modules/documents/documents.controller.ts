@@ -23,6 +23,7 @@ import { OcrService } from '../ocr/ocr.service';
 
 
 
+
 @Controller('documents')
 @UseGuards(JwtAuthGuard)
 export class DocumentsController {
@@ -37,7 +38,7 @@ export class DocumentsController {
     return this.documentsService.upload(file, req.user.userId);
   }
 
-  @Get()
+ @Get()
   findAll(@Query() query: ListDocumentsDto) {
     return this.documentsService.findAll(query);
   }
@@ -63,6 +64,8 @@ export class DocumentsController {
 
     return res.send(result.buffer);
   }
+
+
 
 
 

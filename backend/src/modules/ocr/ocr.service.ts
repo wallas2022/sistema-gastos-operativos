@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -9,6 +10,7 @@ import { StorageService } from '../documents/storage/storage.service';
 import { OcrClientService } from './ocr.client';
 import { UpdateDocumentFieldsDto } from './dto/update-fields.dto';
 import { get } from 'node_modules/axios/index.cjs';
+import { UpdateLineItemsDto } from './dto/i´date-line-items.dto';
 
 @Injectable()
 export class OcrService {
@@ -341,6 +343,62 @@ export class OcrService {
     return {
       ok: true,
       message: 'Documento confirmado correctamente',
+    };
+  }
+
+  async updateLineItems(documentId: string, dto: UpdateLineItemsDto) {
+    const ocrResult = await this.prisma.oCRResult.findFirst({
+      where: {
+        documentId,
+      },
+    });
+
+    if (!ocrResult) {
+      throw new NotFoundException('No existe resultado OCR para este documento');
+    }
+
+    if (!dto.items || !Array.isArray(dto.items)) {
+      throw new BadRequestException('La lista de items es obligatoria');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.extractedLineItem.deleteMany({
+        where: {
+          ocrResultId: ocrResult.id,
+        },
+      });
+
+      if (dto.items.length > 0) {
+        await tx.extractedLineItem.createMany({
+          data: dto.items.map((item, index) => ({
+            ocrResultId: ocrResult.id,
+            lineNumber: item.lineNumber ?? index + 1,
+            article: item.article ?? null,
+            description: item.description,
+            quantity: Number(item.quantity),
+            unitPrice: Number(item.unitPrice),
+            lineSubtotal:
+              item.lineSubtotal !== undefined && item.lineSubtotal !== null
+                ? Number(item.lineSubtotal)
+                : null,
+            lineTax:
+              item.lineTax !== undefined && item.lineTax !== null
+                ? Number(item.lineTax)
+                : null,
+            lineTotal: Number(item.lineTotal),
+            taxIncluded: item.taxIncluded ?? false,
+            confidence:
+              item.confidence !== undefined && item.confidence !== null
+                ? Number(item.confidence)
+                : 100,
+          })),
+        });
+      }
+    });
+
+    return {
+      message: 'Detalle de factura actualizado correctamente',
+      totalItems: dto.items.length,
     };
   }
 

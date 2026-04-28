@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsNumberString, IsOptional, IsString } from 'class-validator';
 
 export class ListDocumentsDto {
   @IsOptional()
@@ -16,4 +16,12 @@ export class ListDocumentsDto {
     'ERROR_OCR',
   ])
   status?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  page?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  pageSize?: string;
 }

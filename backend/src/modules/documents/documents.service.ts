@@ -32,20 +32,43 @@ export class DocumentsService {
     };
   }
 
-  async findAll(_query?: ListDocumentsDto) {
-    const documents = await this.prisma.document.findMany({
+  async findAll(query?: ListDocumentsDto) {
+  const page = Number(query?.page ?? 1);
+  const pageSize = Number(query?.pageSize ?? 10);
+
+  const safePage = page > 0 ? page : 1;
+  const safePageSize = pageSize > 0 ? pageSize : 10;
+
+  const skip = (safePage - 1) * safePageSize;
+  const take = safePageSize;
+
+  const [documents, total] = await this.prisma.$transaction([
+    this.prisma.document.findMany({
+      skip,
+      take,
       orderBy: { createdAt: 'desc' },
       include: {
         ocrResult: true,
         confirmation: true,
       },
-    });
+    }),
+    this.prisma.document.count(),
+  ]);
 
-    return documents.map((document) => ({
+  return {
+    data: documents.map((document) => ({
       ...document,
-      sizeBytes: Number(document.sizeBytes),
-    }));
-  }
+      sizeBytes:
+        document.sizeBytes !== null && document.sizeBytes !== undefined
+          ? Number(document.sizeBytes)
+          : null,
+    })),
+    page: safePage,
+    pageSize: safePageSize,
+    total,
+    totalPages: Math.ceil(total / safePageSize),
+  };
+}
 
   async findOne(id: string) {
     const document = await this.prisma.document.findUnique({

@@ -25,6 +25,8 @@ import { AuditEventsPage } from "./pages/audit-events/AuditEventsPage";
 import { NotFoundPage } from "./pages/error/NotFoundPage";
 import { ModulePlaceholderPage } from "./common/ModulePlaceholderPage";
 import { ApprovalsPage } from "./pages/approvals/ApprovalsPage";
+import { NotificationsPage } from "./pages/approvals/notifications/NotificationsPage";
+import { NotificationDetailPage } from "./pages/approvals/notifications/NotificationDetailPage";
 
 export const router = createBrowserRouter([
   {
@@ -95,9 +97,13 @@ export const router = createBrowserRouter([
             element: <LiquidationsPage />,
             },
             {
-                path: "rendicion-conciliacion/liquidaciones/nueva",
-                element: <NewLiquidationPage />,
-                },
+              path: "rendicion-conciliacion/liquidaciones/nueva",
+              element: <NewLiquidationPage />,
+              },
+              {
+              path: "notificaciones",
+              element: <NotificationsPage />,
+            },
 {
   path: "simulador-gastos",
   element: (
@@ -344,8 +350,15 @@ export const router = createBrowserRouter([
                   {
           path: "planificacion-normativa",
           element: <PlanningPage />,
-        },  
-        ],
+        }, 
+      {
+  path: "notificaciones",
+  element: <NotificationsPage />,
+},
+{
+  path: "notificaciones/:id",
+  element: <NotificationDetailPage />,
+},        ],
       },
     ],
   },

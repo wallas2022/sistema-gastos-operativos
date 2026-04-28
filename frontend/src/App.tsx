@@ -1,21 +1,6 @@
-import { Navigate, Route, Routes } from "react-router-dom";
-import LoginPage from "./modules/auth/pages/LoginPage";
-import ProtectedRoute from "./shared/services/ProtectedRoute";
-import DocumentsPage from "./modules/documents/pages/DocumentsPage";
-import DocumentDetailPage from "./modules/documents/pages/DocumentDetailPage";
+import { RouterProvider } from "react-router-dom";
+import { router } from "./router";
 
-
-
-export default function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="/login" element={<LoginPage />} />
-
-      <Route element={<ProtectedRoute />}>
-        <Route path="/documents" element={<DocumentsPage />} />
-        <Route path="/documents/:id" element={<DocumentDetailPage />} />
-      </Route>
-    </Routes>
-  );
+export function App() {
+  return <RouterProvider router={router} />;
 }

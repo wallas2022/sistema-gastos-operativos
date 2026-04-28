@@ -115,10 +115,16 @@ export const uploadDocument = async (file: File) => {
   return response.data;
 };
 
-export const getDocuments = async (): Promise<DocumentItem[]> => {
-  const response = await api.get("/documents");
+export async function getDocuments(page = 1, pageSize = 10) {
+  const response = await api.get("/documents", {
+    params: {
+      page,
+      pageSize,
+    },
+  });
+
   return response.data;
-};
+}
 
 export const getDocumentById = async (id: string): Promise<OcrResultResponse> => {
   const response = await api.get(`/ocr/${id}/result`);

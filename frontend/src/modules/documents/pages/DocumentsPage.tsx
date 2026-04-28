@@ -36,6 +36,8 @@ const STATUS_OPTIONS = [
 
 
 
+
+
 export default function DocumentsPage() {
   const navigate = useNavigate();
 
@@ -53,54 +55,52 @@ export default function DocumentsPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
 
-  const loadDocuments = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-      const data = await getDocuments();
-      setDocuments(data);
-    } catch (err) {
-      console.error(err);
-      setError("No se pudieron cargar los documentos.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loadDocuments = async () => {
+  try {
+    setLoading(true);
+
+    const result = await getDocuments(page, pageSize);
+
+    setDocuments(result.data ?? []);
+    setTotal(result.total ?? 0);
+    setTotalPages(result.totalPages ?? 1);
+  } catch (error) {
+    console.error("Error cargando documentos:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     loadDocuments();
-  }, []);
+  }, [page]);
 
-  const handleUpload = async () => {
-    try {
-      if (!selectedFile) {
-        setError("Selecciona un archivo primero.");
-        return;
-      }
+ const handleUpload = async () => {
+  if (!selectedFile) {
+    alert("Selecciona un archivo primero");
+    return;
+  }
 
-      setUploading(true);
-      setError("");
-      setSuccessMessage("");
+  try {
+    setUploading(true);
 
-      await uploadDocument(selectedFile);
+    await uploadDocument(selectedFile);
 
-      setSuccessMessage("Documento cargado correctamente.");
-      setSelectedFile(null);
-
-      const input = document.getElementById("file-input") as HTMLInputElement | null;
-      if (input) {
-        input.value = "";
-      }
-
-      await loadDocuments();
-    } catch (err) {
-      console.error(err);
-      setError("No se pudo cargar el documento.");
-    } finally {
-      setUploading(false);
-    }
-  };
+    alert("Documento subido correctamente");
+    setPage(1);
+    await loadDocuments();
+  } catch (error) {
+    console.error("Error subiendo documento:", error);
+    alert("No se pudo subir el documento");
+  } finally {
+    setUploading(false);
+  }
+};
 
   const handleProcessOcr = async (documentId: string) => {
     try {
@@ -168,6 +168,16 @@ export default function DocumentsPage() {
     });
   }, [documents, search, statusFilter]);
 
+  const getPageNumbers = () => {
+  const pages: number[] = [];
+
+  for (let i = 1; i <= totalPages; i++) {
+    pages.push(i);
+  }
+
+  return pages;
+};
+
   return (
     <Box p={{ base: 4, md: 8 }}>
       <Stack gap={6}>
@@ -227,14 +237,7 @@ export default function DocumentsPage() {
                 }}
               />
 
-              <Button
-                colorPalette="blue"
-                onClick={handleUpload}
-                loading={uploading}
-                minW={{ md: "180px" }}
-              >
-                Subir archivo
-              </Button>
+  
             </Flex>
 
             {selectedFile ? (
@@ -243,8 +246,63 @@ export default function DocumentsPage() {
               </Text>
             ) : null}
           </Stack>
-        </Box>
+                      <Button
+                              colorPalette="blue"
+                              onClick={handleUpload}
+                              loading={uploading}
+                              minW={{ md: "180px" }}
+                            >
+                              Subir archivo
+                            </Button>
+                             
+          </Box>
+    <Flex
+                            align="center"
+                            justify="space-between"
+                            mt={4}
+                            flexWrap="wrap"
+                            gap={3}
+                          >
+              <Box
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="center"
+                            mt={4}
+                            gap={4}
+                          >
+                     
 
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                            disabled={page <= 1}
+                          >
+                            Anterior
+                          </Button>
+
+                          {getPageNumbers().map((pageNumber) => (
+                            <Button
+                              key={pageNumber}
+                              size="sm"
+                              variant={pageNumber === page ? "solid" : "outline"}
+                              colorPalette={pageNumber === page ? "blue" : "gray"}
+                              onClick={() => setPage(pageNumber)}
+                            >
+                              {pageNumber}
+                            </Button>
+                          ))}
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                            disabled={page >= totalPages}
+                          >
+                            Siguiente
+                          </Button>
+                        </Box>
+                        </Flex>
         <Box bg="white" borderWidth="1px" borderRadius="2xl" p={6}>
           <Stack gap={5}>
             <Flex
@@ -387,9 +445,12 @@ export default function DocumentsPage() {
                     ))}
                   </Table.Body>
                 </Table.Root>
+             
               </Box>
             )}
+            
           </Stack>
+          
         </Box>
 
         {viewMode === "cards" && filteredDocuments.length > 0 ? (
@@ -397,9 +458,66 @@ export default function DocumentsPage() {
             <Text fontSize="sm" color="gray.500">
               En vista ficha, el procesamiento OCR se hace desde el detalle.
             </Text>
+           
           </Box>
-        ) : null}
+          
+        ) : null }   
+
+   <Flex
+                            align="center"
+                            justify="space-between"
+                            mt={4}
+                            flexWrap="wrap"
+                            gap={3}
+                          >
+              <Box
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="center"
+                            mt={4}
+                            gap={4}
+                          >
+                     
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                            disabled={page <= 1}
+                          >
+                            Anterior
+                          </Button>
+
+                          {getPageNumbers().map((pageNumber) => (
+                            <Button
+                              key={pageNumber}
+                              size="sm"
+                              variant={pageNumber === page ? "solid" : "outline"}
+                              colorPalette={pageNumber === page ? "blue" : "gray"}
+                              onClick={() => setPage(pageNumber)}
+                            >
+                              {pageNumber}
+                            </Button>
+                          ))}
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                            disabled={page >= totalPages}
+                          >
+                            Siguiente
+                          </Button>
+                        </Box>
+                        </Flex>
+        
       </Stack>
+    
     </Box>
+    
+    
   );
+
+  
+  
 }

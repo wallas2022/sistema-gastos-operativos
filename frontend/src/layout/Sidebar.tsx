@@ -8,29 +8,40 @@ import {
 } from "@chakra-ui/react";
 import { NavLink } from "react-router-dom";
 import {
+  Activity,
   BarChart3,
+  Building2,
+  ChartLine,
   ClipboardCheck,
+  ClipboardList,
+  FileCheck,
   FileSearch,
   FileText,
+  FolderArchive,
   GitBranch,
   Home,
   Landmark,
   LayoutDashboard,
   LineChart,
+  LockKeyhole,
+  Network,
+  PieChart,
+  ReceiptText,
+  Route,
+  Scale,
   Settings,
   ShieldCheck,
+  SlidersHorizontal,
+  TrendingUp,
   Users,
-  Activity
+  WalletCards,
 } from "lucide-react";
-import { ClipboardList } from "lucide-react";
-import { UserCheck } from "lucide-react";
-
 
 type MenuItem = {
   label: string;
   path: string;
-  badge?: string;
   icon: React.ElementType;
+  badge?: string;
 };
 
 type MenuGroup = {
@@ -50,79 +61,198 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    title: "Gestión de Gastos",
+    title: "Planificación y Normativa",
     items: [
       {
         label: "Planificación y Normativa",
         path: "/planificacion-normativa",
-        icon: ClipboardCheck,
+        icon: ShieldCheck,
       },
       {
         label: "Solicitudes de gastos",
         path: "/solicitudes-gastos",
         icon: ClipboardList,
-        },
-
-        {
-            label: "Autorizaciones",
-            path: "/autorizaciones",
-            icon: UserCheck,
-     },
-     {
-            label: "Monitor de Estados",
-            path: "/monitor-estados",
-            icon: GitBranch,
-    },
-      {
-        label: "Trazabilidad de Flujos",
-        path: "/trazabilidad-flujos",
-        icon: GitBranch,
       },
       {
-        label: "Bitácora de Eventos",
-        path: "/bitacora-eventos",
-        icon: Activity,
-        },
-      {
-        label: "Rendición y Conciliación",
-        path: "/rendicion-conciliacion",
-        icon: Landmark,
+        label: "Simulador de gastos",
+        path: "/simulador-gastos",
+        icon: SlidersHorizontal,
       },
       {
-        label: "Documentos OCR",
-        path: "/rendicion-conciliacion/ocr/documentos",
-        badge: "OCR",
-        icon: FileSearch,
-      },
-      {
-        label: "Liquidaciones",
-        path: "/rendicion-conciliacion/liquidaciones",
+        label: "Políticas y reglas",
+        path: "/politicas-reglas",
         icon: FileText,
+      },
+      {
+        label: "Verificador presupuestario",
+        path: "/verificador-presupuestario",
+        icon: Scale,
       },
     ],
   },
   {
-    title: "Control y Gobierno",
+    title: "Trazabilidad de Flujos",
     items: [
       {
-        label: "Control Presupuestario",
+        label: "Centro de autorizaciones",
+        path: "/autorizaciones",
+        icon: ClipboardCheck,
+      },
+      {
+        label: "Monitor de estados",
+        path: "/monitor-estados",
+        icon: Route,
+      },
+      {
+        label: "Escalamientos SLA",
+        path: "/escalamientos-sla",
+        icon: GitBranch,
+      },
+      {
+        label: "Bitácora de eventos",
+        path: "/bitacora-eventos",
+        icon: Activity,
+      },
+    ],
+  },
+  {
+    title: "Rendición y Conciliación Financiera",
+    items: [
+      {
+        label: "Rendición y conciliación",
+        path: "/rendicion-conciliacion",
+        icon: WalletCards,
+      },
+      {
+        label: "Documentos OCR",
+        path: "/rendicion-conciliacion/ocr/documentos",
+        icon: FileSearch,
+        badge: "OCR",
+      },
+      {
+        label: "Liquidaciones",
+        path: "/rendicion-conciliacion/liquidaciones",
+        icon: ReceiptText,
+      },
+      {
+        label: "Conciliación de anticipos",
+        path: "/rendicion-conciliacion/anticipos",
+        icon: FileCheck,
+      },
+      {
+        label: "Cierres certificados",
+        path: "/rendicion-conciliacion/cierres-certificados",
+        icon: FolderArchive,
+      },
+    ],
+  },
+  {
+    title: "Control Presupuestario e Inteligencia",
+    items: [
+      {
+        label: "Control presupuestario",
         path: "/control-presupuestario",
         icon: BarChart3,
       },
       {
-        label: "Gobernanza y Configuración",
+        label: "Ejecución presupuestaria",
+        path: "/ejecucion-presupuestaria",
+        icon: PieChart,
+      },
+      {
+        label: "Actual vs proyectado",
+        path: "/actual-vs-proyectado",
+        icon: ChartLine,
+      },
+      {
+        label: "Interoperabilidad API",
+        path: "/interoperabilidad-api",
+        icon: Network,
+      },
+      {
+        label: "Proyección de desvíos",
+        path: "/proyeccion-desvios",
+        icon: TrendingUp,
+      },
+    ],
+  },
+  {
+    title: "Gobernanza y Configuración",
+    items: [
+      {
+        label: "Gobernanza y configuración",
         path: "/gobernanza-configuracion",
         icon: Settings,
       },
       {
-        label: "Usuarios y Accesos",
+        label: "Empresas y unidades",
+        path: "/empresas-unidades",
+        icon: Building2,
+      },
+      {
+        label: "Centros de costo",
+        path: "/centros-costo",
+        icon: Landmark,
+      },
+      {
+        label: "Matriz de roles",
+        path: "/matriz-roles",
+        icon: Users,
+      },
+      {
+        label: "Auditoría del sistema",
+        path: "/auditoria-sistema",
+        icon: Activity,
+      },
+    ],
+  },
+  {
+    title: "Seguridad y Usuarios",
+    items: [
+      {
+        label: "Usuarios y accesos",
         path: "/usuarios-accesos",
         icon: Users,
       },
       {
-        label: "Reportes y Analítica",
+        label: "Roles y permisos",
+        path: "/roles-permisos",
+        icon: LockKeyhole,
+      },
+      {
+        label: "Delegaciones temporales",
+        path: "/delegaciones-temporales",
+        icon: GitBranch,
+      },
+      {
+        label: "Bitácora de accesos",
+        path: "/bitacora-accesos",
+        icon: Activity,
+      },
+    ],
+  },
+  {
+    title: "Reportes y Analítica",
+    items: [
+      {
+        label: "Reportes y analítica",
         path: "/reportes-analitica",
         icon: LineChart,
+      },
+      {
+        label: "KPIs ejecutivos",
+        path: "/kpis-ejecutivos",
+        icon: BarChart3,
+      },
+      {
+        label: "Reportes de auditoría",
+        path: "/reportes-auditoria",
+        icon: FileCheck,
+      },
+      {
+        label: "Exportaciones",
+        path: "/exportaciones",
+        icon: FileText,
       },
     ],
   },
@@ -141,16 +271,15 @@ export function Sidebar() {
       position="fixed"
       left="0"
       top="0"
+      overflowY="auto"
     >
       <Flex align="center" gap="3" mb="8">
         <Image
-          src="/images/logo-servicios-compartidos.jpg"
+          src="/logo-servicios-compartidos.jpg"
           alt="Servicios Compartidos"
-          maxW="200px"
-          rounded="md"
+          maxW="180px"
+          objectFit="contain"
         />
-
-       
       </Flex>
 
       <VStack align="stretch" gap="6">
@@ -169,13 +298,7 @@ export function Sidebar() {
 
             <VStack align="stretch" gap="1">
               {group.items.map((item) => (
-                <NavItem
-                  key={item.path}
-                  label={item.label}
-                  path={item.path}
-                  badge={item.badge}
-                  icon={item.icon}
-                />
+                <SidebarItem key={item.path} item={item} />
               ))}
             </VStack>
           </Box>
@@ -185,33 +308,44 @@ export function Sidebar() {
   );
 }
 
-function NavItem({ label, path, badge, icon: Icon }: MenuItem) {
+function SidebarItem({ item }: { item: MenuItem }) {
+  const Icon = item.icon;
+
   return (
-    <NavLink to={path}>
+    <NavLink to={item.path}>
       {({ isActive }) => (
         <Flex
           align="center"
           justify="space-between"
-          gap="2"
+          gap="3"
           px="3"
           py="2.5"
-          rounded="lg"
-          bg={isActive ? "blue.50" : "transparent"}
-          color={isActive ? "blue.700" : "gray.700"}
+          rounded="xl"
+          fontSize="sm"
           fontWeight={isActive ? "semibold" : "medium"}
+          color={isActive ? "blue.700" : "gray.700"}
+          bg={isActive ? "blue.50" : "transparent"}
           _hover={{
             bg: isActive ? "blue.50" : "gray.50",
-            textDecoration: "none",
+            color: "blue.700",
           }}
+          transition="all 0.2s ease"
         >
           <Flex align="center" gap="3">
-            <Icon size={18} />
-            <Text fontSize="sm">{label}</Text>
+            <Box
+              color={isActive ? "blue.600" : "gray.500"}
+              display="flex"
+              alignItems="center"
+            >
+              <Icon size={17} />
+            </Box>
+
+            <Text>{item.label}</Text>
           </Flex>
 
-          {badge && (
-            <Badge size="sm" colorPalette="blue">
-              {badge}
+          {item.badge && (
+            <Badge size="sm" colorPalette="blue" variant="subtle">
+              {item.badge}
             </Badge>
           )}
         </Flex>

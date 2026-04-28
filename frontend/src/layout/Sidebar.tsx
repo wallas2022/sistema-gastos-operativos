@@ -1,95 +1,196 @@
-import { Box, Button, Text, VStack } from "@chakra-ui/react";
+import {
+  Badge,
+  Box,
+  Flex,
+  Image,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
 import { NavLink } from "react-router-dom";
+import {
+  BarChart3,
+  ClipboardCheck,
+  FileSearch,
+  FileText,
+  GitBranch,
+  Home,
+  Landmark,
+  LayoutDashboard,
+  LineChart,
+  Settings,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 
-const menuItems = [
+type MenuItem = {
+  label: string;
+  path: string;
+  badge?: string;
+  icon: React.ElementType;
+};
+
+type MenuGroup = {
+  title: string;
+  items: MenuItem[];
+};
+
+const menuGroups: MenuGroup[] = [
   {
-    label: "Dashboard",
-    path: "/dashboard",
+    title: "Inicio",
+    items: [
+      {
+        label: "Dashboard",
+        path: "/",
+        icon: LayoutDashboard,
+      },
+    ],
   },
   {
-    label: "Planificación y Normativa",
-    path: "/planificacion-normativa",
+    title: "Gestión de Gastos",
+    items: [
+      {
+        label: "Planificación y Normativa",
+        path: "/planificacion-normativa",
+        icon: ClipboardCheck,
+      },
+      {
+        label: "Trazabilidad de Flujos",
+        path: "/trazabilidad-flujos",
+        icon: GitBranch,
+      },
+      {
+        label: "Rendición y Conciliación",
+        path: "/rendicion-conciliacion",
+        icon: Landmark,
+      },
+      {
+        label: "Documentos OCR",
+        path: "/rendicion-conciliacion/ocr/documentos",
+        badge: "OCR",
+        icon: FileSearch,
+      },
+      {
+        label: "Liquidaciones",
+        path: "/rendicion-conciliacion/liquidaciones",
+        icon: FileText,
+      },
+    ],
   },
   {
-    label: "Trazabilidad de Flujos",
-    path: "/trazabilidad-flujos",
-  },
-  {
-    label: "Rendición y Conciliación",
-    path: "/rendicion-conciliacion",
-  },
-  {
-    label: "Control Presupuestario",
-    path: "/control-presupuestario",
-  },
-  {
-    label: "Gobernanza y Configuración",
-    path: "/gobernanza-configuracion",
-  },
-  {
-    label: "Usuarios y Accesos",
-    path: "/usuarios-accesos",
-  },
-  {
-    label: "Reportes y Analítica",
-    path: "/reportes-analitica",
+    title: "Control y Gobierno",
+    items: [
+      {
+        label: "Control Presupuestario",
+        path: "/control-presupuestario",
+        icon: BarChart3,
+      },
+      {
+        label: "Gobernanza y Configuración",
+        path: "/gobernanza-configuracion",
+        icon: Settings,
+      },
+      {
+        label: "Usuarios y Accesos",
+        path: "/usuarios-accesos",
+        icon: Users,
+      },
+      {
+        label: "Reportes y Analítica",
+        path: "/reportes-analitica",
+        icon: LineChart,
+      },
+    ],
   },
 ];
 
 export function Sidebar() {
   return (
     <Box
-      w="260px"
+      w="280px"
       minH="100vh"
       bg="white"
       borderRight="1px solid"
       borderColor="gray.200"
+      px="4"
+      py="5"
       position="fixed"
       left="0"
       top="0"
-      p="4"
     >
-      <Box mb="8">
-        <img
+      <Flex align="center" gap="3" mb="8">
+        <Image
           src="/images/logo-servicios-compartidos.jpg"
           alt="Servicios Compartidos"
-          style={{
-            width: "190px",
-            height: "auto",
-            display: "block",
-            marginBottom: "16px",
-          }}
+          maxW="200px"
+          rounded="md"
         />
 
-        <Text fontSize="sm" fontWeight="bold" color="blue.800">
-          Gestión de Gastos
-        </Text>
+       
+      </Flex>
 
-        <Text fontSize="xs" color="gray.500">
-          Control presupuestario empresarial
-        </Text>
-      </Box>
+      <VStack align="stretch" gap="6">
+        {menuGroups.map((group) => (
+          <Box key={group.title}>
+            <Text
+              fontSize="xs"
+              fontWeight="bold"
+              color="gray.400"
+              textTransform="uppercase"
+              mb="2"
+              px="2"
+            >
+              {group.title}
+            </Text>
 
-      <VStack align="stretch" gap="2">
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            style={{ textDecoration: "none" }}
-          >
-            {({ isActive }) => (
-              <Button
-                w="100%"
-                justifyContent="flex-start"
-                variant={isActive ? "subtle" : "ghost"}
-                colorPalette="blue"
-              >
-                {item.label}
-              </Button>
-            )}
-          </NavLink>
+            <VStack align="stretch" gap="1">
+              {group.items.map((item) => (
+                <NavItem
+                  key={item.path}
+                  label={item.label}
+                  path={item.path}
+                  badge={item.badge}
+                  icon={item.icon}
+                />
+              ))}
+            </VStack>
+          </Box>
         ))}
       </VStack>
     </Box>
+  );
+}
+
+function NavItem({ label, path, badge, icon: Icon }: MenuItem) {
+  return (
+    <NavLink to={path}>
+      {({ isActive }) => (
+        <Flex
+          align="center"
+          justify="space-between"
+          gap="2"
+          px="3"
+          py="2.5"
+          rounded="lg"
+          bg={isActive ? "blue.50" : "transparent"}
+          color={isActive ? "blue.700" : "gray.700"}
+          fontWeight={isActive ? "semibold" : "medium"}
+          _hover={{
+            bg: isActive ? "blue.50" : "gray.50",
+            textDecoration: "none",
+          }}
+        >
+          <Flex align="center" gap="3">
+            <Icon size={18} />
+            <Text fontSize="sm">{label}</Text>
+          </Flex>
+
+          {badge && (
+            <Badge size="sm" colorPalette="blue">
+              {badge}
+            </Badge>
+          )}
+        </Flex>
+      )}
+    </NavLink>
   );
 }

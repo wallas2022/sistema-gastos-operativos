@@ -13,6 +13,16 @@ import { UsersAccessPage } from "./pages/users-access/UsersAccessPage";
 import { ReportsAnalyticsPage } from "./pages/reports/ReportsAnalyticsPage";
 import  DocumentsPage  from "./modules/documents/pages/DocumentsPage";
 import DocumentDetailPage from "./modules/documents/pages/DocumentDetailPage";
+import { LiquidationsPage } from "./pages/reconciliation/LiquidationsPage";
+import { NewLiquidationPage } from "./pages/reconciliation/NewLiquidationPage";
+import { LiquidationDetailPage } from "./pages/reconciliation/LiquidationDetailPage";
+import { ExpenseRequestsPage } from "./pages/expense-requests/ExpenseRequestsPage";
+import { NewExpenseRequestPage } from "./pages/expense-requests/NewExpenseRequestPage";
+import { ExpenseRequestDetailPage } from "./pages/expense-requests/ExpenseRequestDetailPage";
+import { AuthorizationsCenterPage } from "./pages/authorizations/AuthorizationsCenterPage";
+import { FlowMonitorPage } from "./pages/flow-monitor/FlowMonitorPage";
+import { AuditEventsPage } from "./pages/audit-events/AuditEventsPage";
+import { NotFoundPage } from "./pages/error/NotFoundPage";
 
 export const router = createBrowserRouter([
   {
@@ -35,14 +45,53 @@ export const router = createBrowserRouter([
             element: <PlanningPage />,
           },
           {
+            path: "solicitudes-gastos",
+            element: <ExpenseRequestsPage />,
+            },
+            {
+            path: "solicitudes-gastos/nueva",
+            element: <NewExpenseRequestPage />,
+            },
+            {
+            path: "solicitudes-gastos/:id",
+            element: <ExpenseRequestDetailPage />,
+            },
+
+           {
+            path: "autorizaciones",
+            element: <AuthorizationsCenterPage />,
+            }, 
+         {
+            path: "monitor-estados",
+            element: <FlowMonitorPage />,
+            },                           
+          {
             path: "trazabilidad-flujos",
             element: <WorkflowPage />,
           },
+
+          {
+            path: "bitacora-eventos",
+            element: <AuditEventsPage />,
+            },
           {
             path: "rendicion-conciliacion",
             element: <ReconciliationPage />,
           },
           {
+            path: "rendicion-conciliacion/liquidaciones",
+            element: <LiquidationsPage />,
+            },
+            {
+                path: "rendicion-conciliacion/liquidaciones/nueva",
+                element: <NewLiquidationPage />,
+                },
+
+                {
+            path: "rendicion-conciliacion/liquidaciones/:id",
+            element: <LiquidationDetailPage />,
+            },
+                        {
             path: "rendicion-conciliacion/ocr/documentos",
             element: <DocumentsPage />,
           },
@@ -74,6 +123,10 @@ export const router = createBrowserRouter([
             path: "reportes-analitica",
             element: <ReportsAnalyticsPage />,
           },
+          {
+            path: "*",
+            element: <NotFoundPage />,
+            },
         ],
       },
     ],

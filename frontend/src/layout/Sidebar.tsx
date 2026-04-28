@@ -20,7 +20,11 @@ import {
   Settings,
   ShieldCheck,
   Users,
+  Activity
 } from "lucide-react";
+import { ClipboardList } from "lucide-react";
+import { UserCheck } from "lucide-react";
+
 
 type MenuItem = {
   label: string;
@@ -54,10 +58,31 @@ const menuGroups: MenuGroup[] = [
         icon: ClipboardCheck,
       },
       {
+        label: "Solicitudes de gastos",
+        path: "/solicitudes-gastos",
+        icon: ClipboardList,
+        },
+
+        {
+            label: "Autorizaciones",
+            path: "/autorizaciones",
+            icon: UserCheck,
+     },
+     {
+            label: "Monitor de Estados",
+            path: "/monitor-estados",
+            icon: GitBranch,
+    },
+      {
         label: "Trazabilidad de Flujos",
         path: "/trazabilidad-flujos",
         icon: GitBranch,
       },
+      {
+        label: "Bitácora de Eventos",
+        path: "/bitacora-eventos",
+        icon: Activity,
+        },
       {
         label: "Rendición y Conciliación",
         path: "/rendicion-conciliacion",

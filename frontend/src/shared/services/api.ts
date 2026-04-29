@@ -1,3 +1,5 @@
+// src/shared/services/api.ts
+
 import axios from "axios";
 
 export const api = axios.create({
@@ -6,10 +8,15 @@ export const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("access_token");
+    const isLoginRequest = config.url?.includes("/auth/login");
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (!isLoginRequest) {
+      const token = localStorage.getItem("access_token");
+
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+        console.log("TOKEN ENVIADO AL BACKEND:", token);
+      }
     }
 
     return config;
@@ -22,7 +29,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isLoginRequest = error.config?.url?.includes("/auth/login");
+
+    if (error.response?.status === 401 && !isLoginRequest) {
+      console.warn("Sesión no autorizada o token inválido.");
+
       localStorage.removeItem("access_token");
       localStorage.removeItem("user");
 

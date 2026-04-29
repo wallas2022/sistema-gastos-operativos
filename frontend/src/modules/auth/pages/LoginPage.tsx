@@ -12,6 +12,8 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import { api } from "../../../shared/services/api";
+import { LockKeyhole } from "lucide-react";
 
 const slides = [
   {
@@ -43,10 +45,11 @@ const features = [
 export function LoginPage() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("admin@sistema.com");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState("admin@local.com");
+  const [password, setPassword] = useState("Admin1234*");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -66,27 +69,33 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      if (!email || !password) {
-        setError("Ingresa tu correo y contraseña.");
-        return;
+         setLoading(true);
+      setErrorMessage("");
+
+      console.log("LOGIN DATA:", {
+  email,
+  password,
+});
+
+      const response = await api.post("/auth/login", {
+        email,
+        password,
+      });
+      //console.log("Respuesta del backend:", response.data);
+      const accessToken = response.data?.access_token 
+     //   console.log("Respuesta del backend:", response.data);
+
+      if (!accessToken) {
+        throw new Error("El backend no devolvió un token válido.");
       }
 
-      /**
-       * Aquí puedes conectar tu login real.
-       * Por ahora dejamos el flujo funcional para entrar al dashboard.
-       */
-
-      localStorage.setItem("token", "demo-token");
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          name: "Walter Rosales",
-          email,
-          role: "Administrador",
-        })
-      );
-
-      navigate("/", { replace: true });
+      localStorage.setItem("access_token", accessToken);
+     // console.log("user es: ", response.data?.user);
+      if (response.data?.user) {
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+      }
+      console.log("debe dirigirse al dashboard");
+      navigate("/");
     } catch (err) {
       console.error(err);
       setError("No fue posible iniciar sesión. Verifica tus credenciales.");
@@ -151,22 +160,15 @@ export function LoginPage() {
         >
           <Box>
             <HStack gap="4" mb="14">
-              <Box bg="white" p="3" rounded="2xl" shadow="lg">
+              <Box  p="3" rounded="2xl" shadow="lg">
                 <Image
-                  src="/images/logo-servicios-compartidos.jpg"
+                  src="/images/logo-servicios-compartidos.png"
                   alt="Servicios Compartidos"
-                  maxW="92px"
+                  maxW="200px"
                 />
               </Box>
 
-              <Box>
-                <Text fontWeight="bold" fontSize="xl" lineHeight="1.1">
-                  Servicios Compartidos
-                </Text>
-                <Text fontSize="sm" color="whiteAlpha.800">
-                  Plataforma corporativa
-                </Text>
-              </Box>
+              
             </HStack>
 
             <Badge
@@ -181,7 +183,7 @@ export function LoginPage() {
             >
               Sistema de gestión empresarial
             </Badge>
-
+                
             <Heading
               fontSize={{ lg: "42px", xl: "52px" }}
               lineHeight="1.05"
@@ -212,19 +214,21 @@ export function LoginPage() {
 
             <HStack gap="3">
               {slides.map((slide, index) => (
-                <Box
-                  key={slide.title}
-                  as="button"
-                  type="button"
-                  onClick={() => setCurrentSlide(index)}
-                  w={currentSlide === index ? "34px" : "10px"}
-                  h="10px"
-                  rounded="full"
-                  bg={currentSlide === index ? "white" : "whiteAlpha.400"}
-                  transition="all 0.25s ease"
-                  cursor="pointer"
-                  aria-label={`Ir al slide ${index + 1}`}
-                />
+                <button
+  key={slide.title}
+  type="button"
+  onClick={() => setCurrentSlide(index)}
+  style={{
+    width: currentSlide === index ? "34px" : "10px",
+    height: "10px",
+    borderRadius: "9999px",
+    background: currentSlide === index ? "white" : "rgba(255,255,255,0.4)",
+    transition: "all 0.25s ease",
+    cursor: "pointer",
+    border: "none",
+  }}
+  aria-label={`Ir al slide ${index + 1}`}
+/>
               ))}
             </HStack>
           </Box>
@@ -272,9 +276,24 @@ export function LoginPage() {
                 <Badge colorPalette="blue" mb="4">
                   Acceso seguro
                 </Badge>
+                    <Box
+    mx="auto"
+    w="62px"
+    h="62px"
+    rounded="2xl"
+    bg="blue.50"
+    color="blue.600"
+    display="flex"
+    alignItems="center"
+    justifyContent="center"
+    boxShadow="0 12px 28px rgba(37, 99, 235, 0.18)"
+  >
+    <LockKeyhole size={30} />
+  </Box>
 
-                <Heading size="xl">Iniciar sesión</Heading>
-
+                <Heading size="xl" textAlign="center">Iniciar sesión
+                
+</Heading>
                 <Text color="gray.500" mt="2">
                   Ingresa tus credenciales para acceder al sistema de gestión y
                   control presupuestario.
@@ -330,12 +349,16 @@ export function LoginPage() {
 
                 <Flex justify="space-between" align="center">
                   <HStack gap="2">
-                    <Box
-                      as="input"
-                      type="checkbox"
-                      defaultChecked
-                      accentColor="#2563eb"
-                    />
+                  <input
+  type="checkbox"
+  defaultChecked
+  style={{
+    accentColor: "#2563eb",
+    width: "16px",
+    height: "16px",
+    cursor: "pointer",
+  }}
+/>
                     <Text fontSize="sm" color="gray.600">
                       Recordar sesión
                     </Text>

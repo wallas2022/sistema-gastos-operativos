@@ -1,136 +1,285 @@
+import { useMemo, useState } from "react";
 import {
   Badge,
   Box,
   Button,
-  Checkbox,
-  Field,
   Flex,
   Grid,
   Heading,
   HStack,
   Input,
-  NumberInput,
-  Select,
   Text,
-  Textarea,
   VStack,
-  createListCollection,
 } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
-  Calculator,
+  CalendarDays,
   CheckCircle2,
   ClipboardList,
   FileText,
-  Plane,
+  MapPin,
   Plus,
   Save,
-  Send,
-  ShieldCheck,
+  Trash2,
   WalletCards,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { createExpenseRequest } from "../../modules/expense-requests/services/expenseRequests.service";
 
-const expenseTypes = createListCollection({
-  items: [
-    { label: "Gasto de viaje", value: "travel" },
-    { label: "Pago a proveedor", value: "provider" },
-    { label: "Gasto administrativo", value: "admin" },
-    { label: "Gasto extraordinario", value: "extraordinary" },
-  ],
-});
+type ExpenseItem = {
+  name: string;
+  description: string;
+  quantity: number;
+  unitAmount: number;
+};
 
-const requesterRoles = createListCollection({
-  items: [
-    { label: "Operador", value: "operador" },
-    { label: "Jefe", value: "jefe" },
-    { label: "Gerente", value: "gerente" },
-    { label: "Directivo", value: "directivo" },
-  ],
-});
-
-const destinations = createListCollection({
-  items: [
-    { label: "Ciudad de Guatemala", value: "guatemala" },
-    { label: "Interior del país", value: "interior" },
-    { label: "Internacional", value: "internacional" },
-  ],
-});
-
-const travelItems = [
-  {
-    key: "lodging",
-    label: "Alojamiento",
-    description: "Hotel u hospedaje autorizado según destino y rol.",
-    base: 450,
-  },
-  {
-    key: "food",
-    label: "Alimentación",
-    description: "Monto diario para comidas según política interna.",
-    base: 175,
-  },
-  {
-    key: "vehicle",
-    label: "Alquiler de vehículo",
-    description: "Disponible según justificación y nivel de autorización.",
-    base: 350,
-  },
-  {
-    key: "transport",
-    label: "Transporte local",
-    description: "Taxi, parqueo, transporte público o movilidad local.",
-    base: 125,
-  },
-  {
-    key: "fuel",
-    label: "Combustible",
-    description: "Aplica cuando se autoriza uso de vehículo.",
-    base: 200,
-  },
+const expenseTypes = [
+  { value: "GASTO_OPERATIVO", label: "Gasto operativo" },
+  { value: "GASTO_VIAJE", label: "Gasto de viaje" },
+  { value: "PAGO_PROVEEDOR", label: "Pago a proveedor" },
+  { value: "COMPRA_INSUMO", label: "Compra de insumo" },
+  { value: "SERVICIO", label: "Servicio" },
+  { value: "OTRO", label: "Otro" },
 ];
 
-const roleMultiplier: Record<string, number> = {
-  operador: 1,
-  jefe: 1.15,
-  gerente: 1.35,
-  directivo: 1.6,
+const priorities = [
+  { value: "BAJA", label: "Baja" },
+  { value: "NORMAL", label: "Normal" },
+  { value: "ALTA", label: "Alta" },
+  { value: "URGENTE", label: "Urgente" },
+];
+
+const roleTemplates: Record<string, ExpenseItem[]> = {
+  Operador: [
+    {
+      name: "Alimentación",
+      description: "Monto estimado por día según política",
+      quantity: 1,
+      unitAmount: 100,
+    },
+    {
+      name: "Transporte local",
+      description: "Movilidad operativa",
+      quantity: 1,
+      unitAmount: 75,
+    },
+  ],
+  Jefe: [
+    {
+      name: "Alimentación",
+      description: "Monto estimado por día según política",
+      quantity: 1,
+      unitAmount: 140,
+    },
+    {
+      name: "Alojamiento",
+      description: "Hospedaje estándar",
+      quantity: 1,
+      unitAmount: 450,
+    },
+  ],
+  Gerente: [
+    {
+      name: "Alimentación",
+      description: "Monto estimado por día según política",
+      quantity: 1,
+      unitAmount: 160,
+    },
+    {
+      name: "Alojamiento superior",
+      description: "Hospedaje autorizado por jerarquía",
+      quantity: 1,
+      unitAmount: 650,
+    },
+    {
+      name: "Alquiler de vehículo",
+      description: "Movilidad ejecutiva",
+      quantity: 1,
+      unitAmount: 400,
+    },
+  ],
+  Directivo: [
+    {
+      name: "Alimentación ejecutiva",
+      description: "Monto estimado por día según política",
+      quantity: 1,
+      unitAmount: 250,
+    },
+    {
+      name: "Alojamiento ejecutivo",
+      description: "Hospedaje autorizado por jerarquía",
+      quantity: 1,
+      unitAmount: 950,
+    },
+    {
+      name: "Transporte ejecutivo",
+      description: "Vehículo o traslado autorizado",
+      quantity: 1,
+      unitAmount: 600,
+    },
+  ],
 };
 
 export function NewExpenseRequestPage() {
-  const [expenseType, setExpenseType] = useState<string[]>(["travel"]);
-  const [role, setRole] = useState<string[]>(["operador"]);
-  const [destination, setDestination] = useState<string[]>(["guatemala"]);
-  const [days, setDays] = useState("1");
-  const [selectedItems, setSelectedItems] = useState<string[]>([
-    "lodging",
-    "food",
+  const navigate = useNavigate();
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [type, setType] = useState("GASTO_VIAJE");
+  const [priority, setPriority] = useState("NORMAL");
+  const [requesterName, setRequesterName] = useState("Walter Rosales");
+  const [requesterRole, setRequesterRole] = useState("Gerente");
+  const [companyName, setCompanyName] = useState("Servicios Compartidos");
+  const [costCenter, setCostCenter] = useState("CC-ADM-001");
+  const [budgetAccount, setBudgetAccount] = useState(
+    "6101 - Gastos administrativos"
+  );
+  const [concept, setConcept] = useState(
+    "Viaje operativo para supervisión regional"
+  );
+  const [justification, setJustification] = useState(
+    "Supervisión operativa planificada."
+  );
+  const [destination, setDestination] = useState("Ciudad de Guatemala");
+  const [days, setDays] = useState(3);
+  const [estimatedDate, setEstimatedDate] = useState("");
+
+  const [items, setItems] = useState<ExpenseItem[]>([
+    {
+      name: "Alimentación",
+      description: "Q 160.00 por día x 3 días",
+      quantity: 3,
+      unitAmount: 160,
+    },
+    {
+      name: "Alojamiento superior",
+      description: "Q 650.00 por noche x 2 noches",
+      quantity: 2,
+      unitAmount: 650,
+    },
+    {
+      name: "Alquiler de vehículo",
+      description: "Q 400.00 por día x 3 días",
+      quantity: 3,
+      unitAmount: 400,
+    },
   ]);
 
-  const currentExpenseType = expenseType[0] ?? "travel";
-  const currentRole = role[0] ?? "operador";
-  const currentDestination = destination[0] ?? "guatemala";
+  const estimatedTotal = useMemo(() => {
+    return items.reduce((total, item) => {
+      return total + Number(item.quantity || 0) * Number(item.unitAmount || 0);
+    }, 0);
+  }, [items]);
 
-  const estimatedAmount = useMemo(() => {
-    const numberOfDays = Number(days) || 1;
-    const multiplier = roleMultiplier[currentRole] ?? 1;
+  const applyRoleTemplate = () => {
+    const template = roleTemplates[requesterRole] ?? [];
 
-    if (currentExpenseType !== "travel") {
-      return 0;
-    }
+    const adjustedItems = template.map((item) => ({
+      ...item,
+      quantity: type === "GASTO_VIAJE" ? Number(days || 1) : 1,
+      description:
+        type === "GASTO_VIAJE"
+          ? `${item.description} x ${days || 1} día(s)`
+          : item.description,
+    }));
 
-    return travelItems
-      .filter((item) => selectedItems.includes(item.key))
-      .reduce((sum, item) => sum + item.base * numberOfDays * multiplier, 0);
-  }, [currentExpenseType, currentRole, days, selectedItems]);
+    setItems(adjustedItems);
+  };
 
-  const toggleItem = (itemKey: string) => {
-    setSelectedItems((previous) =>
-      previous.includes(itemKey)
-        ? previous.filter((key) => key !== itemKey)
-        : [...previous, itemKey]
+  const addItem = () => {
+    setItems((current) => [
+      ...current,
+      {
+        name: "",
+        description: "",
+        quantity: 1,
+        unitAmount: 0,
+      },
+    ]);
+  };
+
+  const removeItem = (index: number) => {
+    setItems((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const updateItem = (
+    index: number,
+    field: keyof ExpenseItem,
+    value: string | number
+  ) => {
+    setItems((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              [field]:
+                field === "quantity" || field === "unitAmount"
+                  ? Number(value)
+                  : value,
+            }
+          : item
+      )
     );
+  };
+
+  const handleSubmitRequest = async () => {
+    try {
+      setIsSaving(true);
+
+      if (!concept.trim()) {
+        alert("Debes ingresar el concepto de la solicitud.");
+        return;
+      }
+
+      if (!companyName.trim()) {
+        alert("Debes ingresar la empresa.");
+        return;
+      }
+
+      if (!costCenter.trim()) {
+        alert("Debes ingresar el centro de costo.");
+        return;
+      }
+
+      if (items.length === 0) {
+        alert("Debes agregar al menos un ítem de gasto.");
+        return;
+      }
+
+      const payload = {
+        type,
+        priority,
+        requesterName,
+        requesterRole,
+        companyName,
+        costCenter,
+        budgetAccount,
+        concept,
+        justification,
+        destination,
+        days: Number(days || 1),
+        estimatedDate: estimatedDate || undefined,
+        currency: "GTQ",
+        items: items.map((item) => ({
+          name: item.name,
+          description: item.description,
+          quantity: Number(item.quantity || 1),
+          unitAmount: Number(item.unitAmount || 0),
+        })),
+      };
+
+      const createdRequest = await createExpenseRequest(payload);
+
+      alert("Solicitud de gasto creada correctamente.");
+
+      navigate(`/planificacion/solicitudes/${createdRequest.id}`);
+    } catch (error) {
+      console.error("Error al crear solicitud de gasto:", error);
+      alert(
+        "No se pudo crear la solicitud de gasto. Revisa los datos e intenta nuevamente."
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -143,248 +292,314 @@ export function NewExpenseRequestPage() {
       >
         <Box>
           <HStack mb="2">
-            <Badge colorPalette="blue" variant="subtle">
-              MPN
-            </Badge>
-            <Badge colorPalette="green" variant="subtle">
-              Nueva solicitud
-            </Badge>
+            <Box
+              w="42px"
+              h="42px"
+              rounded="xl"
+              bg="blue.50"
+              color="blue.600"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <ClipboardList size={22} />
+            </Box>
+
+            <Box>
+              <Heading size="lg">Nueva solicitud de gasto</Heading>
+              <Text color="gray.500">
+                Registro inicial del ciclo de planificación y normativa.
+              </Text>
+            </Box>
           </HStack>
-
-          <Heading size="lg">Nueva solicitud de gasto</Heading>
-
-          <Text color="gray.500" mt="1">
-            Registro inicial de gasto con validación de política, cálculo
-            estimado y verificación presupuestaria previa.
-          </Text>
         </Box>
 
-        <RouterLink to="/planificacion-normativa">
-          <Button variant="outline">
-            <ArrowLeft size={18} />
-            Volver al módulo
-          </Button>
-        </RouterLink>
+        <Badge colorPalette="blue" rounded="full" px="3" py="1">
+          MPN · Planificación y Normativa
+        </Badge>
       </Flex>
 
       <Grid templateColumns={{ base: "1fr", xl: "1.4fr 0.8fr" }} gap="5">
         <VStack align="stretch" gap="5">
-          <SectionCard
-            title="Datos generales de la solicitud"
-            description="Información principal para clasificar y enrutar la solicitud."
-            icon={ClipboardList}
+          <Box
+            bg="white"
+            border="1px solid"
+            borderColor="gray.200"
+            rounded="2xl"
+            p="5"
           >
+            <HStack mb="4">
+              <FileText size={20} />
+              <Heading size="md">Datos generales</Heading>
+            </HStack>
+
             <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap="4">
-              <Field.Root>
-                <Field.Label>Tipo de gasto</Field.Label>
-                <Select.Root
-                  collection={expenseTypes}
-                  value={expenseType}
-                  onValueChange={(details) => setExpenseType(details.value)}
+              <Field label="Tipo de gasto">
+                <Box
+                  as="select"
+                  value={type}
+                  onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+                    setType(event.target.value)
+                  }
+                  border="1px solid"
+                  borderColor="gray.200"
+                  rounded="md"
+                  h="40px"
+                  px="3"
+                  bg="white"
                 >
-                  <Select.HiddenSelect />
-                  <Select.Control>
-                    <Select.Trigger>
-                      <Select.ValueText placeholder="Seleccione tipo de gasto" />
-                    </Select.Trigger>
-                    <Select.IndicatorGroup>
-                      <Select.Indicator />
-                    </Select.IndicatorGroup>
-                  </Select.Control>
-                  <Select.Positioner>
-                    <Select.Content>
-                      {expenseTypes.items.map((item) => (
-                        <Select.Item item={item} key={item.value}>
-                          {item.label}
-                          <Select.ItemIndicator />
-                        </Select.Item>
-                      ))}
-                    </Select.Content>
-                  </Select.Positioner>
-                </Select.Root>
-              </Field.Root>
+                  {expenseTypes.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </Box>
+              </Field>
 
-              <Field.Root>
-                <Field.Label>Rol del solicitante</Field.Label>
-                <Select.Root
-                  collection={requesterRoles}
-                  value={role}
-                  onValueChange={(details) => setRole(details.value)}
+              <Field label="Prioridad">
+                <Box
+                  as="select"
+                  value={priority}
+                  onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+                    setPriority(event.target.value)
+                  }
+                  border="1px solid"
+                  borderColor="gray.200"
+                  rounded="md"
+                  h="40px"
+                  px="3"
+                  bg="white"
                 >
-                  <Select.HiddenSelect />
-                  <Select.Control>
-                    <Select.Trigger>
-                      <Select.ValueText placeholder="Seleccione rol" />
-                    </Select.Trigger>
-                    <Select.IndicatorGroup>
-                      <Select.Indicator />
-                    </Select.IndicatorGroup>
-                  </Select.Control>
-                  <Select.Positioner>
-                    <Select.Content>
-                      {requesterRoles.items.map((item) => (
-                        <Select.Item item={item} key={item.value}>
-                          {item.label}
-                          <Select.ItemIndicator />
-                        </Select.Item>
-                      ))}
-                    </Select.Content>
-                  </Select.Positioner>
-                </Select.Root>
-              </Field.Root>
+                  {priorities.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </Box>
+              </Field>
 
-              <Field.Root>
-                <Field.Label>Empresa / unidad de negocio</Field.Label>
-                <Input placeholder="Servicios Compartidos" />
-              </Field.Root>
-
-              <Field.Root>
-                <Field.Label>Centro de costo</Field.Label>
-                <Input placeholder="Administración / Finanzas" />
-              </Field.Root>
-
-              <Field.Root gridColumn={{ base: "auto", md: "span 2" }}>
-                <Field.Label>Concepto de la solicitud</Field.Label>
-                <Input placeholder="Ej. Gastos operativos por visita técnica" />
-              </Field.Root>
-
-              <Field.Root gridColumn={{ base: "auto", md: "span 2" }}>
-                <Field.Label>Justificación</Field.Label>
-                <Textarea
-                  placeholder="Explique el motivo del gasto y su relación con la operación."
-                  minH="110px"
+              <Field label="Solicitante">
+                <Input
+                  value={requesterName}
+                  onChange={(event) => setRequesterName(event.target.value)}
                 />
-              </Field.Root>
+              </Field>
+
+              <Field label="Rol del solicitante">
+                <Box
+                  as="select"
+                  value={requesterRole}
+                  onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+                    setRequesterRole(event.target.value)
+                  }
+                  border="1px solid"
+                  borderColor="gray.200"
+                  rounded="md"
+                  h="40px"
+                  px="3"
+                  bg="white"
+                >
+                  <option value="Operador">Operador</option>
+                  <option value="Jefe">Jefe</option>
+                  <option value="Gerente">Gerente</option>
+                  <option value="Directivo">Directivo</option>
+                </Box>
+              </Field>
+
+              <Field label="Empresa">
+                <Input
+                  value={companyName}
+                  onChange={(event) => setCompanyName(event.target.value)}
+                />
+              </Field>
+
+              <Field label="Centro de costo">
+                <Input
+                  value={costCenter}
+                  onChange={(event) => setCostCenter(event.target.value)}
+                />
+              </Field>
+
+              <Field label="Cuenta presupuestaria">
+                <Input
+                  value={budgetAccount}
+                  onChange={(event) => setBudgetAccount(event.target.value)}
+                />
+              </Field>
+
+              <Field label="Fecha estimada">
+                <Input
+                  type="date"
+                  value={estimatedDate}
+                  onChange={(event) => setEstimatedDate(event.target.value)}
+                />
+              </Field>
             </Grid>
-          </SectionCard>
+          </Box>
 
-          {currentExpenseType === "travel" && (
-            <SectionCard
-              title="Detalle de gasto de viaje"
-              description="Seleccione los rubros necesarios para calcular el monto estimado según rol, destino y días."
-              icon={Plane}
-            >
-              <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap="4" mb="5">
-                <Field.Root>
-                  <Field.Label>Destino</Field.Label>
-                  <Select.Root
-                    collection={destinations}
-                    value={destination}
-                    onValueChange={(details) => setDestination(details.value)}
+          <Box
+            bg="white"
+            border="1px solid"
+            borderColor="gray.200"
+            rounded="2xl"
+            p="5"
+          >
+            <HStack mb="4">
+              <MapPin size={20} />
+              <Heading size="md">Detalle de la solicitud</Heading>
+            </HStack>
+
+            <Grid templateColumns={{ base: "1fr", md: "1.5fr 0.5fr" }} gap="4">
+              <Field label="Concepto">
+                <Input
+                  value={concept}
+                  onChange={(event) => setConcept(event.target.value)}
+                />
+              </Field>
+
+              <Field label="Días">
+                <Input
+                  type="number"
+                  min="1"
+                  value={days}
+                  onChange={(event) => setDays(Number(event.target.value))}
+                />
+              </Field>
+
+              <Field label="Destino">
+                <Input
+                  value={destination}
+                  onChange={(event) => setDestination(event.target.value)}
+                />
+              </Field>
+
+              <Field label="Justificación">
+                <Box
+                  as="textarea"
+                  value={justification}
+                  onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    setJustification(event.target.value)
+                  }
+                  border="1px solid"
+                  borderColor="gray.200"
+                  rounded="md"
+                  minH="40px"
+                  px="3"
+                  py="2"
+                  resize="vertical"
+                />
+              </Field>
+            </Grid>
+
+            <Button variant="outline" mt="4" onClick={applyRoleTemplate}>
+              <CheckCircle2 size={18} />
+              Aplicar ítems sugeridos por rol
+            </Button>
+          </Box>
+
+          <Box
+            bg="white"
+            border="1px solid"
+            borderColor="gray.200"
+            rounded="2xl"
+            p="5"
+          >
+            <Flex justify="space-between" align="center" mb="4">
+              <Box>
+                <Heading size="md">Ítems del gasto</Heading>
+                <Text fontSize="sm" color="gray.500">
+                  Rubros estimados para la solicitud.
+                </Text>
+              </Box>
+
+              <Button size="sm" variant="outline" onClick={addItem}>
+                <Plus size={16} />
+                Agregar ítem
+              </Button>
+            </Flex>
+
+            <VStack align="stretch" gap="3">
+              {items.map((item, index) => (
+                <Box
+                  key={index}
+                  border="1px solid"
+                  borderColor="gray.100"
+                  rounded="xl"
+                  p="4"
+                >
+                  <Grid
+                    templateColumns={{
+                      base: "1fr",
+                      md: "1.2fr 1.5fr 0.5fr 0.6fr 0.4fr",
+                    }}
+                    gap="3"
+                    alignItems="end"
                   >
-                    <Select.HiddenSelect />
-                    <Select.Control>
-                      <Select.Trigger>
-                        <Select.ValueText placeholder="Seleccione destino" />
-                      </Select.Trigger>
-                      <Select.IndicatorGroup>
-                        <Select.Indicator />
-                      </Select.IndicatorGroup>
-                    </Select.Control>
-                    <Select.Positioner>
-                      <Select.Content>
-                        {destinations.items.map((item) => (
-                          <Select.Item item={item} key={item.value}>
-                            {item.label}
-                            <Select.ItemIndicator />
-                          </Select.Item>
-                        ))}
-                      </Select.Content>
-                    </Select.Positioner>
-                  </Select.Root>
-                </Field.Root>
+                    <Field label="Nombre">
+                      <Input
+                        value={item.name}
+                        onChange={(event) =>
+                          updateItem(index, "name", event.target.value)
+                        }
+                      />
+                    </Field>
 
-                <Field.Root>
-                  <Field.Label>Cantidad de días</Field.Label>
-                  <NumberInput.Root
-                    min={1}
-                    value={days}
-                    onValueChange={(details) => setDays(details.value)}
-                  >
-                    <NumberInput.Control />
-                    <NumberInput.Input />
-                  </NumberInput.Root>
-                </Field.Root>
+                    <Field label="Descripción">
+                      <Input
+                        value={item.description}
+                        onChange={(event) =>
+                          updateItem(index, "description", event.target.value)
+                        }
+                      />
+                    </Field>
 
-                <Field.Root>
-                  <Field.Label>Fecha estimada de salida</Field.Label>
-                  <Input type="date" />
-                </Field.Root>
-              </Grid>
+                    <Field label="Cantidad">
+                      <Input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(event) =>
+                          updateItem(index, "quantity", event.target.value)
+                        }
+                      />
+                    </Field>
 
-              <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap="4">
-                {travelItems.map((item) => (
-                  <Box
-                    key={item.key}
-                    border="1px solid"
-                    borderColor={
-                      selectedItems.includes(item.key) ? "blue.200" : "gray.100"
-                    }
-                    bg={selectedItems.includes(item.key) ? "blue.50" : "white"}
-                    rounded="2xl"
-                    p="4"
-                    cursor="pointer"
-                    onClick={() => toggleItem(item.key)}
-                  >
-                    <Flex justify="space-between" align="start" gap="3">
-                      <Box>
-                        <Text fontWeight="semibold">{item.label}</Text>
-                        <Text fontSize="sm" color="gray.500" mt="1">
-                          {item.description}
-                        </Text>
-                        <Text fontSize="sm" fontWeight="bold" mt="3">
-                          Base diaria: Q {item.base.toFixed(2)}
-                        </Text>
-                      </Box>
+                    <Field label="Monto unitario">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={item.unitAmount}
+                        onChange={(event) =>
+                          updateItem(index, "unitAmount", event.target.value)
+                        }
+                      />
+                    </Field>
 
-                      <Checkbox.Root
-                        checked={selectedItems.includes(item.key)}
-                        onCheckedChange={() => toggleItem(item.key)}
-                      >
-                        <Checkbox.HiddenInput />
-                        <Checkbox.Control />
-                      </Checkbox.Root>
-                    </Flex>
-                  </Box>
-                ))}
-              </Grid>
-            </SectionCard>
-          )}
+                    <Button
+                      variant="outline"
+                      colorPalette="red"
+                      onClick={() => removeItem(index)}
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  </Grid>
 
-          {currentExpenseType === "provider" && (
-            <SectionCard
-              title="Detalle de pago a proveedor"
-              description="Campos específicos para gastos relacionados con proveedores, servicios externos o compras operativas."
-              icon={FileText}
-            >
-              <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap="4">
-                <Field.Root>
-                  <Field.Label>Proveedor</Field.Label>
-                  <Input placeholder="Nombre del proveedor" />
-                </Field.Root>
-
-                <Field.Root>
-                  <Field.Label>NIT / Identificación</Field.Label>
-                  <Input placeholder="Ingrese NIT del proveedor" />
-                </Field.Root>
-
-                <Field.Root>
-                  <Field.Label>Número de proforma / referencia</Field.Label>
-                  <Input placeholder="PRO-0001" />
-                </Field.Root>
-
-                <Field.Root>
-                  <Field.Label>Fecha estimada de pago</Field.Label>
-                  <Input type="date" />
-                </Field.Root>
-
-                <Field.Root gridColumn={{ base: "auto", md: "span 2" }}>
-                  <Field.Label>Servicio o compra solicitada</Field.Label>
-                  <Textarea placeholder="Detalle del servicio, compra o gasto solicitado." />
-                </Field.Root>
-              </Grid>
-            </SectionCard>
-          )}
+                  <Text fontSize="sm" color="gray.500" mt="2">
+                    Subtotal:{" "}
+                    <strong>
+                      Q{" "}
+                      {(
+                        Number(item.quantity || 0) *
+                        Number(item.unitAmount || 0)
+                      ).toLocaleString("es-GT", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </strong>
+                  </Text>
+                </Box>
+              ))}
+            </VStack>
+          </Box>
         </VStack>
 
         <VStack align="stretch" gap="5">
@@ -394,123 +609,82 @@ export function NewExpenseRequestPage() {
             borderColor="gray.200"
             rounded="2xl"
             p="5"
+            position="sticky"
+            top="92px"
           >
             <HStack mb="4">
-              <Box color="blue.600">
-                <Calculator size={22} />
-              </Box>
+              <WalletCards size={20} />
               <Heading size="md">Resumen estimado</Heading>
             </HStack>
 
             <VStack align="stretch" gap="3">
-              <SummaryRow label="Tipo de gasto" value={getSelectedLabel(expenseTypes.items, currentExpenseType)} />
-              <SummaryRow label="Rol" value={getSelectedLabel(requesterRoles.items, currentRole)} />
-              {currentExpenseType === "travel" && (
-                <>
-                  <SummaryRow label="Destino" value={getSelectedLabel(destinations.items, currentDestination)} />
-                  <SummaryRow label="Días" value={days || "1"} />
-                  <SummaryRow label="Rubros seleccionados" value={String(selectedItems.length)} />
-                </>
-              )}
+              <SummaryRow label="Tipo" value={type.replace("_", " ")} />
+              <SummaryRow label="Prioridad" value={priority} />
+              <SummaryRow label="Rol" value={requesterRole} />
+              <SummaryRow label="Días" value={`${days || 1}`} />
+              <SummaryRow label="Ítems" value={`${items.length}`} />
             </VStack>
 
-            <Box
-              mt="5"
-              p="4"
-              rounded="2xl"
-              bg="blue.50"
-              border="1px solid"
-              borderColor="blue.100"
-            >
+            <Box bg="blue.50" rounded="2xl" p="4" mt="5">
               <Text fontSize="sm" color="blue.700">
-                Monto estimado
+                Total estimado
               </Text>
-              <Heading size="xl" color="blue.700" mt="1">
-                Q {estimatedAmount.toLocaleString("es-GT", { minimumFractionDigits: 2 })}
+              <Heading size="xl" color="blue.800" mt="1">
+                Q{" "}
+                {estimatedTotal.toLocaleString("es-GT", {
+                  minimumFractionDigits: 2,
+                })}
               </Heading>
             </Box>
-          </Box>
 
-          <Box
-            bg="white"
-            border="1px solid"
-            borderColor="gray.200"
-            rounded="2xl"
-            p="5"
-          >
-            <HStack mb="4">
-              <Box color="green.600">
-                <ShieldCheck size={22} />
-              </Box>
-              <Heading size="md">Validaciones</Heading>
-            </HStack>
-
-            <VStack align="stretch" gap="3">
-              <ValidationStatus title="Política aplicada" status="Correcto" />
-              <ValidationStatus title="Presupuesto disponible" status="Correcto" />
-              <ValidationStatus title="Flujo de autorización" status="Definido" />
-              <ValidationStatus title="Documentos requeridos" status="Pendiente" />
-            </VStack>
-          </Box>
-
-          <HStack gap="3">
-            <Button variant="outline" flex="1">
+            <Button
+              colorPalette="blue"
+              w="100%"
+              mt="5"
+              loading={isSaving}
+              onClick={handleSubmitRequest}
+            >
               <Save size={18} />
-              Guardar borrador
+              Crear solicitud
             </Button>
 
-            <Button colorPalette="blue" flex="1">
-              <Send size={18} />
-              Enviar solicitud
+            <Button
+              variant="outline"
+              w="100%"
+              mt="3"
+              onClick={() => navigate("/solicitudes-gastos")}
+            >
+              Cancelar
             </Button>
-          </HStack>
+
+            <Box mt="5" borderTop="1px solid" borderColor="gray.100" pt="4">
+              <HStack color="gray.500">
+                <CalendarDays size={16} />
+                <Text fontSize="sm">
+                  La solicitud se guardará como borrador y luego podrá enviarse
+                  a autorización.
+                </Text>
+              </HStack>
+            </Box>
+          </Box>
         </VStack>
       </Grid>
     </VStack>
   );
 }
 
-function SectionCard({
-  title,
-  description,
-  icon: Icon,
+function Field({
+  label,
   children,
 }: {
-  title: string;
-  description: string;
-  icon: React.ElementType;
+  label: string;
   children: React.ReactNode;
 }) {
   return (
-    <Box
-      bg="white"
-      border="1px solid"
-      borderColor="gray.200"
-      rounded="2xl"
-      p="5"
-    >
-      <HStack align="start" gap="3" mb="5">
-        <Box
-          w="42px"
-          h="42px"
-          rounded="xl"
-          bg="blue.50"
-          color="blue.600"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <Icon size={21} />
-        </Box>
-
-        <Box>
-          <Heading size="md">{title}</Heading>
-          <Text fontSize="sm" color="gray.500" mt="1">
-            {description}
-          </Text>
-        </Box>
-      </HStack>
-
+    <Box>
+      <Text fontSize="sm" fontWeight="medium" color="gray.700" mb="1">
+        {label}
+      </Text>
       {children}
     </Box>
   );
@@ -527,41 +701,4 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
       </Text>
     </Flex>
   );
-}
-
-function ValidationStatus({
-  title,
-  status,
-}: {
-  title: string;
-  status: string;
-}) {
-  return (
-    <Flex
-      justify="space-between"
-      align="center"
-      border="1px solid"
-      borderColor="gray.100"
-      rounded="xl"
-      p="3"
-    >
-      <HStack>
-        <CheckCircle2 size={17} color="#16a34a" />
-        <Text fontSize="sm" fontWeight="medium">
-          {title}
-        </Text>
-      </HStack>
-
-      <Badge colorPalette={status === "Pendiente" ? "yellow" : "green"}>
-        {status}
-      </Badge>
-    </Flex>
-  );
-}
-
-function getSelectedLabel(
-  items: { label: string; value: string }[],
-  value: string
-) {
-  return items.find((item) => item.value === value)?.label ?? value;
 }

@@ -212,19 +212,20 @@ export function Sidebar({ isCollapsed = false }: SidebarProps) {
 
   return (
     <Box
-      w={isCollapsed ? "88px" : "280px"}
-      minH="100vh"
-      bg="white"
-      borderRight="1px solid"
-      borderColor="gray.200"
-      px={isCollapsed ? "3" : "4"}
-      py="5"
-      position="fixed"
-      left="0"
-      top="0"
-      overflowY="auto"
-      transition="width 0.2s ease"
-    >
+        w="280px"
+        h="100vh"
+        bg="white"
+        borderRight="1px solid"
+        borderColor="gray.200"
+        px="4"
+        py="5"
+        position="fixed"
+        left="0"
+        top="0"
+        zIndex="30"
+        overflowY="auto"
+        display={{ base: "none", lg: "block" }}
+      >
       <Flex
         align="center"
         justify={isCollapsed ? "center" : "flex-start"}

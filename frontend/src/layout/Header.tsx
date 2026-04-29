@@ -83,16 +83,26 @@ export function Header() {
     ? "Detalle de notificación"
     : moduleTitles[location.pathname] ?? "Sistema de Gestión de Gastos";
 
-  const userName = localStorage.getItem("userName") || "Walter Rosales";
-  const userRole = localStorage.getItem("userRole") || "Administrador";
+ const storedUser = localStorage.getItem("user");
+ console.log("USUARIO ALMACENADO:", storedUser);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userName");
-    localStorage.removeItem("userRole");
+let parsedUser: any = null;
 
-    navigate("/login", { replace: true });
-  };
+try {
+  parsedUser = storedUser ? JSON.parse(storedUser) : null;
+} catch {
+  parsedUser = null;
+}
+
+const userName = parsedUser?.name ;
+const userRole = parsedUser?.role ;
+
+const handleLogout = () => {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("user");
+console.log("TOKEN ELIMINADO:", localStorage.getItem("access_token"));
+  navigate("/login", { replace: true });
+};
 
   return (
     <Flex

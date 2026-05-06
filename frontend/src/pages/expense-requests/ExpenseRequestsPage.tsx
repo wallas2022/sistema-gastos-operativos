@@ -1,101 +1,124 @@
+import { useEffect, useState } from "react";
 import {
   Badge,
   Box,
   Button,
-  Flex,
-  Grid,
   Heading,
   HStack,
+  Icon,
+  SimpleGrid,
+  Spinner,
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
+  AlertTriangle,
   ArrowRight,
+  CheckCircle2,
   ClipboardList,
+  Clock,
   FileText,
   Plus,
-  ShieldCheck,
-  WalletCards,
-  Clock3,
-  CheckCircle2,
-  AlertTriangle,
-  SearchCheck,
 } from "lucide-react";
+import {
+  ExpenseRequest,
+  getExpenseRequests,
+} from "../../services/expenseRequests.service";
 
-const requestStats = [
-  {
-    label: "Solicitudes abiertas",
-    value: "12",
-    description: "Gastos en proceso",
-    color: "blue",
-    icon: ClipboardList,
-  },
-  {
-    label: "Pendientes de aprobación",
-    value: "5",
-    description: "Esperando autorización",
-    color: "yellow",
-    icon: Clock3,
-  },
-  {
-    label: "Aprobadas",
-    value: "18",
-    description: "Listas para ejecutar",
-    color: "green",
-    icon: CheckCircle2,
-  },
-  {
-    label: "Observadas",
-    value: "2",
-    description: "Requieren corrección",
-    color: "red",
-    icon: AlertTriangle,
-  },
-];
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "BORRADOR":
+      return "gray";
+    case "ENVIADA":
+      return "blue";
+    case "EN_REVISION":
+      return "orange";
+    case "APROBADA":
+      return "green";
+    case "RECHAZADA":
+      return "red";
+    case "ANULADA":
+      return "purple";
+    default:
+      return "gray";
+  }
+};
 
-const expenseRequests = [
-  {
-    code: "SOL-0001",
-    requester: "Walter Rosales",
-    concept: "Compra de suministros administrativos",
-    type: "Gasto operativo",
-    area: "Administración",
-    amount: "Q 3,500.00",
-    status: "Pendiente aprobación",
-  },
-  {
-    code: "SOL-0002",
-    requester: "María López",
-    concept: "Pago a proveedor de mantenimiento",
-    type: "Proveedor",
-    area: "Operaciones",
-    amount: "Q 8,900.00",
-    status: "Aprobada",
-  },
-  {
-    code: "SOL-0003",
-    requester: "Carlos Méndez",
-    concept: "Gastos de traslado y alimentación",
-    type: "Gasto de viaje",
-    area: "Ventas",
-    amount: "Q 1,750.00",
-    status: "Observada",
-  },
-];
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case "BORRADOR":
+      return "Borrador";
+    case "ENVIADA":
+      return "Enviada";
+    case "EN_REVISION":
+      return "En revisión";
+    case "APROBADA":
+      return "Aprobada";
+    case "RECHAZADA":
+      return "Rechazada";
+    case "ANULADA":
+      return "Anulada";
+    default:
+      return status;
+  }
+};
 
-export function ExpenseRequestsPage() {
+const formatMoney = (currency: string, amount: number) => {
+  return `${currency} ${Number(amount || 0).toLocaleString("es-GT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+};
+
+export default function ExpenseRequestsPage() {
+  const navigate = useNavigate();
+
+  const [requests, setRequests] = useState<ExpenseRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const loadRequests = async () => {
+    try {
+      setLoading(true);
+      setErrorMessage("");
+
+      const data = await getExpenseRequests();
+      setRequests(data);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("No se pudieron cargar las solicitudes de gasto.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRequests();
+  }, []);
+
+  const abiertas = requests.filter(
+    (item) => item.status === "BORRADOR" || item.status === "ENVIADA"
+  ).length;
+
+  const pendientes = requests.filter(
+    (item) => item.status === "ENVIADA" || item.status === "EN_REVISION"
+  ).length;
+
+  const aprobadas = requests.filter(
+    (item) => item.status === "APROBADA"
+  ).length;
+
+  const observadas = requests.filter(
+    (item) => item.status === "RECHAZADA" || item.status === "ANULADA"
+  ).length;
+
   return (
-    <VStack align="stretch" gap="6">
-      <Flex
-        justify="space-between"
-        align={{ base: "start", md: "center" }}
-        direction={{ base: "column", md: "row" }}
-        gap="4"
-      >
+    <Box p={6}>
+      <HStack justify="space-between" align="start" mb={6}>
         <Box>
-          <Heading size="lg">Solicitudes y Planificación de Gastos</Heading>
-          <Text color="gray.500" mt="1">
+          <Heading size="md">Solicitudes y Planificación de Gastos</Heading>
+          <Text color="gray.500" mt={1}>
             Registro, validación y seguimiento inicial de solicitudes de gastos
             antes de su autorización y ejecución.
           </Text>
@@ -107,384 +130,236 @@ export function ExpenseRequestsPage() {
             Nueva solicitud
           </Button>
         </RouterLink>
-      </Flex>
+      </HStack>
 
-      <Grid
-        templateColumns={{
-          base: "1fr",
-          md: "repeat(2, 1fr)",
-          xl: "repeat(4, 1fr)",
-        }}
-        gap="4"
-      >
-        {requestStats.map((item) => (
-          <StatCard key={item.label} {...item} />
-        ))}
-      </Grid>
-
-      <Grid templateColumns={{ base: "1fr", xl: "1.5fr 1fr" }} gap="5">
-        <Box
-          bg="white"
-          border="1px solid"
-          borderColor="gray.200"
-          rounded="2xl"
-          p="5"
-        >
-          <Flex justify="space-between" align="center" mb="5">
+      <SimpleGrid columns={{ base: 1, md: 2, xl: 4 }} gap={4} mb={6}>
+        <Box p={5} bg="white" borderWidth="1px" rounded="xl">
+          <HStack justify="space-between">
             <Box>
-              <Heading size="md">Solicitudes recientes</Heading>
-              <Text fontSize="sm" color="gray.500">
-                Bandeja principal de gastos solicitados por los usuarios.
+              <Text color="gray.500" fontSize="sm">
+                Solicitudes abiertas
+              </Text>
+              <Text fontSize="2xl" fontWeight="bold">
+                {abiertas}
+              </Text>
+              <Text color="gray.500" fontSize="sm">
+                Gastos en proceso
               </Text>
             </Box>
-
-            <Badge colorPalette="blue">MSPG</Badge>
-          </Flex>
-
-          <VStack align="stretch" gap="3">
-            {expenseRequests.map((item) => (
-              <ExpenseRequestRow key={item.code} {...item} />
-            ))}
-          </VStack>
+            <Icon as={ClipboardList} boxSize={6} color="blue.500" />
+          </HStack>
         </Box>
 
-        <Box
-          bg="white"
-          border="1px solid"
-          borderColor="gray.200"
-          rounded="2xl"
-          p="5"
-        >
-          <Heading size="md">Validaciones del módulo</Heading>
-          <Text fontSize="sm" color="gray.500" mt="1" mb="5">
-            Antes de enviar una solicitud a autorización, el sistema debe validar
-            reglas, políticas y disponibilidad presupuestaria.
+        <Box p={5} bg="white" borderWidth="1px" rounded="xl">
+          <HStack justify="space-between">
+            <Box>
+              <Text color="gray.500" fontSize="sm">
+                Pendientes de aprobación
+              </Text>
+              <Text fontSize="2xl" fontWeight="bold">
+                {pendientes}
+              </Text>
+              <Text color="gray.500" fontSize="sm">
+                Esperando autorización
+              </Text>
+            </Box>
+            <Icon as={Clock} boxSize={6} color="orange.500" />
+          </HStack>
+        </Box>
+
+        <Box p={5} bg="white" borderWidth="1px" rounded="xl">
+          <HStack justify="space-between">
+            <Box>
+              <Text color="gray.500" fontSize="sm">
+                Aprobadas
+              </Text>
+              <Text fontSize="2xl" fontWeight="bold">
+                {aprobadas}
+              </Text>
+              <Text color="gray.500" fontSize="sm">
+                Listas para ejecutar
+              </Text>
+            </Box>
+            <Icon as={CheckCircle2} boxSize={6} color="green.500" />
+          </HStack>
+        </Box>
+
+        <Box p={5} bg="white" borderWidth="1px" rounded="xl">
+          <HStack justify="space-between">
+            <Box>
+              <Text color="gray.500" fontSize="sm">
+                Observadas
+              </Text>
+              <Text fontSize="2xl" fontWeight="bold">
+                {observadas}
+              </Text>
+              <Text color="gray.500" fontSize="sm">
+                Requieren corrección
+              </Text>
+            </Box>
+            <Icon as={AlertTriangle} boxSize={6} color="red.500" />
+          </HStack>
+        </Box>
+      </SimpleGrid>
+
+      <SimpleGrid columns={{ base: 1, xl: 2 }} gap={6}>
+        <Box p={5} bg="white" borderWidth="1px" rounded="xl">
+          <Heading size="sm">Solicitudes recientes</Heading>
+          <Text color="gray.500" fontSize="sm" mt={1} mb={5}>
+            Bandeja principal de gastos solicitados por los usuarios.
           </Text>
 
-          <VStack align="stretch" gap="3">
-            <ValidationCard
-              icon={ShieldCheck}
-              title="Consulta de políticas"
-              description="Valida límites permitidos por empresa, área, tipo de gasto o jerarquía."
-              status="Regla activa"
-              color="green"
-            />
-
-            <ValidationCard
-              icon={WalletCards}
-              title="Verificador de presupuesto"
-              description="Consulta disponibilidad contra centro de costo y presupuesto operativo."
-              status="Disponible"
-              color="blue"
-            />
-
-            <ValidationCard
-              icon={SearchCheck}
-              title="Simulador de gasto"
-              description="Permite calcular el costo estimado antes de enviar la solicitud."
-              status="Prevalidación"
-              color="purple"
-            />
-          </VStack>
-        </Box>
-      </Grid>
-
-      <Box
-        bg="white"
-        border="1px solid"
-        borderColor="gray.200"
-        rounded="2xl"
-        p="5"
-      >
-        <Heading size="md" mb="2">
-          Flujo de una solicitud de gasto
-        </Heading>
-
-        <Text fontSize="sm" color="gray.500" mb="5">
-          Este flujo representa el nacimiento del gasto antes de llegar a OCR,
-          liquidación y conciliación.
-        </Text>
-
-        <Grid
-          templateColumns={{
-            base: "1fr",
-            md: "repeat(5, 1fr)",
-          }}
-          gap="4"
-        >
-          <ProcessStep
-            title="Crear solicitud"
-            description="El usuario registra el gasto requerido."
-            icon={FileText}
-            showArrow
-          />
-
-          <ProcessStep
-            title="Validar política"
-            description="Se revisan reglas internas aplicables."
-            icon={ShieldCheck}
-            showArrow
-          />
-
-          <ProcessStep
-            title="Validar presupuesto"
-            description="Se consulta disponibilidad del centro de costo."
-            icon={WalletCards}
-            showArrow
-          />
-
-          <ProcessStep
-            title="Autorizar"
-            description="El aprobador acepta o rechaza la solicitud."
-            icon={CheckCircle2}
-            showArrow
-          />
-
-          <ProcessStep
-            title="Ejecutar gasto"
-            description="El gasto aprobado queda listo para comprobantes."
-            icon={ClipboardList}
-            showArrow={false}
-          />
-        </Grid>
-      </Box>
-    </VStack>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  description,
-  color,
-  icon: Icon,
-}: {
-  label: string;
-  value: string;
-  description: string;
-  color: string;
-  icon: React.ElementType;
-}) {
-  return (
-    <Box
-      bg="white"
-      border="1px solid"
-      borderColor="gray.200"
-      rounded="2xl"
-      p="5"
-    >
-      <Flex justify="space-between" align="start">
-        <Box>
-          <Text fontSize="sm" color="gray.500">
-            {label}
-          </Text>
-          <Heading size="xl" mt="2">
-            {value}
-          </Heading>
-          <Text fontSize="sm" color="gray.500" mt="2">
-            {description}
-          </Text>
-        </Box>
-
-        <Box
-          w="42px"
-          h="42px"
-          rounded="xl"
-          bg={`${color}.50`}
-          color={`${color}.600`}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <Icon size={21} />
-        </Box>
-      </Flex>
-    </Box>
-  );
-}
-
-function ExpenseRequestRow({
-  code,
-  requester,
-  concept,
-  type,
-  area,
-  amount,
-  status,
-}: {
-  code: string;
-  requester: string;
-  concept: string;
-  type: string;
-  area: string;
-  amount: string;
-  status: string;
-}) {
-  return (
-    <RouterLink
-      to={`/solicitudes-gastos/${code}`}
-      style={{ textDecoration: "none" }}
-    >
-      <Flex
-        justify="space-between"
-        align={{ base: "start", md: "center" }}
-        direction={{ base: "column", md: "row" }}
-        gap="3"
-        border="1px solid"
-        borderColor="gray.100"
-        rounded="xl"
-        p="4"
-        cursor="pointer"
-        transition="all 0.2s ease"
-        _hover={{
-          bg: "gray.50",
-          borderColor: "blue.200",
-          transform: "translateY(-1px)",
-        }}
-      >
-        <HStack align="start" gap="3">
-          <Box
-            w="42px"
-            h="42px"
-            rounded="xl"
-            bg="blue.50"
-            color="blue.600"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <ClipboardList size={19} />
-          </Box>
-
-          <Box>
-            <HStack gap="2" mb="1">
-              <Text fontWeight="semibold">{code}</Text>
-              <Badge colorPalette={getStatusColor(status)}>{status}</Badge>
+          {loading && (
+            <HStack justify="center" py={10}>
+              <Spinner />
+              <Text>Cargando solicitudes...</Text>
             </HStack>
+          )}
 
-            <Text fontSize="sm" color="gray.600">
-              {concept}
-            </Text>
+          {!loading && errorMessage && (
+            <Box
+              p={4}
+              borderWidth="1px"
+              borderColor="red.200"
+              bg="red.50"
+              rounded="lg"
+            >
+              <Text color="red.600">{errorMessage}</Text>
+            </Box>
+          )}
 
-            <Text fontSize="xs" color="gray.500" mt="1">
-              Solicitante: {requester} · {type} · {area}
-            </Text>
-          </Box>
-        </HStack>
+          {!loading && !errorMessage && requests.length === 0 && (
+            <Box
+              p={6}
+              borderWidth="1px"
+              rounded="xl"
+              bg="gray.50"
+              textAlign="center"
+            >
+              <Text fontWeight="semibold">No hay solicitudes registradas.</Text>
+              <Text color="gray.500" mt={1}>
+                Crea una solicitud para iniciar el ciclo del gasto.
+              </Text>
+            </Box>
+          )}
 
-        <HStack>
-          <Text fontWeight="bold">{amount}</Text>
-          <ArrowRight size={18} color="#718096" />
-        </HStack>
-      </Flex>
-    </RouterLink>
-  );
-}
+          {!loading && !errorMessage && requests.length > 0 && (
+            <VStack gap={3} align="stretch">
+              {requests.map((request) => (
+                <Box
+                  key={request.id}
+                  p={4}
+                  borderWidth="1px"
+                  rounded="xl"
+                  bg="white"
+                  _hover={{ bg: "gray.50", cursor: "pointer" }}
+                  onClick={() => navigate(`/solicitudes-gastos/${request.id}`)}
+                >
+                  <HStack justify="space-between" align="center">
+                    <HStack gap={4} align="start">
+                      <Box
+                        bg="blue.50"
+                        color="blue.600"
+                        p={3}
+                        rounded="lg"
+                      >
+                        <FileText size={20} />
+                      </Box>
 
-function ValidationCard({
-  icon: Icon,
-  title,
-  description,
-  status,
-  color,
-}: {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  status: string;
-  color: string;
-}) {
-  return (
-    <Box border="1px solid" borderColor="gray.100" rounded="xl" p="4">
-      <Flex justify="space-between" align="start" gap="3">
-        <HStack align="start" gap="3">
-          <Box
-            w="38px"
-            h="38px"
-            rounded="xl"
-            bg={`${color}.50`}
-            color={`${color}.600`}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <Icon size={18} />
-          </Box>
+                      <Box>
+                        <HStack mb={1}>
+                          <Text fontWeight="bold">{request.code}</Text>
+                          <Badge
+                            colorPalette={getStatusColor(request.status)}
+                          >
+                            {getStatusLabel(request.status)}
+                          </Badge>
+                        </HStack>
 
-          <Box>
-            <Text fontWeight="semibold">{title}</Text>
-            <Text fontSize="sm" color="gray.500">
-              {description}
-            </Text>
-          </Box>
-        </HStack>
+                        <Text fontWeight="medium">{request.concept}</Text>
 
-        <Badge colorPalette={color}>{status}</Badge>
-      </Flex>
-    </Box>
-  );
-}
+                        <Text color="gray.500" fontSize="sm">
+                          Solicitante: {request.requesterName} ·{" "}
+                          {request.type} · {request.companyName}
+                        </Text>
 
-function ProcessStep({
-  title,
-  description,
-  icon: Icon,
-  showArrow,
-}: {
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  showArrow: boolean;
-}) {
-  return (
-    <Box position="relative">
-      <Box
-        border="1px solid"
-        borderColor="gray.200"
-        rounded="2xl"
-        p="4"
-        h="100%"
-      >
-        <Box
-          w="44px"
-          h="44px"
-          rounded="xl"
-          bg="blue.50"
-          color="blue.600"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          mb="4"
-        >
-          <Icon size={22} />
+                        <Text color="gray.500" fontSize="sm">
+                          Centro de costo: {request.costCenter}
+                        </Text>
+                      </Box>
+                    </HStack>
+
+                    <HStack>
+                      <Text fontWeight="bold">
+                        {formatMoney(
+                          request.currency,
+                          request.estimatedAmount
+                        )}
+                      </Text>
+                      <ArrowRight size={18} />
+                    </HStack>
+                  </HStack>
+                </Box>
+              ))}
+            </VStack>
+          )}
         </Box>
 
-        <Text fontWeight="semibold">{title}</Text>
-        <Text fontSize="sm" color="gray.500" mt="2">
-          {description}
-        </Text>
-      </Box>
+        <Box p={5} bg="white" borderWidth="1px" rounded="xl">
+          <Heading size="sm">Validaciones del módulo</Heading>
+          <Text color="gray.500" fontSize="sm" mt={1} mb={5}>
+            Antes de enviar una solicitud a autorización, el sistema debe
+            validar reglas, políticas y disponibilidad presupuestaria.
+          </Text>
 
-      {showArrow && (
-        <Box
-          display={{ base: "none", md: "block" }}
-          position="absolute"
-          right="-22px"
-          top="50%"
-          transform="translateY(-50%)"
-          color="gray.400"
-          zIndex="1"
-        >
-          <ArrowRight size={22} />
+          <VStack gap={4} align="stretch">
+            <Box p={4} borderWidth="1px" rounded="xl">
+              <HStack>
+                <Box bg="green.50" color="green.600" p={3} rounded="lg">
+                  <CheckCircle2 size={20} />
+                </Box>
+                <Box>
+                  <Text fontWeight="bold">Consulta de políticas</Text>
+                  <Text color="gray.500" fontSize="sm">
+                    Valida límites permitidos por empresa, área, tipo de gasto o
+                    jerarquía.
+                  </Text>
+                </Box>
+              </HStack>
+            </Box>
+
+            <Box p={4} borderWidth="1px" rounded="xl">
+              <HStack>
+                <Box bg="blue.50" color="blue.600" p={3} rounded="lg">
+                  <ClipboardList size={20} />
+                </Box>
+                <Box>
+                  <Text fontWeight="bold">Verificador de presupuesto</Text>
+                  <Text color="gray.500" fontSize="sm">
+                    Consulta disponibilidad contra centro de costo y presupuesto
+                    operativo.
+                  </Text>
+                </Box>
+              </HStack>
+            </Box>
+
+            <Box p={4} borderWidth="1px" rounded="xl">
+              <HStack>
+                <Box bg="purple.50" color="purple.600" p={3} rounded="lg">
+                  <Clock size={20} />
+                </Box>
+                <Box>
+                  <Text fontWeight="bold">Simulador de gasto</Text>
+                  <Text color="gray.500" fontSize="sm">
+                    Permite calcular el costo estimado antes de enviar la
+                    solicitud.
+                  </Text>
+                </Box>
+              </HStack>
+            </Box>
+          </VStack>
         </Box>
-      )}
+      </SimpleGrid>
     </Box>
   );
-}
-
-function getStatusColor(status: string) {
-  if (status === "Aprobada") return "green";
-  if (status === "Observada") return "red";
-  if (status === "Pendiente aprobación") return "yellow";
-  return "blue";
 }

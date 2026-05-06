@@ -15,7 +15,7 @@ api.interceptors.request.use(
 
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log("TOKEN ENVIADO AL BACKEND:", token);
+       // console.log("TOKEN ENVIADO AL BACKEND:", token);
       }
     }
 

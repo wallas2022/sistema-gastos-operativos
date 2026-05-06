@@ -84,7 +84,7 @@ export function Header() {
     : moduleTitles[location.pathname] ?? "Sistema de Gestión de Gastos";
 
  const storedUser = localStorage.getItem("user");
- console.log("USUARIO ALMACENADO:", storedUser);
+ //console.log("USUARIO ALMACENADO:", storedUser);
 
 let parsedUser: any = null;
 

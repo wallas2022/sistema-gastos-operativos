@@ -12,6 +12,8 @@
     "@chakra-ui/react": "^3.28.0",
     "@emotion/react": "^11.14.0",
     "axios": "^1.15.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
     "lucide-react": "^1.11.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

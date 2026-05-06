@@ -350,15 +350,15 @@ export function LoginPage() {
                 <Flex justify="space-between" align="center">
                   <HStack gap="2">
                   <input
-  type="checkbox"
-  defaultChecked
-  style={{
-    accentColor: "#2563eb",
-    width: "16px",
-    height: "16px",
-    cursor: "pointer",
-  }}
-/>
+                      type="checkbox"
+                      defaultChecked
+                      style={{
+                        accentColor: "#052d85",
+                        width: "16px",
+                        height: "16px",
+                        cursor: "pointer",
+                      }}
+                    />
                     <Text fontSize="sm" color="gray.600">
                       Recordar sesión
                     </Text>
@@ -377,7 +377,8 @@ export function LoginPage() {
 
                   <Button
                     type="submit"
-                    colorPalette="blue"
+                  //  colorPalette="blue"
+                    bg="#052d85"
                     size="lg"
                     loading={loading}
                     rounded="xl"

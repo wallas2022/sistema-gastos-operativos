@@ -52,6 +52,27 @@ const menuGroups: MenuGroup[] = [
     icon: LayoutDashboard,
   },
   {
+  title: "Seguridad",
+  icon: ShieldCheck,
+  children: [
+    {
+      label: "Matriz de acceso",
+      path: "/security/access-matrix",
+      icon: ShieldCheck,
+    },
+    {
+      label: "Usuarios",
+      icon: ShieldCheck,
+      path: "/security/users",
+    },
+      ],
+  },
+  {
+    title: "Mapa del sistema",
+    path: "/mapa-sitio",
+    icon: Network,
+  },
+  {
     title: "Planificación y Normativa",
     icon: ShieldCheck,
     children: [

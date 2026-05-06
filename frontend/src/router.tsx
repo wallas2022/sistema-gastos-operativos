@@ -16,9 +16,8 @@ import DocumentDetailPage from "./modules/documents/pages/DocumentDetailPage";
 import { LiquidationsPage } from "./pages/reconciliation/LiquidationsPage";
 import { NewLiquidationPage } from "./pages/reconciliation/NewLiquidationPage";
 import { LiquidationDetailPage } from "./pages/reconciliation/LiquidationDetailPage";
-import { ExpenseRequestsPage } from "./pages/expense-requests/ExpenseRequestsPage";
-import { NewExpenseRequestPage } from "./pages/expense-requests/NewExpenseRequestPage";
-import { ExpenseRequestDetailPage } from "./pages/expense-requests/ExpenseRequestDetailPage";
+import  NewExpenseRequestPage from "./pages/expense-requests/NewExpenseRequestPage";
+import  ExpenseRequestDetailPage  from "./pages/expense-requests/ExpenseRequestDetailPage";
 import { AuthorizationsCenterPage } from "./pages/authorizations/AuthorizationsCenterPage";
 import { FlowMonitorPage } from "./pages/flow-monitor/FlowMonitorPage";
 import { AuditEventsPage } from "./pages/audit-events/AuditEventsPage";
@@ -27,6 +26,10 @@ import { ModulePlaceholderPage } from "./common/ModulePlaceholderPage";
 import { ApprovalsPage } from "./pages/approvals/ApprovalsPage";
 import { NotificationsPage } from "./pages/approvals/notifications/NotificationsPage";
 import { NotificationDetailPage } from "./pages/approvals/notifications/NotificationDetailPage";
+import ExpenseRequestsPage from "./pages/expense-requests/ExpenseRequestsPage";
+import SystemMapPage from "./pages/system-map/SystemMapPage";
+import AccessMatrixPage from "./pages/security/AccessMatrixPage";
+import UsersPage from "./pages/security/UsersPage";
 
 export const router = createBrowserRouter([
   {
@@ -43,6 +46,14 @@ export const router = createBrowserRouter([
           {
             index: true,
             element: <DashboardPage />,
+          },
+           {
+          path: "security/access-matrix",
+          element: <AccessMatrixPage />,
+          },
+          {
+            path: "security/users",
+            element: <UsersPage />,
           },
           {
             path: "planificacion-normativa",
@@ -104,16 +115,20 @@ export const router = createBrowserRouter([
               path: "notificaciones",
               element: <NotificationsPage />,
             },
-{
-  path: "simulador-gastos",
-  element: (
-    <ModulePlaceholderPage
-      title="Simulador de gastos"
-      moduleName="MPN"
-      description="Pantalla destinada a calcular de forma anticipada el costo estimado de una solicitud de gasto según tipo de gasto, duración, rol, destino, política vigente y presupuesto disponible."
-    />
-  ),
-},
+            {
+              path: "mapa-sitio",
+              element: <SystemMapPage />,
+            },
+              {
+                path: "simulador-gastos",
+                element: (
+                  <ModulePlaceholderPage
+                    title="Simulador de gastos"
+                    moduleName="MPN"
+                    description="Pantalla destinada a calcular de forma anticipada el costo estimado de una solicitud de gasto según tipo de gasto, duración, rol, destino, política vigente y presupuesto disponible."
+                  />
+                ),
+              },
 {
   path: "politicas-reglas",
   element: (
@@ -358,7 +373,10 @@ export const router = createBrowserRouter([
 {
   path: "notificaciones/:id",
   element: <NotificationDetailPage />,
-},        ],
+},       
+
+
+],
       },
     ],
   },

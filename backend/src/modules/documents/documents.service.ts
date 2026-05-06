@@ -32,7 +32,10 @@ export class DocumentsService {
     };
   }
 
-  async findAll(query?: ListDocumentsDto) {
+  async findAll(query?: ListDocumentsDto, user?: any) {
+
+     const where = this.buildDocumentWhereByPermissions(user);
+
   const page = Number(query?.page ?? 1);
   const pageSize = Number(query?.pageSize ?? 10);
 
@@ -48,6 +51,7 @@ export class DocumentsService {
       take,
       orderBy: { createdAt: 'desc' },
       include: {
+        user: true,
         ocrResult: true,
         confirmation: true,
       },
@@ -70,9 +74,10 @@ export class DocumentsService {
   };
 }
 
-  async findOne(id: string) {
+  async findOne(id: string, user: any) {
+      const whereByPermission = this.buildDocumentWhereByPermissions(user);
     const document = await this.prisma.document.findUnique({
-      where: { id },
+      where: { id, ...whereByPermission },
       include: {
         ocrResult: true,
         confirmation: true,
@@ -104,6 +109,33 @@ export class DocumentsService {
     buffer,
     mimeType: document.mimeType,
     fileName: document.fileName,
+  };
+}
+
+
+private buildDocumentWhereByPermissions(user: any) {
+  const permissions: string[] = user.permissions ?? [];
+
+  if (permissions.includes('OCR_VIEW_ALL')) {
+    return {};
+  }
+
+  if (permissions.includes('OCR_VIEW_COMPANY')) {
+    return {
+      user: {
+        companyId: user.companyId,
+      },
+    };
+  }
+
+  if (permissions.includes('OCR_VIEW_OWN')) {
+    return {
+      userId: user.id,
+    };
+  }
+
+  return {
+    id: '__NO_ACCESS__',
   };
 }
 

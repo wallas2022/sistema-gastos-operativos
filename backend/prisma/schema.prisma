@@ -9,8 +9,11 @@ datasource db {
 
 enum RoleName {
   ADMIN
-  REVISOR_OCR
   SOLICITANTE
+  GERENTE
+  FINANZAS
+  TESORERIA
+  REVISOR_OCR
 }
 
 enum DocumentStatus {
@@ -23,114 +26,201 @@ enum DocumentStatus {
 }
 
 model User {
-  id             String            @id @default(uuid())
-  name           String
-  email          String            @unique
-  passwordHash   String
-  role           RoleName
-  active         Boolean           @default(true)
-  documents      Document[]
-  confirmations  OCRConfirmation[]
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  id                  String                  @id @default(uuid())
+  name                String
+  email               String                  @unique
+  passwordHash        String
+  role                RoleName?               // temporal, mientras migramos
+  active              Boolean                 @default(true)
+
+  companyId           String?
+  company             Company?                @relation(fields: [companyId], references: [id])
+
+  managerId           String?
+  manager             User?                   @relation("UserManager", fields: [managerId], references: [id])
+  subordinates        User[]                  @relation("UserManager")
+
+  costCenter          String?
+  position            String?
+
+  roles               UserRole[]
+
+  documents           Document[]
+  confirmations       OCRConfirmation[]
+  paidExpenseRequests ExpenseRequestPayment[]
+
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+}
+
+
+
+
+
+enum AccessScope {
+  OWN
+  TEAM
+  COMPANY
+  ALL
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  active      Boolean  @default(true)
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
+model Permission {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  module      String
+  action      String
+  active      Boolean  @default(true)
+
+  roles       RolePermission[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
+model RolePermission {
+  id           String     @id @default(uuid())
+
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id])
+
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, roleId])
 }
 
 model Document {
-  id            String            @id @default(uuid())
-  fileName      String
-  fileType      String
-  mimeType      String
-  storagePath   String
-  sizeBytes     BigInt
-  status        DocumentStatus    @default(CARGADO)
-  userId        String
-  user          User              @relation(fields: [userId], references: [id])
-  ocrResult     OCRResult?
-  confirmation  OCRConfirmation?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id               String           @id @default(uuid())
+  fileName         String
+  fileType         String
+  mimeType         String
+  storagePath      String
+  sizeBytes        BigInt
+  status           DocumentStatus   @default(CARGADO)
+  userId           String
+  user             User             @relation(fields: [userId], references: [id])
+  ocrResult        OCRResult?
+  confirmation     OCRConfirmation?
+  expenseRequestId String?
+  expenseRequest   ExpenseRequest?  @relation(fields: [expenseRequestId], references: [id])
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }
 
 model OCRResult {
-  id                   String                @id @default(uuid())
-  documentId           String                @unique
-  document             Document              @relation(fields: [documentId], references: [id])
+  id         String   @id @default(uuid())
+  documentId String   @unique
+  document   Document @relation(fields: [documentId], references: [id])
 
-  extractedText        String?
-  averageConfidence    Decimal?              @db.Decimal(5, 2)
-  processStatus        String
-  errorMessage         String?
+  extractedText     String?
+  averageConfidence Decimal? @db.Decimal(5, 2)
+  processStatus     String
+  errorMessage      String?
 
   countryDetected      String?
   languageDetected     String?
   documentTypeDetected String?
 
-  currencyCode         String?
-  currencySymbol       String?
-  decimalSeparator     String?
-  thousandsSeparator   String?
+  currencyCode       String?
+  currencySymbol     String?
+  decimalSeparator   String?
+  thousandsSeparator String?
 
-  subtotalAmount       Decimal?              @db.Decimal(14, 2)
-  taxAmount            Decimal?              @db.Decimal(14, 2)
-  totalAmount          Decimal?              @db.Decimal(14, 2)
-  taxIncludedInPrices  Boolean?
+  subtotalAmount      Decimal? @db.Decimal(14, 2)
+  taxAmount           Decimal? @db.Decimal(14, 2)
+  totalAmount         Decimal? @db.Decimal(14, 2)
+  taxIncludedInPrices Boolean?
 
-  extractedFields      ExtractedField[]
-  extraFields          ExtractedExtraField[]
-  extractedLineItems   ExtractedLineItem[]
+  extractedFields    ExtractedField[]
+  extraFields        ExtractedExtraField[]
+  extractedLineItems ExtractedLineItem[]
 
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ExtractedField {
-  id               String    @id @default(uuid())
-  ocrResultId      String
-  ocrResult        OCRResult @relation(fields: [ocrResultId], references: [id])
+  id          String    @id @default(uuid())
+  ocrResultId String
+  ocrResult   OCRResult @relation(fields: [ocrResultId], references: [id])
 
-  fieldName        String
-  rawLabel         String?
-  detectedValue    String?
-  normalizedValue  String?
-  finalValue       String?
-  confidence       Decimal?  @db.Decimal(5, 2)
-  wasCorrected     Boolean   @default(false)
+  fieldName       String
+  rawLabel        String?
+  detectedValue   String?
+  normalizedValue String?
+  finalValue      String?
+  confidence      Decimal? @db.Decimal(5, 2)
+  wasCorrected    Boolean  @default(false)
 
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ExtractedExtraField {
-  id            String    @id @default(uuid())
-  ocrResultId   String
-  ocrResult     OCRResult @relation(fields: [ocrResultId], references: [id])
+  id          String    @id @default(uuid())
+  ocrResultId String
+  ocrResult   OCRResult @relation(fields: [ocrResultId], references: [id])
 
-  rawLabel      String?
-  rawValue      String?
-  confidence    Decimal?  @db.Decimal(5, 2)
+  rawLabel   String?
+  rawValue   String?
+  confidence Decimal? @db.Decimal(5, 2)
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ExtractedLineItem {
-  id            String    @id @default(uuid())
-  ocrResultId   String
-  ocrResult     OCRResult @relation(fields: [ocrResultId], references: [id])
+  id          String    @id @default(uuid())
+  ocrResultId String
+  ocrResult   OCRResult @relation(fields: [ocrResultId], references: [id])
 
-  lineNumber    Int
-  article       String?
-  description   String?
-  quantity      Decimal?  @db.Decimal(12, 2)
-  unitPrice     Decimal?  @db.Decimal(12, 2)
-  lineSubtotal  Decimal?  @db.Decimal(12, 2)
-  lineTax       Decimal?  @db.Decimal(12, 2)
-  lineTotal     Decimal?  @db.Decimal(12, 2)
-  taxIncluded   Boolean?
-  confidence    Decimal?  @db.Decimal(5, 2)
+  lineNumber   Int
+  article      String?
+  description  String?
+  quantity     Decimal? @db.Decimal(12, 2)
+  unitPrice    Decimal? @db.Decimal(12, 2)
+  lineSubtotal Decimal? @db.Decimal(12, 2)
+  lineTax      Decimal? @db.Decimal(12, 2)
+  lineTotal    Decimal? @db.Decimal(12, 2)
+  taxIncluded  Boolean?
+  confidence   Decimal? @db.Decimal(5, 2)
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model OCRConfirmation {
@@ -143,4 +233,226 @@ model OCRConfirmation {
   confirmationDate DateTime
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+enum ExpenseRequestStatus {
+  BORRADOR
+  ENVIADA
+  EN_REVISION
+  PENDIENTE_APROBACION
+  VALIDADA
+  APROBADA
+  OBSERVADA
+  RECHAZADA
+  CANCELADA
+  EN_LIQUIDACION
+  LIQUIDADA
+  CERRADA
+  ANULADA
+}
+
+enum ExpenseType {
+  GASTO_OPERATIVO
+  GASTO_VIAJE
+  PAGO_PROVEEDOR
+  COMPRA_INSUMO
+  SERVICIO
+  OTRO
+}
+
+enum RequestPriority {
+  BAJA
+  NORMAL
+  ALTA
+  URGENTE
+}
+
+enum PaymentStatus {
+  PENDIENTE
+  EN_PROCESO
+  PAGADO
+  RECHAZADO
+  ANULADO
+}
+
+enum PaymentMethod {
+  CHEQUE
+  TRANSFERENCIA
+  DEPOSITO
+  EFECTIVO
+  OTRO
+}
+
+model ExpenseRequestPayment {
+  id               String         @id @default(uuid())
+  expenseRequestId String
+  expenseRequest   ExpenseRequest @relation(fields: [expenseRequestId], references: [id])
+
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(PENDIENTE)
+
+  bankName        String?
+  accountNumber   String?
+  referenceNumber String?
+  checkNumber     String?
+
+  amountPaid Decimal  @db.Decimal(12, 2)
+  currencyId String
+  currency   Currency @relation(fields: [currencyId], references: [id])
+
+  paymentDate  DateTime?
+  paidByUserId String?
+  paidByUser   User?     @relation(fields: [paidByUserId], references: [id])
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ExpenseRequest {
+  id       String               @id @default(uuid())
+  code     String               @unique
+  type     ExpenseType
+  status   ExpenseRequestStatus @default(BORRADOR)
+  priority RequestPriority      @default(NORMAL)
+
+  requesterId   String
+  requesterName String
+  requesterRole String
+
+  companyName   String
+  costCenter    String
+  budgetAccount String?
+
+  concept       String
+  justification String?
+
+  destination   String?
+  days          Int?
+  estimatedDate DateTime?
+
+  companyId  String?
+  currencyId String?
+
+  estimatedAmount Decimal @db.Decimal(14, 2)
+  currency        String  @default("GTQ")
+
+  payments ExpenseRequestPayment[]
+
+  documents Document[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items       ExpenseRequestItem[]
+  validations ExpenseRequestValidation[]
+  traces      ExpenseRequestTrace[]
+  company     Company?                   @relation("CompanyExpenseRequests", fields: [companyId], references: [id])
+  currencyRef Currency?                  @relation("CurrencyExpenseRequests", fields: [currencyId], references: [id])
+  Country     Country?                   @relation(fields: [countryId], references: [id])
+  countryId   String?
+}
+
+model ExpenseRequestItem {
+  id        String         @id @default(uuid())
+  requestId String
+  request   ExpenseRequest @relation(fields: [requestId], references: [id])
+
+  name        String
+  description String?
+  quantity    Int     @default(1)
+  unitAmount  Decimal @db.Decimal(14, 2)
+  totalAmount Decimal @db.Decimal(14, 2)
+
+  policyStatus String   @default("PENDIENTE")
+  createdAt    DateTime @default(now())
+}
+
+model ExpenseRequestValidation {
+  id        String         @id @default(uuid())
+  requestId String
+  request   ExpenseRequest @relation(fields: [requestId], references: [id])
+
+  type      String
+  status    String
+  message   String?
+  createdAt DateTime @default(now())
+}
+
+model ExpenseRequestTrace {
+  id        String         @id @default(uuid())
+  requestId String
+  request   ExpenseRequest @relation(fields: [requestId], references: [id])
+
+  event       String
+  description String
+  userName    String?
+  fromStatus  String?
+  toStatus    String?
+
+  createdAt DateTime @default(now())
+}
+
+model Country {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  currencies      Currency[]
+  companies       Company[]
+  expenseRequests ExpenseRequest[]
+}
+
+model Currency {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  symbol    String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  countries              Country[]
+  companies              Company[]
+  expenseRequests        ExpenseRequest[]        @relation("CurrencyExpenseRequests")
+  expenseRequestPayments ExpenseRequestPayment[]
+}
+
+model Company {
+  id         String   @id @default(uuid())
+  code       String   @unique
+  name       String
+  countryId  String
+  currencyId String
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  country         Country          @relation(fields: [countryId], references: [id])
+  currency        Currency         @relation(fields: [currencyId], references: [id])
+  expenseRequests ExpenseRequest[] @relation("CompanyExpenseRequests")
+  users User[]
+
+  documentSeries DocumentSeries[]
+}
+
+model DocumentSeries {
+  id            String   @id @default(uuid())
+  companyId     String
+  documentType  String
+  prefix        String
+  currentNumber Int      @default(0)
+  padding       Int      @default(4)
+  year          Int
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, documentType, year])
 }

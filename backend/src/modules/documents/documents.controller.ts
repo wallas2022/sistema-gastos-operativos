@@ -44,8 +44,8 @@ export class DocumentsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.documentsService.findOne(id);
+  findOne(@Param('id') id: string, @Req() req: any) {
+    return this.documentsService.findOne(id,req.user);
   }
 
    @Get(':id/file')

@@ -6,6 +6,10 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { OcrModule } from './modules/ocr/ocr.module';
+import { ExpenseRequestsModule } from './modules/expense-requests/expense-requests.module';
+import { ExpenseRequestPaymentsModule } from './modules/expense-request-payments/expense-request-payments.module';
+import { CatalogModule } from './catalog/catalog.module';
+import { SecurityModule } from './modules/security/security.module';
 
 
 @Module({
@@ -16,9 +20,13 @@ import { OcrModule } from './modules/ocr/ocr.module';
     }),
     PrismaModule,
     UsersModule,
+    CatalogModule,
     AuthModule,
     DocumentsModule,
     OcrModule,
+    ExpenseRequestsModule,
+    ExpenseRequestPaymentsModule,
+    SecurityModule,
   ],
 })
 export class AppModule {}

@@ -4,41 +4,66 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
+  CloseButton,
+  Dialog,
   Flex,
   Heading,
   HStack,
   Input,
+  Portal,
   Spinner,
   Table,
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { RefreshCw, Search, ShieldCheck, UserRound } from "lucide-react";
+import { RefreshCw, Search, ShieldCheck, UserCog, UserRound } from "lucide-react";
 import {
   getSecurityUsers,
   SecurityUser,
+  assignRoleToUser,
+  getSecurityRoles,
+  removeRoleFromUser,
+  SecurityRole,
 } from "../../services/security.service";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<SecurityUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
+  const [roles, setRoles] = useState<SecurityRole[]>([]);
+  const [selectedUser, setSelectedUser] = useState<SecurityUser | null>(null);
+  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+  const [savingRoles, setSavingRoles] = useState(false);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  
 
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      const result = await getSecurityUsers();
-      setUsers(result);
-    } catch (error) {
-      console.error("Error cargando usuarios:", error);
-      alert("No se pudo cargar el listado de usuarios.");
-    } finally {
-      setLoading(false);
-    }
-  };
+ const loadUsers = async () => {
+  try {
+    setLoading(true);
+    const result = await getSecurityUsers();
+    setUsers(result);
+  } catch (error) {
+    console.error("Error cargando usuarios:", error);
+    alert("No se pudo cargar el listado de usuarios.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+const loadRoles = async () => {
+  try {
+    const result = await getSecurityRoles();
+    setRoles(result);
+  } catch (error) {
+    console.error("Error cargando roles:", error);
+    alert("No se pudo cargar el listado de roles.");
+  }
+};
 
   useEffect(() => {
     loadUsers();
+    loadRoles();
   }, []);
 
   const filteredUsers = useMemo(() => {
@@ -65,6 +90,67 @@ export default function UsersPage() {
       );
     });
   }, [users, filter]);
+
+
+  const openRoleModal = (user: SecurityUser) => {
+  setSelectedUser(user);
+
+  const currentRoleIds =
+    user.roles?.map((item) => item.role.id) ?? [];
+
+  setSelectedRoleIds(currentRoleIds);
+  setIsRoleModalOpen(true);
+};
+
+const toggleRole = (roleId: string) => {
+  setSelectedRoleIds((current) => {
+    if (current.includes(roleId)) {
+      return current.filter((id) => id !== roleId);
+    }
+
+    return [...current, roleId];
+  });
+};
+
+const saveUserRoles = async () => {
+  if (!selectedUser) return;
+
+  try {
+    setSavingRoles(true);
+
+    const currentRoleIds =
+      selectedUser.roles?.map((item) => item.role.id) ?? [];
+
+    const rolesToAdd = selectedRoleIds.filter(
+      (roleId) => !currentRoleIds.includes(roleId)
+    );
+
+    const rolesToRemove = currentRoleIds.filter(
+      (roleId) => !selectedRoleIds.includes(roleId)
+    );
+
+    for (const roleId of rolesToAdd) {
+      await assignRoleToUser(selectedUser.id, roleId);
+    }
+
+    for (const roleId of rolesToRemove) {
+      await removeRoleFromUser(selectedUser.id, roleId);
+    }
+
+    await loadUsers();
+
+    setIsRoleModalOpen(false);
+    setSelectedUser(null);
+    setSelectedRoleIds([]);
+
+    alert("Roles del usuario actualizados correctamente.");
+  } catch (error) {
+    console.error("Error guardando roles del usuario:", error);
+    alert("No se pudieron actualizar los roles del usuario.");
+  } finally {
+    setSavingRoles(false);
+  }
+};
 
   if (loading) {
     return (
@@ -145,6 +231,7 @@ export default function UsersPage() {
                   <Table.ColumnHeader>Puesto</Table.ColumnHeader>
                   <Table.ColumnHeader>Centro de costo</Table.ColumnHeader>
                   <Table.ColumnHeader>Estado</Table.ColumnHeader>
+                  <Table.ColumnHeader>Acciones</Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>
 
@@ -220,6 +307,12 @@ export default function UsersPage() {
                         <Badge colorPalette="red">Inactivo</Badge>
                       )}
                     </Table.Cell>
+                    <Table.Cell>
+                        <Button size="sm" variant="outline" onClick={() => openRoleModal(user)}>
+                          <UserCog size={15} />
+                          Gestionar roles
+                        </Button>
+                      </Table.Cell>
                   </Table.Row>
                 ))}
 
@@ -237,6 +330,145 @@ export default function UsersPage() {
           </Box>
         </Card.Body>
       </Card.Root>
+
+      <Dialog.Root
+  open={isRoleModalOpen}
+  onOpenChange={(details) => {
+    setIsRoleModalOpen(details.open);
+
+    if (!details.open) {
+      setSelectedUser(null);
+      setSelectedRoleIds([]);
+    }
+  }}
+>
+  <Portal>
+    <Dialog.Backdrop />
+    <Dialog.Positioner>
+      <Dialog.Content maxW="560px">
+        <Dialog.Header>
+          <Dialog.Title>Gestionar roles del usuario</Dialog.Title>
+          <Dialog.CloseTrigger asChild>
+            <CloseButton size="sm" />
+          </Dialog.CloseTrigger>
+        </Dialog.Header>
+
+        <Dialog.Body>
+          {selectedUser && (
+            <VStack align="stretch" gap={5}>
+              <Card.Root variant="outline">
+                <Card.Body>
+                  <HStack gap={3}>
+                    <Flex
+                      w="44px"
+                      h="44px"
+                      rounded="full"
+                      bg="blue.50"
+                      color="blue.600"
+                      align="center"
+                      justify="center"
+                      fontWeight="bold"
+                    >
+                      {selectedUser.name
+                        .split(" ")
+                        .map((part) => part[0])
+                        .join("")
+                        .slice(0, 2)
+                        .toUpperCase()}
+                    </Flex>
+
+                    <Box>
+                      <Text fontWeight="bold">{selectedUser.name}</Text>
+                      <Text fontSize="sm" color="gray.500">
+                        {selectedUser.email}
+                      </Text>
+                      <Text fontSize="sm" color="gray.500">
+                        {selectedUser.position ?? "Puesto no definido"}
+                      </Text>
+                    </Box>
+                  </HStack>
+                </Card.Body>
+              </Card.Root>
+
+              <Box>
+                <Text fontWeight="semibold" mb={2}>
+                  Roles disponibles
+                </Text>
+
+                <VStack align="stretch" gap={2}>
+                  {roles.map((role) => {
+                    const checked = selectedRoleIds.includes(role.id);
+
+                    return (
+                      <Flex
+                        key={role.id}
+                        align="center"
+                        justify="space-between"
+                        borderWidth="1px"
+                        rounded="lg"
+                        px={4}
+                        py={3}
+                      >
+                        <Box>
+                          <HStack gap={2}>
+                            <ShieldCheck size={16} />
+                            <Text fontWeight="semibold">{role.name}</Text>
+                            <Badge colorPalette={role.active ? "green" : "red"}>
+                              {role.active ? "Activo" : "Inactivo"}
+                            </Badge>
+                          </HStack>
+
+                          <Text fontSize="xs" color="gray.500" mt={1}>
+                            {role.code}
+                          </Text>
+
+                          {role.description && (
+                            <Text fontSize="sm" color="gray.600" mt={1}>
+                              {role.description}
+                            </Text>
+                          )}
+                        </Box>
+
+                        <Checkbox.Root
+                          checked={checked}
+                          onCheckedChange={() => toggleRole(role.id)}
+                          disabled={!role.active}
+                        >
+                          <Checkbox.HiddenInput />
+                          <Checkbox.Control />
+                        </Checkbox.Root>
+                      </Flex>
+                    );
+                  })}
+
+                  {roles.length === 0 && (
+                    <Text color="gray.500" fontSize="sm">
+                      No hay roles registrados.
+                    </Text>
+                  )}
+                </VStack>
+              </Box>
+            </VStack>
+          )}
+        </Dialog.Body>
+
+        <Dialog.Footer>
+          <Button
+            variant="outline"
+            onClick={() => setIsRoleModalOpen(false)}
+            disabled={savingRoles}
+          >
+            Cancelar
+          </Button>
+
+          <Button onClick={saveUserRoles} loading={savingRoles}>
+            Guardar cambios
+          </Button>
+        </Dialog.Footer>
+      </Dialog.Content>
+    </Dialog.Positioner>
+  </Portal>
+</Dialog.Root>
     </Box>
   );
 }

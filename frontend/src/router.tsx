@@ -30,6 +30,9 @@ import ExpenseRequestsPage from "./pages/expense-requests/ExpenseRequestsPage";
 import SystemMapPage from "./pages/system-map/SystemMapPage";
 import AccessMatrixPage from "./pages/security/AccessMatrixPage";
 import UsersPage from "./pages/security/UsersPage";
+import RolesPage from "./pages/security/RolesPage";
+import PermissionsPage from "./pages/security/PermissionsPage";
+
 
 export const router = createBrowserRouter([
   {
@@ -56,8 +59,12 @@ export const router = createBrowserRouter([
             element: <UsersPage />,
           },
           {
-            path: "planificacion-normativa",
-            element: <PlanningPage />,
+            path: "security/roles",
+            element: <RolesPage />,
+          },
+          {
+            path: "security/permissions",
+            element: <PermissionsPage />,
           },
           {
             path: "solicitudes-gastos",

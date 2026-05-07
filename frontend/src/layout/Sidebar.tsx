@@ -65,7 +65,18 @@ const menuGroups: MenuGroup[] = [
       icon: ShieldCheck,
       path: "/security/users",
     },
-      ],
+    {
+      label: "Roles",
+      icon: ShieldCheck,
+      path: "/security/roles",
+    },
+    {
+      label: "Permisos",
+      icon: ShieldCheck,
+      path: "/security/permissions",
+    },
+    
+    ],
   },
   {
     title: "Mapa del sistema",

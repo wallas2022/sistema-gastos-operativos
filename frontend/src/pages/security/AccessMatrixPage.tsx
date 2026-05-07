@@ -13,7 +13,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { Check, RefreshCw, ShieldCheck, X } from "lucide-react";
+import { RefreshCw, ShieldCheck } from "lucide-react";
 import {
   AccessMatrixResponse,
   getAccessMatrix,
@@ -27,7 +27,9 @@ export default function AccessMatrixPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const result = await getAccessMatrix();
+      const result = await getAccessMatrix();   
+      console.log("Matriz completa:", result);
+    console.table(result.roles);
       setData(result);
     } catch (error) {
       console.error("Error cargando matriz de accesos:", error);
@@ -76,31 +78,101 @@ export default function AccessMatrixPage() {
   }, [data, filter]);
 
   const roleHasPermission = (role: any, permission: any) => {
-  if (!role.permissions) {
+    if (!role.permissions) {
+      return false;
+    }
+
+    // Caso 1: matriz agrupada por módulo y acción
+    if (role.permissions?.[permission.module]?.[permission.action] === true) {
+      return true;
+    }
+
+    // Caso 2: arreglo de permisos relacionados
+    if (Array.isArray(role.permissions)) {
+      return role.permissions.some((item: any) => {
+        const currentPermission = item.permission ?? item;
+
+        return (
+          currentPermission.id === permission.id ||
+          currentPermission.code === permission.code
+        );
+      });
+    }
+
     return false;
-  }
+  };
 
-  if (
-    role.permissions?.[permission.module]?.[permission.action] === true
-  ) {
-    return true;
-  }
+    const getRoleId = (role: any, index: number) => {
+    return (
+      role.id ??
+      role.roleId ??
+      role.role?.id ??
+      role.code ??
+      role.role?.code ??
+      `role-${index}`
+    );
+  };
 
-  if (Array.isArray(role.permissions)) {
-    return role.permissions.some((item: any) => {
-      const currentPermission = item.permission ?? item;
+  const getRoleName = (role: any) => {
+    return (
+      role.name ??
+      role.roleName ??
+      role.role?.name ??
+      role.nombre ??
+      role.code ??
+      role.role?.code ??
+      "Rol sin nombre"
+    );
+  };
 
-      return (
-        currentPermission.code === permission.code ||
-        currentPermission.action === permission.action
-      );
-    });
-  }
-
-  return false;
-};
+  const getRoleCode = (role: any) => {
+    return (
+      role.code ??
+      role.roleCode ??
+      role.role?.code ??
+      role.codigo ??
+      role.name ??
+      role.role?.name ??
+      "SIN_CODIGO"
+    );
+  };
 
   if (loading) {
+
+    const getRoleId = (role: any, index: number) => {
+  return (
+    role.id ??
+    role.roleId ??
+    role.role?.id ??
+    role.code ??
+    role.role?.code ??
+    `role-${index}`
+  );
+};
+
+const getRoleName = (role: any) => {
+  return (
+    role.name ??
+    role.roleName ??
+    role.role?.name ??
+    role.nombre ??
+    role.code ??
+    role.role?.code ??
+    "Rol sin nombre"
+  );
+};
+
+const getRoleCode = (role: any) => {
+  return (
+    role.code ??
+    role.roleCode ??
+    role.role?.code ??
+    role.codigo ??
+    role.name ??
+    role.role?.name ??
+    "SIN_CODIGO"
+  );
+};
     return (
       <Flex minH="60vh" align="center" justify="center">
         <VStack gap={3}>
@@ -170,6 +242,7 @@ export default function AccessMatrixPage() {
                     {group.permissions.length} permisos del módulo
                   </Text>
                 </Box>
+
                 <Badge colorPalette="blue">{group.module}</Badge>
               </Flex>
 
@@ -177,48 +250,76 @@ export default function AccessMatrixPage() {
                 <Table.Root size="sm" variant="outline">
                   <Table.Header>
                     <Table.Row>
-                      <Table.ColumnHeader minW="260px">
+                      <Table.ColumnHeader minW="280px">
                         Permiso
                       </Table.ColumnHeader>
 
-                      {data.roles.map((role) => (
-                        <Table.ColumnHeader
-                          key={role.id}
-                          textAlign="center"
-                          minW="140px"
-                        >
-                          {role.name}
-                        </Table.ColumnHeader>
-                      ))}
+                      {data.roles.map((role: any, index: number) => {
+                 const roleId = getRoleId(role, index);
+                const roleName = getRoleName(role);
+                const roleCode = getRoleCode(role);
+
+                return (
+                  <Table.ColumnHeader
+                    key={roleId}
+                    textAlign="center"
+                    minW="170px"
+                    bg="gray.50"
+                  >
+                    <Box textAlign="center">
+                      <Text
+                        fontWeight="bold"
+                        fontSize="xs"
+                        color="gray.800"
+                        whiteSpace="normal"
+                      >
+                        {roleName}
+                      </Text>
+
+                      <Badge colorPalette="blue" variant="subtle" mt={1}>
+                        {roleCode}
+                      </Badge>
+                    </Box>
+                  </Table.ColumnHeader>
+                );
+              })}
                     </Table.Row>
                   </Table.Header>
 
                   <Table.Body>
                     {group.permissions.map((permission) => (
                       <Table.Row key={permission.id}>
-                        <Table.Cell>
-                          <Text fontWeight="semibold">{permission.name}</Text>
-                          <Text fontSize="xs" color="gray.500">
-                            {permission.code}
-                          </Text>
-                          <Badge size="sm" mt={1}>
-                            {permission.action}
-                          </Badge>
+                        <Table.Cell minW="280px">
+                          <Box>
+                            <Text fontWeight="semibold">
+                              {permission.name}
+                            </Text>
+
+                            <Text fontSize="xs" color="gray.500">
+                              {permission.code}
+                            </Text>
+
+                            <Badge mt={1} variant="subtle">
+                              {permission.action}
+                            </Badge>
+                          </Box>
                         </Table.Cell>
 
-                        {data.roles.map((role) => {
-                          const hasPermission = roleHasPermission(role, permission);
+                        {data.roles.map((role: any, roleIndex: number) => {
+                          const hasAccess = roleHasPermission(
+                            role,
+                            permission
+                          );
 
                           return (
-                            <Table.Cell key={role.id} textAlign="center">
-                              {hasPermission ? (
-                                <Badge colorPalette="green">
-                                  <Check size={13} /> Sí
-                                </Badge>
+                            <Table.Cell
+                                key={`${permission.id}-${getRoleId(role, roleIndex)}`}
+                              textAlign="center"
+                            >
+                              {hasAccess ? (
+                                <Badge colorPalette="green">✓ Sí</Badge>
                               ) : (
-                                <Badge colorPalette="red" variant="subtle">
-                                  <X size={13} /> No
-                                </Badge>
+                                <Badge colorPalette="red">× No</Badge>
                               )}
                             </Table.Cell>
                           );
@@ -231,6 +332,16 @@ export default function AccessMatrixPage() {
             </Card.Body>
           </Card.Root>
         ))}
+
+        {groupedPermissions.length === 0 && (
+          <Card.Root>
+            <Card.Body>
+              <Text color="gray.500">
+                No se encontraron permisos con el filtro aplicado.
+              </Text>
+            </Card.Body>
+          </Card.Root>
+        )}
       </VStack>
     </Box>
   );

@@ -1,0 +1,4 @@
+import { Prisma } from '@prisma/client';
+export type BudgetEvaluationStatus = 'AVAILABLE' | 'PARTIAL' | 'INSUFFICIENT' | 'NOT_FOUND' | 'CLOSED' | 'EXPIRED' | 'NO_APPLIES';
+export interface BudgetEvaluationInput { requestId?: string; fiscalYear: number; month: number; budgetLineId?: string | null; budgetPeriodId?: string | null; accountCode?: string | null; companyId?: string | null; countryId?: string | null; currency: string; amount: Prisma.Decimal.Value; }
+export interface BudgetEvaluationResult { status: BudgetEvaluationStatus; approved: number; reserved: number; committed: number; executed: number; available: number; balance: number; consumedPercentage: number; monthlyApproved: number; monthlyCommitted: number; monthlyExecuted: number; monthlyAvailable: number; monthlyBalance: number; message: string; detail: { versionId?: string; lineIds: string[]; budgetPeriodId?: string; fiscalYear: number; month: number; accountCode?: string | null; currency: string }; }

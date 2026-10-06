@@ -1,0 +1,26 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam backgroundColor white
+left to right direction
+actor Solicitante
+actor Tesoreria
+actor Finanzas
+rectangle "Ejecución financiera OPEX" {
+  usecase "Definir modalidad" as U1
+  usecase "Desembolsar al solicitante" as U2
+  usecase "Pagar a proveedor/servicio/beneficiario" as U3
+  usecase "Adjuntar comprobante" as U4
+  usecase "Crear liquidación" as U5
+  usecase "Conciliar documentos OCR" as U6
+}
+Solicitante --> U1
+Tesoreria --> U2
+Tesoreria --> U3
+Tesoreria --> U4
+Solicitante --> U5
+Finanzas --> U6
+U2 .> U4 : incluye
+U3 .> U4 : incluye
+U5 .> U6 : continúa
+@enduml

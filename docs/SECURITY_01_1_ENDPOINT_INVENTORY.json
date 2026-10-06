@@ -1,0 +1,1129 @@
+[
+  {
+    "method": "GET",
+    "path": "/catalog/countries",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 27,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/catalog/countries/:id",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 32,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/catalog/countries",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 37,
+    "id_parameter": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/catalog/countries/:id",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 43,
+    "id_parameter": true
+  },
+  {
+    "method": "DELETE",
+    "path": "/catalog/countries/:id",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 49,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/catalog/currencies",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 57,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/catalog/currencies/:id",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 62,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/catalog/currencies",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 67,
+    "id_parameter": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/catalog/currencies/:id",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 73,
+    "id_parameter": true
+  },
+  {
+    "method": "DELETE",
+    "path": "/catalog/currencies/:id",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 79,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/catalog/companies",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 87,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/catalog/companies/:id",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 92,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/catalog/companies",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 97,
+    "id_parameter": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/catalog/companies/:id",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 103,
+    "id_parameter": true
+  },
+  {
+    "method": "DELETE",
+    "path": "/catalog/companies/:id",
+    "file": "backend/src/catalog/catalog.controller.ts",
+    "line": 109,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/approval-flows/pending/me",
+    "file": "backend/src/modules/approval/approval.controller.ts",
+    "line": 12,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/approval-flows/request/:requestId",
+    "file": "backend/src/modules/approval/approval.controller.ts",
+    "line": 15,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/approval-flows/:id/history",
+    "file": "backend/src/modules/approval/approval.controller.ts",
+    "line": 18,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/approval-flows/:id",
+    "file": "backend/src/modules/approval/approval.controller.ts",
+    "line": 21,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/approval-flows/:id/approve",
+    "file": "backend/src/modules/approval/approval.controller.ts",
+    "line": 24,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/approval-flows/:id/reject",
+    "file": "backend/src/modules/approval/approval.controller.ts",
+    "line": 37,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/approval-flows/:id/observe",
+    "file": "backend/src/modules/approval/approval.controller.ts",
+    "line": 40,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/approval-flows/:id/delegate",
+    "file": "backend/src/modules/approval/approval.controller.ts",
+    "line": 43,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/approval-flows/:id/steps/:stepId/reassign",
+    "file": "backend/src/modules/approval/approval.controller.ts",
+    "line": 46,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/approval-flows/:id/cancel",
+    "file": "backend/src/modules/approval/approval.controller.ts",
+    "line": 49,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/auth/login",
+    "file": "backend/src/modules/auth/auth.controller.ts",
+    "line": 10,
+    "id_parameter": false
+  },
+  {
+    "method": "POST",
+    "path": "/auth/forgot-password",
+    "file": "backend/src/modules/auth/auth.controller.ts",
+    "line": 11,
+    "id_parameter": false
+  },
+  {
+    "method": "POST",
+    "path": "/auth/reset-password",
+    "file": "backend/src/modules/auth/auth.controller.ts",
+    "line": 12,
+    "id_parameter": false
+  },
+  {
+    "method": "POST",
+    "path": "/auth/change-password",
+    "file": "backend/src/modules/auth/auth.controller.ts",
+    "line": 13,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/banking/banks",
+    "file": "backend/src/modules/banking/banking.controller.ts",
+    "line": 10,
+    "id_parameter": false
+  },
+  {
+    "method": "POST",
+    "path": "/banking/banks",
+    "file": "backend/src/modules/banking/banking.controller.ts",
+    "line": 11,
+    "id_parameter": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/banking/banks/:id",
+    "file": "backend/src/modules/banking/banking.controller.ts",
+    "line": 12,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/banking/accounts/me",
+    "file": "backend/src/modules/banking/banking.controller.ts",
+    "line": 13,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/banking/accounts/user/:userId",
+    "file": "backend/src/modules/banking/banking.controller.ts",
+    "line": 14,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/banking/accounts",
+    "file": "backend/src/modules/banking/banking.controller.ts",
+    "line": 15,
+    "id_parameter": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/banking/accounts/:id",
+    "file": "backend/src/modules/banking/banking.controller.ts",
+    "line": 16,
+    "id_parameter": true
+  },
+  {
+    "method": "DELETE",
+    "path": "/banking/accounts/:id",
+    "file": "backend/src/modules/banking/banking.controller.ts",
+    "line": 17,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/budget-imports/preview",
+    "file": "backend/src/modules/budget/budget-import.controller.ts",
+    "line": 11,
+    "id_parameter": false
+  },
+  {
+    "method": "POST",
+    "path": "/budget-imports",
+    "file": "backend/src/modules/budget/budget-import.controller.ts",
+    "line": 13,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/budget-imports/versions",
+    "file": "backend/src/modules/budget/budget-import.controller.ts",
+    "line": 15,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/budget-imports/versions/:id",
+    "file": "backend/src/modules/budget/budget-import.controller.ts",
+    "line": 16,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/budget-imports/versions/:currentId/compare/:previousId",
+    "file": "backend/src/modules/budget/budget-import.controller.ts",
+    "line": 17,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/budget/available-lines",
+    "file": "backend/src/modules/budget/budget.controller.ts",
+    "line": 11,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/budget/filters",
+    "file": "backend/src/modules/budget/budget.controller.ts",
+    "line": 12,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/budget/lines",
+    "file": "backend/src/modules/budget/budget.controller.ts",
+    "line": 13,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/budget/lines/:id",
+    "file": "backend/src/modules/budget/budget.controller.ts",
+    "line": 14,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/budget/requests/:id/evaluation",
+    "file": "backend/src/modules/budget/budget.controller.ts",
+    "line": 15,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/dashboard/summary",
+    "file": "backend/src/modules/dashboard/dashboard.controller.ts",
+    "line": 12,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/dashboard/budget",
+    "file": "backend/src/modules/dashboard/dashboard.controller.ts",
+    "line": 13,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/dashboard/workflow",
+    "file": "backend/src/modules/dashboard/dashboard.controller.ts",
+    "line": 14,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/dashboard/policies",
+    "file": "backend/src/modules/dashboard/dashboard.controller.ts",
+    "line": 15,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/dashboard/approvals",
+    "file": "backend/src/modules/dashboard/dashboard.controller.ts",
+    "line": 16,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/dashboard/charts",
+    "file": "backend/src/modules/dashboard/dashboard.controller.ts",
+    "line": 17,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/dashboard/trends",
+    "file": "backend/src/modules/dashboard/dashboard.controller.ts",
+    "line": 18,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/dashboard/filters",
+    "file": "backend/src/modules/dashboard/dashboard.controller.ts",
+    "line": 19,
+    "id_parameter": false
+  },
+  {
+    "method": "POST",
+    "path": "/documents/upload",
+    "file": "backend/src/modules/documents/documents.controller.ts",
+    "line": 13,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/documents",
+    "file": "backend/src/modules/documents/documents.controller.ts",
+    "line": 20,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/documents/:id",
+    "file": "backend/src/modules/documents/documents.controller.ts",
+    "line": 25,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/documents/:id/file",
+    "file": "backend/src/modules/documents/documents.controller.ts",
+    "line": 30,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/exchange-rates",
+    "file": "backend/src/modules/exchange-rates/exchange-rates.controller.ts",
+    "line": 13,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/exchange-rates/current",
+    "file": "backend/src/modules/exchange-rates/exchange-rates.controller.ts",
+    "line": 14,
+    "id_parameter": false
+  },
+  {
+    "method": "POST",
+    "path": "/exchange-rates",
+    "file": "backend/src/modules/exchange-rates/exchange-rates.controller.ts",
+    "line": 16,
+    "id_parameter": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/exchange-rates/:id",
+    "file": "backend/src/modules/exchange-rates/exchange-rates.controller.ts",
+    "line": 20,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/expense-request-payments",
+    "file": "backend/src/modules/expense-request-payments/expense-request-payments.controller.ts",
+    "line": 24,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/expense-request-payments/pending",
+    "file": "backend/src/modules/expense-request-payments/expense-request-payments.controller.ts",
+    "line": 30,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/expense-request-payments/expense-request/:expenseRequestId",
+    "file": "backend/src/modules/expense-request-payments/expense-request-payments.controller.ts",
+    "line": 33,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/expense-request-payments/expense-request/:expenseRequestId/summary",
+    "file": "backend/src/modules/expense-request-payments/expense-request-payments.controller.ts",
+    "line": 38,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/expense-requests",
+    "file": "backend/src/modules/expense-requests/expense-requests.controller.ts",
+    "line": 29,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/expense-requests",
+    "file": "backend/src/modules/expense-requests/expense-requests.controller.ts",
+    "line": 37,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/expense-requests/:id",
+    "file": "backend/src/modules/expense-requests/expense-requests.controller.ts",
+    "line": 42,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/expense-requests/:id",
+    "file": "backend/src/modules/expense-requests/expense-requests.controller.ts",
+    "line": 47,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/expense-requests/:id/submit",
+    "file": "backend/src/modules/expense-requests/expense-requests.controller.ts",
+    "line": 57,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/expense-requests/:id/cancel",
+    "file": "backend/src/modules/expense-requests/expense-requests.controller.ts",
+    "line": 67,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/expense-requests/:id/documents",
+    "file": "backend/src/modules/expense-requests/expense-requests.controller.ts",
+    "line": 75,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/health",
+    "file": "backend/src/modules/health/health.controller.ts",
+    "line": 5,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/ocr/analytics/metrics",
+    "file": "backend/src/modules/ocr/ocr.controller.ts",
+    "line": 25,
+    "id_parameter": false
+  },
+  {
+    "method": "POST",
+    "path": "/ocr/:documentId",
+    "file": "backend/src/modules/ocr/ocr.controller.ts",
+    "line": 28,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/ocr/:documentId/result",
+    "file": "backend/src/modules/ocr/ocr.controller.ts",
+    "line": 33,
+    "id_parameter": true
+  },
+  {
+    "method": "PUT",
+    "path": "/ocr/:documentId/fields",
+    "file": "backend/src/modules/ocr/ocr.controller.ts",
+    "line": 38,
+    "id_parameter": true
+  },
+  {
+    "method": "PUT",
+    "path": "/ocr/:documentId/total",
+    "file": "backend/src/modules/ocr/ocr.controller.ts",
+    "line": 47,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/ocr/:documentId/confirm",
+    "file": "backend/src/modules/ocr/ocr.controller.ts",
+    "line": 52,
+    "id_parameter": true
+  },
+  {
+    "method": "PUT",
+    "path": "/ocr/:documentId/items",
+    "file": "backend/src/modules/ocr/ocr.controller.ts",
+    "line": 65,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/ocr/:documentId/validation-runs",
+    "file": "backend/src/modules/ocr/ocr.controller.ts",
+    "line": 74,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/ocr/:documentId/validate-compliance",
+    "file": "backend/src/modules/ocr/ocr.controller.ts",
+    "line": 79,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/policies",
+    "file": "backend/src/modules/policies/policies.controller.ts",
+    "line": 32,
+    "id_parameter": false
+  },
+  {
+    "method": "POST",
+    "path": "/policies/simulate",
+    "file": "backend/src/modules/policies/policies.controller.ts",
+    "line": 38,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/policies/:id",
+    "file": "backend/src/modules/policies/policies.controller.ts",
+    "line": 57,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/policies",
+    "file": "backend/src/modules/policies/policies.controller.ts",
+    "line": 63,
+    "id_parameter": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/policies/:id",
+    "file": "backend/src/modules/policies/policies.controller.ts",
+    "line": 69,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/policies/:id/activate",
+    "file": "backend/src/modules/policies/policies.controller.ts",
+    "line": 79,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/policies/:id/deactivate",
+    "file": "backend/src/modules/policies/policies.controller.ts",
+    "line": 85,
+    "id_parameter": true
+  },
+  {
+    "method": "DELETE",
+    "path": "/policies/:id",
+    "file": "backend/src/modules/policies/policies.controller.ts",
+    "line": 91,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/reports/filters",
+    "file": "backend/src/modules/reports/reports.controller.ts",
+    "line": 15,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/reports/budget",
+    "file": "backend/src/modules/reports/reports.controller.ts",
+    "line": 16,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/reports/requests",
+    "file": "backend/src/modules/reports/reports.controller.ts",
+    "line": 17,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/reports/approvals",
+    "file": "backend/src/modules/reports/reports.controller.ts",
+    "line": 18,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/reports/policies",
+    "file": "backend/src/modules/reports/reports.controller.ts",
+    "line": 19,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/reports/executive",
+    "file": "backend/src/modules/reports/reports.controller.ts",
+    "line": 20,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/reports/ocr",
+    "file": "backend/src/modules/reports/reports.controller.ts",
+    "line": 21,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/reports/:kind/export/:format",
+    "file": "backend/src/modules/reports/reports.controller.ts",
+    "line": 23,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/security/users",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 30,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/security/users/:id",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 36,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/security/users",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 42,
+    "id_parameter": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/security/users/:id",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 48,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/security/users/:id/activate",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 54,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/security/users/:id/deactivate",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 60,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/security/users/:id/block",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 66,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/security/users/:id/unblock",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 67,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/security/users/:id/force-password-change",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 68,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/security/users/:id/password-reset-link",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 69,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/security/users/:id/reset-password",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 70,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/security/roles",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 74,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/security/roles/:id",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 80,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/security/roles",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 86,
+    "id_parameter": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/security/roles/:id",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 92,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/security/permissions",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 100,
+    "id_parameter": false
+  },
+  {
+    "method": "POST",
+    "path": "/security/permissions",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 106,
+    "id_parameter": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/security/permissions/:id",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 112,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/security/users/:userId/roles/:roleId",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 120,
+    "id_parameter": true
+  },
+  {
+    "method": "DELETE",
+    "path": "/security/users/:userId/roles/:roleId",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 130,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/security/roles/:roleId/permissions/:permissionId",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 142,
+    "id_parameter": true
+  },
+  {
+    "method": "DELETE",
+    "path": "/security/roles/:roleId/permissions/:permissionId",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 152,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/security/access-matrix",
+    "file": "backend/src/modules/security/security.controller.ts",
+    "line": 164,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/settlements",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 12,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/settlements/indicators",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 13,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/settlements/refunds/pending-treasury",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 14,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/settlements/eligible/:requestId",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 15,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/settlements/:id/eligible-documents",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 16,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/settlements/:id",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 17,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/settlements",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 18,
+    "id_parameter": false
+  },
+  {
+    "method": "POST",
+    "path": "/settlements/:id/documents",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 19,
+    "id_parameter": true
+  },
+  {
+    "method": "DELETE",
+    "path": "/settlements/:id/documents/:documentId",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 20,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/settlements/:id/submit",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 21,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/settlements/:id/observe",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 22,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/settlements/:id/resubmit",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 23,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/settlements/:id/approve",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 24,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/settlements/:id/reject",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 25,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/settlements/:id/close",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 26,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/settlements/:id/certify",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 27,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/settlements/:id/refunds",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 29,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/settlements/:id/refunds/:refundId/correct",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 33,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/settlements/:id/refunds/:refundId/validate",
+    "file": "backend/src/modules/settlements/settlements.controller.ts",
+    "line": 37,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/traceability/authorizations",
+    "file": "backend/src/modules/traceability/traceability.controller.ts",
+    "line": 18,
+    "id_parameter": false
+  },
+  {
+    "method": "POST",
+    "path": "/traceability/authorizations/:id/approve",
+    "file": "backend/src/modules/traceability/traceability.controller.ts",
+    "line": 23,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/traceability/authorizations/:id/reject",
+    "file": "backend/src/modules/traceability/traceability.controller.ts",
+    "line": 32,
+    "id_parameter": true
+  },
+  {
+    "method": "POST",
+    "path": "/traceability/authorizations/:id/observe",
+    "file": "backend/src/modules/traceability/traceability.controller.ts",
+    "line": 41,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/traceability/status-monitor",
+    "file": "backend/src/modules/traceability/traceability.controller.ts",
+    "line": 50,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/traceability/status-monitor/:id",
+    "file": "backend/src/modules/traceability/traceability.controller.ts",
+    "line": 55,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/traceability/sla-escalations",
+    "file": "backend/src/modules/traceability/traceability.controller.ts",
+    "line": 60,
+    "id_parameter": false
+  },
+  {
+    "method": "POST",
+    "path": "/traceability/sla-escalations/:id/escalate",
+    "file": "backend/src/modules/traceability/traceability.controller.ts",
+    "line": 65,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/traceability/event-logs",
+    "file": "backend/src/modules/traceability/traceability.controller.ts",
+    "line": 74,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/traceability/event-logs/:requestId",
+    "file": "backend/src/modules/traceability/traceability.controller.ts",
+    "line": 79,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/notifications",
+    "file": "backend/src/modules/workflow/notifications.controller.ts",
+    "line": 10,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/notifications/unread-count",
+    "file": "backend/src/modules/workflow/notifications.controller.ts",
+    "line": 13,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/notifications/latest",
+    "file": "backend/src/modules/workflow/notifications.controller.ts",
+    "line": 16,
+    "id_parameter": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/notifications/read-all",
+    "file": "backend/src/modules/workflow/notifications.controller.ts",
+    "line": 19,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/notifications/:id",
+    "file": "backend/src/modules/workflow/notifications.controller.ts",
+    "line": 22,
+    "id_parameter": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/notifications/:id/read",
+    "file": "backend/src/modules/workflow/notifications.controller.ts",
+    "line": 25,
+    "id_parameter": true
+  },
+  {
+    "method": "GET",
+    "path": "/workflow/sla/rules",
+    "file": "backend/src/modules/workflow/sla.controller.ts",
+    "line": 9,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/workflow/sla/pending/me",
+    "file": "backend/src/modules/workflow/sla.controller.ts",
+    "line": 10,
+    "id_parameter": false
+  },
+  {
+    "method": "GET",
+    "path": "/workflow/sla/flow/:id",
+    "file": "backend/src/modules/workflow/sla.controller.ts",
+    "line": 11,
+    "id_parameter": true
+  }
+]

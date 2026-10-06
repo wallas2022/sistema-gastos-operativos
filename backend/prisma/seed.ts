@@ -276,29 +276,63 @@ async function main() {
   /**
    * 11. Serie documental para solicitudes de gasto
    */
-  await prisma.documentSeries.upsert({
-    where: {
-      companyId_documentType_year: {
-        companyId: company.id,
-        documentType: 'SOLICITUD_GASTO',
-        year: 2026,
-      },
-    },
-    update: {
-      prefix: 'GT-SOL',
-      padding: 4,
-      active: true,
-    },
-    create: {
-      companyId: company.id,
-      documentType: 'SOLICITUD_GASTO',
-      prefix: 'GT-SOL',
-      currentNumber: 0,
-      padding: 4,
-      year: 2026,
-      active: true,
-    },
+  const currentYear = new Date().getFullYear();
+  const expenseRequestDocumentType = 'EXPENSE_REQUEST';
+
+  const activeCompanies = await prisma.company.findMany({
+    where: { active: true },
+    select: { id: true, code: true },
   });
+
+  for (const activeCompany of activeCompanies) {
+    const legacyExpenseRequestSeries = await prisma.documentSeries.findUnique({
+      where: {
+        companyId_documentType_year: {
+          companyId: activeCompany.id,
+          documentType: 'SOLICITUD_GASTO',
+          year: currentYear,
+        },
+      },
+    });
+    const companyPrefix = activeCompany.code
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .slice(0, 8);
+
+    const expenseRequestSeries = await prisma.documentSeries.upsert({
+      where: {
+        companyId_documentType_year: {
+          companyId: activeCompany.id,
+          documentType: expenseRequestDocumentType,
+          year: currentYear,
+        },
+      },
+      update: {
+        prefix: `${companyPrefix}-SOL`,
+        padding: 4,
+        active: true,
+      },
+      create: {
+        companyId: activeCompany.id,
+        documentType: expenseRequestDocumentType,
+        prefix: `${companyPrefix}-SOL`,
+        currentNumber: legacyExpenseRequestSeries?.currentNumber ?? 0,
+        padding: 4,
+        year: currentYear,
+        active: true,
+      },
+    });
+
+    if (
+      legacyExpenseRequestSeries &&
+      legacyExpenseRequestSeries.id !== expenseRequestSeries.id
+    ) {
+      await prisma.documentSeries.update({
+        where: { id: legacyExpenseRequestSeries.id },
+        data: { active: false },
+      });
+    }
+  }
 
   /**
    * 12. Permisos del módulo de seguridad
@@ -355,6 +389,9 @@ async function main() {
     create: { userId: admin.id, roleId: adminRole.id },
   });
 
+  const ocrProcess = await prisma.permission.upsert({ where: { code: 'OCR_PROCESS' }, update: {}, create: { code: 'OCR_PROCESS', name: 'Procesar y reprocesar OCR', module: 'ocr', action: 'PROCESS' } });
+  const processingRoles = await prisma.role.findMany({ where: { code: { in: ['ADMIN', 'REVISOR_OCR', 'FINANZAS', 'GERENTE'] } } });
+  for (const role of processingRoles) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: role.id, permissionId: ocrProcess.id } }, update: {}, create: { roleId: role.id, permissionId: ocrProcess.id } });
   console.log('Seed demo ejecutado correctamente.');
   console.log('');
   console.log('Usuarios disponibles para demo:');

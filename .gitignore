@@ -86,3 +86,9 @@ logs/
 # =====================
 docker-data/
 volumes/
+# Manuales y operacion local
+backups/
+~$*
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts

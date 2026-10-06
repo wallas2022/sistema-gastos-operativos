@@ -1,474 +1,519 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Badge,
   Box,
   Button,
   Card,
-  Checkbox,
-  CloseButton,
-  Dialog,
   Flex,
   Heading,
   HStack,
   Input,
-  Portal,
   Spinner,
   Table,
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { RefreshCw, Search, ShieldCheck, UserCog, UserRound } from "lucide-react";
 import {
-  getSecurityUsers,
-  SecurityUser,
-  assignRoleToUser,
-  getSecurityRoles,
-  removeRoleFromUser,
-  SecurityRole,
-} from "../../services/security.service";
+  getUsers,
+  type SecurityUser,
+  createUser,
+  updateUser,
+  activateUser,
+  deactivateUser,
+  blockUser,
+  unblockUser,
+  forcePasswordChange,
+  generatePasswordResetLink,
+  adminResetPassword,
+} from "../../services/security/users.service";
+import { api } from "../../shared/services/api";
+
+type UserFormState = {
+  name: string;
+  email: string;
+  password: string;
+  roleId: string;
+  companyId: string;
+  costCenter: string;
+  position: string;
+};
+
+const emptyForm: UserFormState = {
+  name: "",
+  email: "",
+  password: "",
+  roleId: "",
+  companyId: "",
+  costCenter: "",
+  position: "",
+};
+type RoleOption = {
+  id: string;
+  name: string;
+  code?: string;
+};
+
+type CompanyOption = {
+  id: string;
+  name: string;
+};
 
 export default function UsersPage() {
   const [users, setUsers] = useState<SecurityUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("");
-  const [roles, setRoles] = useState<SecurityRole[]>([]);
-  const [selectedUser, setSelectedUser] = useState<SecurityUser | null>(null);
-  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
-  const [savingRoles, setSavingRoles] = useState(false);
-  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-  
+  const [search, setSearch] = useState("");
 
- const loadUsers = async () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<SecurityUser | null>(null);
+  const [form, setForm] = useState<UserFormState>(emptyForm);
+
+  const [roles, setRoles] = useState<RoleOption[]>([]);
+  const [companies, setCompanies] = useState<CompanyOption[]>([]);
+
+  const costCenters = [
+  "ADM-ROOT",
+  "CC-ADM-001",
+  "CC-ADM-002",
+  "FIN-001",
+  "GER-001",
+  "DOC-001",
+  "TES-001",
+  "CC-TI-001",
+];
+
+const positions = [
+  "Administrador del Sistema",
+  "Analista Financiero",
+  "Gerente de Área",
+  "Revisor Documental OCR",
+  "Asistente Administrativo",
+  "Analista de Tesorería",
+  "Operador",
+];
+
+const loadCatalogs = async () => {
   try {
-    setLoading(true);
-    const result = await getSecurityUsers();
-    setUsers(result);
+    const [rolesResponse, companiesResponse] = await Promise.all([
+      api.get("/security/roles"),
+      api.get("/catalog/companies"),
+    ]);
+
+    setRoles(rolesResponse.data);
+    setCompanies(companiesResponse.data);
   } catch (error) {
-    console.error("Error cargando usuarios:", error);
-    alert("No se pudo cargar el listado de usuarios.");
-  } finally {
-    setLoading(false);
+    console.error("Error al cargar catálogos:", error);
   }
 };
 
-const loadRoles = async () => {
-  try {
-    const result = await getSecurityRoles();
-    setRoles(result);
-  } catch (error) {
-    console.error("Error cargando roles:", error);
-    alert("No se pudo cargar el listado de roles.");
-  }
-};
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await getUsers();
+      setUsers(data);
+       console.log("Usuarios recibidos:", data);
+    } catch (error) {
+      console.error("Error al cargar usuarios:", error);
+      alert("No se pudieron cargar los usuarios");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadUsers();
-    loadRoles();
+    loadCatalogs();
   }, []);
 
-  const filteredUsers = useMemo(() => {
-    const value = filter.trim().toLowerCase();
+  const filteredUsers = users.filter((user) => {
+  const roleNames =
+    user.roles?.map((item) => item.role.name).join(" ") ?? "";
 
-    if (!value) {
-      return users;
-    }
+  const text = `${user.name} ${user.email} ${roleNames}`.toLowerCase();
 
-    return users.filter((user) => {
-      const rolesText =
-        user.roles
-          ?.map((item) => `${item.role.code} ${item.role.name}`)
-          .join(" ")
-          .toLowerCase() ?? "";
+  return text.includes(search.toLowerCase());
+});
 
-      return (
-        user.name.toLowerCase().includes(value) ||
-        user.email.toLowerCase().includes(value) ||
-        user.role.toLowerCase().includes(value) ||
-        user.position?.toLowerCase().includes(value) ||
-        user.costCenter?.toLowerCase().includes(value) ||
-        rolesText.includes(value)
-      );
+  const handleOpenCreate = () => {
+    setEditingUser(null);
+    setForm(emptyForm);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (user: SecurityUser) => {
+    setEditingUser(user);
+    setForm({
+      name: user.name ?? "",
+      email: user.email ?? "",
+      password: "",
+      roleId: user.roles?.[0]?.role.id ?? "",
+      companyId: user.companyId ?? "",
+      costCenter: user.costCenter ?? "",
+      position: user.position ?? "",
     });
-  }, [users, filter]);
+    setIsModalOpen(true);
+  };
 
-
-  const openRoleModal = (user: SecurityUser) => {
-  setSelectedUser(user);
-
-  const currentRoleIds =
-    user.roles?.map((item) => item.role.id) ?? [];
-
-  setSelectedRoleIds(currentRoleIds);
-  setIsRoleModalOpen(true);
-};
-
-const toggleRole = (roleId: string) => {
-  setSelectedRoleIds((current) => {
-    if (current.includes(roleId)) {
-      return current.filter((id) => id !== roleId);
-    }
-
-    return [...current, roleId];
-  });
-};
-
-const saveUserRoles = async () => {
-  if (!selectedUser) return;
-
+const handleToggleStatus = async (user: SecurityUser) => {
   try {
-    setSavingRoles(true);
-
-    const currentRoleIds =
-      selectedUser.roles?.map((item) => item.role.id) ?? [];
-
-    const rolesToAdd = selectedRoleIds.filter(
-      (roleId) => !currentRoleIds.includes(roleId)
-    );
-
-    const rolesToRemove = currentRoleIds.filter(
-      (roleId) => !selectedRoleIds.includes(roleId)
-    );
-
-    for (const roleId of rolesToAdd) {
-      await assignRoleToUser(selectedUser.id, roleId);
-    }
-
-    for (const roleId of rolesToRemove) {
-      await removeRoleFromUser(selectedUser.id, roleId);
+    if (user.active) {
+      await deactivateUser(user.id);
+    } else {
+      await activateUser(user.id);
     }
 
     await loadUsers();
-
-    setIsRoleModalOpen(false);
-    setSelectedUser(null);
-    setSelectedRoleIds([]);
-
-    alert("Roles del usuario actualizados correctamente.");
   } catch (error) {
-    console.error("Error guardando roles del usuario:", error);
-    alert("No se pudieron actualizar los roles del usuario.");
-  } finally {
-    setSavingRoles(false);
+    console.error("Error al cambiar estado del usuario:", error);
+    alert("No se pudo cambiar el estado del usuario");
   }
 };
 
-  if (loading) {
-    return (
-      <Flex minH="60vh" align="center" justify="center">
-        <VStack gap={3}>
-          <Spinner size="lg" />
-          <Text color="gray.500">Cargando usuarios...</Text>
-        </VStack>
-      </Flex>
-    );
-  }
+  const handleSecurityAction = async (user: SecurityUser, action: 'block'|'force'|'link'|'reset') => {
+    try {
+      if (action === 'block') user.blocked ? await unblockUser(user.id) : await blockUser(user.id);
+      if (action === 'force') { await forcePasswordChange(user.id); alert('El usuario deberá cambiar su contraseña en el próximo inicio.'); }
+      if (action === 'link') { const result = await generatePasswordResetLink(user.id); await navigator.clipboard.writeText(result.resetUrl); alert(`Enlace copiado. Vence en ${result.expiresMinutes} minutos.`); }
+      if (action === 'reset') { const result = await adminResetPassword(user.id); alert(`Contraseña temporal (se muestra una sola vez): ${result.temporaryPassword}`); }
+      await loadUsers();
+    } catch (error) { console.error(error); alert('No se pudo completar la operación de seguridad.'); }
+  };
+
+  const handleSaveUser = async () => {
+    try {
+      if (!form.name || !form.email) {
+        alert("Nombre y correo son obligatorios");
+        return;
+      }
+
+      if (!editingUser && !form.password) {
+        alert("La contraseña es obligatoria para crear usuario");
+        return;
+      }
+
+      const payload = editingUser
+  ? {
+      name: form.name,
+      companyId: form.companyId || undefined,
+      costCenter: form.costCenter || undefined,
+      position: form.position || undefined,
+      ...(form.password ? { password: form.password } : {}),
+    }
+  : {
+      name: form.name,
+      email: form.email,
+      companyId: form.companyId || undefined,
+      costCenter: form.costCenter || undefined,
+      position: form.position || undefined,
+      ...(form.password ? { password: form.password } : {}),
+    };
+      if (editingUser) {
+        await updateUser(editingUser.id, payload);
+      } else {
+        await createUser(payload as any);
+      }
+
+      setIsModalOpen(false);
+      setEditingUser(null);
+      setForm(emptyForm);
+      await loadUsers();
+    } catch (error) {
+      console.error("Error al guardar usuario:", error);
+      alert("No se pudo guardar el usuario");
+    }
+  };
 
   return (
     <Box p={6}>
-      <Flex justify="space-between" align="center" mb={6} gap={4}>
-        <Box>
-          <HStack gap={2} mb={1}>
-            <UserRound size={22} />
-            <Heading size="lg">Usuarios</Heading>
-          </HStack>
-          <Text color="gray.600">
-            Administración y consulta de usuarios registrados en el sistema.
-          </Text>
-        </Box>
-
-        <Button onClick={loadUsers}>
-          <RefreshCw size={16} />
-          Actualizar
-        </Button>
-      </Flex>
-
-      <Card.Root mb={5}>
+      <Card.Root borderRadius="2xl" shadow="sm">
         <Card.Body>
-          <Flex justify="space-between" align="center" gap={4} wrap="wrap">
+          <Flex justify="space-between" align="center" mb={6} gap={4}>
             <Box>
-              <Text fontWeight="semibold">Resumen de usuarios</Text>
-              <Text color="gray.500" fontSize="sm">
-                Usuarios registrados: {users.length} · Activos:{" "}
-                {users.filter((user) => user.active).length} · Inactivos:{" "}
-                {users.filter((user) => !user.active).length}
+              <Heading size="lg">Usuarios</Heading>
+              <Text color="gray.500" mt={1}>
+                Administración de usuarios del sistema
               </Text>
             </Box>
 
-            <HStack maxW="420px" w="full">
-              <Search size={18} />
-              <Input
-                placeholder="Buscar usuario, correo, rol o puesto..."
-                value={filter}
-                onChange={(event) => setFilter(event.target.value)}
-              />
-            </HStack>
-          </Flex>
-        </Card.Body>
-      </Card.Root>
-
-      <Card.Root>
-        <Card.Body>
-          <Flex justify="space-between" align="center" mb={4}>
-            <Box>
-              <Heading size="md">Listado de usuarios</Heading>
-              <Text color="gray.500" fontSize="sm">
-                Usuarios visibles según el permiso administrativo del perfil.
-              </Text>
-            </Box>
-
-            <Badge colorPalette="blue">
-              {filteredUsers.length} resultado(s)
-            </Badge>
+            <Button colorPalette="blue" onClick={handleOpenCreate}>
+              Nuevo usuario
+            </Button>
           </Flex>
 
-          <Box overflowX="auto">
+          <Flex mb={5}>
+            <Input
+              placeholder="Buscar por nombre, correo o rol"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              maxW="360px"
+            />
+          </Flex>
+
+          {loading ? (
+            <VStack py={10}>
+              <Spinner />
+              <Text color="gray.500">Cargando usuarios...</Text>
+            </VStack>
+          ) : (
             <Table.Root size="sm" variant="outline">
               <Table.Header>
                 <Table.Row>
-                  <Table.ColumnHeader>Usuario</Table.ColumnHeader>
-                  <Table.ColumnHeader>Rol base</Table.ColumnHeader>
-                  <Table.ColumnHeader>Roles asignados</Table.ColumnHeader>
+                  <Table.ColumnHeader>Nombre</Table.ColumnHeader>
+                  <Table.ColumnHeader>Correo</Table.ColumnHeader>
+                  <Table.ColumnHeader>Rol</Table.ColumnHeader>
                   <Table.ColumnHeader>Puesto</Table.ColumnHeader>
                   <Table.ColumnHeader>Centro de costo</Table.ColumnHeader>
                   <Table.ColumnHeader>Estado</Table.ColumnHeader>
-                  <Table.ColumnHeader>Acciones</Table.ColumnHeader>
+                  <Table.ColumnHeader textAlign="end">
+                    Acciones
+                  </Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>
 
               <Table.Body>
                 {filteredUsers.map((user) => (
                   <Table.Row key={user.id}>
+                    <Table.Cell fontWeight="medium">{user.name}</Table.Cell>
+                    <Table.Cell>{user.email}</Table.Cell>
+                    <Table.Cell>{user.roles?.map((item) => item.role.name).join(", ") || "Sin rol"}</Table.Cell>
+                    <Table.Cell>{user.position ?? "-"}</Table.Cell>
+                    <Table.Cell>{user.costCenter ?? "-"}</Table.Cell>
+
                     <Table.Cell>
-                      <HStack gap={3}>
-                        <Flex
-                          w="36px"
-                          h="36px"
-                          rounded="full"
-                          bg="blue.50"
-                          color="blue.600"
-                          align="center"
-                          justify="center"
-                          fontWeight="bold"
+                    <Badge
+                        colorPalette={user.active ? "green" : "red"}
+                        variant="subtle"
+                      >
+                        {user.active ? "Activo" : "Inactivo"}
+                      </Badge>
+                    </Table.Cell>
+
+                    <Table.Cell>
+                      <HStack justify="flex-end">
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={() => handleOpenEdit(user)}
                         >
-                          {user.name
-                            .split(" ")
-                            .map((part) => part[0])
-                            .join("")
-                            .slice(0, 2)
-                            .toUpperCase()}
-                        </Flex>
-
-                        <Box>
-                          <Text fontWeight="semibold">{user.name}</Text>
-                          <Text fontSize="xs" color="gray.500">
-                            {user.email}
-                          </Text>
-                        </Box>
-                      </HStack>
-                    </Table.Cell>
-
-                    <Table.Cell>
-                      <Badge colorPalette="purple">{user.role}</Badge>
-                    </Table.Cell>
-
-                    <Table.Cell>
-                      <HStack gap={2} wrap="wrap">
-                        {user.roles && user.roles.length > 0 ? (
-                          user.roles.map((item) => (
-                            <Badge
-                              key={item.id}
-                              colorPalette="blue"
-                              variant="subtle"
-                            >
-                              <ShieldCheck size={12} />
-                              {item.role.name}
-                            </Badge>
-                          ))
-                        ) : (
-                          <Badge colorPalette="gray" variant="subtle">
-                            Sin rol dinámico
-                          </Badge>
-                        )}
-                      </HStack>
-                    </Table.Cell>
-
-                    <Table.Cell>
-                      <Text>{user.position ?? "No definido"}</Text>
-                    </Table.Cell>
-
-                    <Table.Cell>
-                      <Text>{user.costCenter ?? "No definido"}</Text>
-                    </Table.Cell>
-
-                    <Table.Cell>
-                      {user.active ? (
-                        <Badge colorPalette="green">Activo</Badge>
-                      ) : (
-                        <Badge colorPalette="red">Inactivo</Badge>
-                      )}
-                    </Table.Cell>
-                    <Table.Cell>
-                        <Button size="sm" variant="outline" onClick={() => openRoleModal(user)}>
-                          <UserCog size={15} />
-                          Gestionar roles
+                          Editar
                         </Button>
-                      </Table.Cell>
+                        <Button
+                          size="xs"
+                          colorPalette={user.active ? "red" : "green"}
+                          variant="subtle"
+                          onClick={() => handleToggleStatus(user)}
+                        >
+                          {user.active ? "Desactivar" : "Activar"}
+                        </Button>
+                        <Button size="xs" variant="outline" onClick={() => handleSecurityAction(user, 'block')}>{user.blocked ? 'Desbloquear' : 'Bloquear'}</Button>
+                        <Button size="xs" variant="outline" onClick={() => handleSecurityAction(user, 'force')}>Obligar cambio</Button>
+                        <Button size="xs" variant="outline" onClick={() => handleSecurityAction(user, 'link')}>Generar enlace</Button>
+                        <Button size="xs" colorPalette="orange" variant="subtle" onClick={() => handleSecurityAction(user, 'reset')}>Restablecer</Button>
+                      </HStack>
+                    </Table.Cell>
                   </Table.Row>
                 ))}
 
                 {filteredUsers.length === 0 && (
                   <Table.Row>
-                    <Table.Cell colSpan={6}>
+                    <Table.Cell colSpan={7}>
                       <Text textAlign="center" color="gray.500" py={6}>
-                        No se encontraron usuarios con el filtro aplicado.
+                        No se encontraron usuarios.
                       </Text>
                     </Table.Cell>
                   </Table.Row>
                 )}
               </Table.Body>
             </Table.Root>
-          </Box>
+          )}
         </Card.Body>
       </Card.Root>
 
-      <Dialog.Root
-  open={isRoleModalOpen}
-  onOpenChange={(details) => {
-    setIsRoleModalOpen(details.open);
+      {isModalOpen && (
+        <Box
+          position="fixed"
+          inset="0"
+          bg="blackAlpha.500"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          zIndex={1000}
+        >
+          <Box
+            bg="white"
+            p={6}
+            borderRadius="2xl"
+            shadow="xl"
+            w="100%"
+            maxW="520px"
+          >
+            <Heading size="md" mb={4}>
+              {editingUser ? "Editar usuario" : "Nuevo usuario"}
+            </Heading>
 
-    if (!details.open) {
-      setSelectedUser(null);
-      setSelectedRoleIds([]);
-    }
-  }}
->
-  <Portal>
-    <Dialog.Backdrop />
-    <Dialog.Positioner>
-      <Dialog.Content maxW="560px">
-        <Dialog.Header>
-          <Dialog.Title>Gestionar roles del usuario</Dialog.Title>
-          <Dialog.CloseTrigger asChild>
-            <CloseButton size="sm" />
-          </Dialog.CloseTrigger>
-        </Dialog.Header>
+            <VStack gap={3} align="stretch">
+              <Input
+                placeholder="Nombre"
+                value={form.name}
+                onChange={(e) =>
+                  setForm({ ...form, name: e.target.value })
+                }
+              />
 
-        <Dialog.Body>
-          {selectedUser && (
-            <VStack align="stretch" gap={5}>
-              <Card.Root variant="outline">
-                <Card.Body>
-                  <HStack gap={3}>
-                    <Flex
-                      w="44px"
-                      h="44px"
-                      rounded="full"
-                      bg="blue.50"
-                      color="blue.600"
-                      align="center"
-                      justify="center"
-                      fontWeight="bold"
-                    >
-                      {selectedUser.name
-                        .split(" ")
-                        .map((part) => part[0])
-                        .join("")
-                        .slice(0, 2)
-                        .toUpperCase()}
-                    </Flex>
+              <Input
+                placeholder="Correo"
+                value={form.email}
+                onChange={(e) =>
+                  setForm({ ...form, email: e.target.value })
+                }
+              />
 
-                    <Box>
-                      <Text fontWeight="bold">{selectedUser.name}</Text>
-                      <Text fontSize="sm" color="gray.500">
-                        {selectedUser.email}
-                      </Text>
-                      <Text fontSize="sm" color="gray.500">
-                        {selectedUser.position ?? "Puesto no definido"}
-                      </Text>
-                    </Box>
-                  </HStack>
-                </Card.Body>
-              </Card.Root>
+              <Input
+                placeholder={
+                  editingUser ? "Nueva contraseña opcional" : "Contraseña"
+                }
+                type="password"
+                value={form.password}
+                onChange={(e) =>
+                  setForm({ ...form, password: e.target.value })
+                }
+              />
+
+             <Box>
+            <Text fontSize="sm" mb={1} color="gray.600">
+              Rol
+            </Text>
+       
+        <Box>
+
+
+              <select
+                value={form.roleId}
+                onChange={(e) =>
+                  setForm({ ...form, roleId: e.target.value })
+                }
+                style={{
+                  width: "100%",
+                  height: "40px",
+                  padding: "0 12px",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "6px",
+                  background: "white",
+                }}
+              >
+                <option value="">Seleccione un rol</option>
+                {roles.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+            </Box>
 
               <Box>
-                <Text fontWeight="semibold" mb={2}>
-                  Roles disponibles
+                <Text fontSize="sm" mb={1} color="gray.600">
+                  Empresa
                 </Text>
 
-                <VStack align="stretch" gap={2}>
-                  {roles.map((role) => {
-                    const checked = selectedRoleIds.includes(role.id);
-
-                    return (
-                      <Flex
-                        key={role.id}
-                        align="center"
-                        justify="space-between"
-                        borderWidth="1px"
-                        rounded="lg"
-                        px={4}
-                        py={3}
-                      >
-                        <Box>
-                          <HStack gap={2}>
-                            <ShieldCheck size={16} />
-                            <Text fontWeight="semibold">{role.name}</Text>
-                            <Badge colorPalette={role.active ? "green" : "red"}>
-                              {role.active ? "Activo" : "Inactivo"}
-                            </Badge>
-                          </HStack>
-
-                          <Text fontSize="xs" color="gray.500" mt={1}>
-                            {role.code}
-                          </Text>
-
-                          {role.description && (
-                            <Text fontSize="sm" color="gray.600" mt={1}>
-                              {role.description}
-                            </Text>
-                          )}
-                        </Box>
-
-                        <Checkbox.Root
-                          checked={checked}
-                          onCheckedChange={() => toggleRole(role.id)}
-                          disabled={!role.active}
-                        >
-                          <Checkbox.HiddenInput />
-                          <Checkbox.Control />
-                        </Checkbox.Root>
-                      </Flex>
-                    );
-                  })}
-
-                  {roles.length === 0 && (
-                    <Text color="gray.500" fontSize="sm">
-                      No hay roles registrados.
-                    </Text>
-                  )}
-                </VStack>
+                <select
+                  value={form.companyId}
+                  onChange={(e) =>
+                    setForm({ ...form, companyId: e.target.value })
+                  }
+                  style={{
+                    width: "100%",
+                    height: "40px",
+                    padding: "0 12px",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "6px",
+                    background: "white",
+                  }}
+                >
+                  <option value="">Seleccione una empresa</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
               </Box>
-            </VStack>
-          )}
-        </Dialog.Body>
 
-        <Dialog.Footer>
-          <Button
-            variant="outline"
-            onClick={() => setIsRoleModalOpen(false)}
-            disabled={savingRoles}
-          >
-            Cancelar
-          </Button>
+              <Box>
+                <Text fontSize="sm" mb={1} color="gray.600">
+                  Centro de costo
+                </Text>
 
-          <Button onClick={saveUserRoles} loading={savingRoles}>
-            Guardar cambios
-          </Button>
-        </Dialog.Footer>
-      </Dialog.Content>
-    </Dialog.Positioner>
-  </Portal>
-</Dialog.Root>
-    </Box>
+                <select
+                  value={form.costCenter}
+                  onChange={(e) =>
+                    setForm({ ...form, costCenter: e.target.value })
+                  }
+                  style={{
+                    width: "100%",
+                    height: "40px",
+                    padding: "0 12px",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "6px",
+                    background: "white",
+                  }}
+                >
+                  <option value="">Seleccione centro de costo</option>
+                  {costCenters.map((costCenter) => (
+                    <option key={costCenter} value={costCenter}>
+                      {costCenter}
+                    </option>
+                  ))}
+                </select>
+              </Box>
+
+              <Box>
+                <Text fontSize="sm" mb={1} color="gray.600">
+                  Puesto
+                </Text>
+
+                <select
+                  value={form.position}
+                  onChange={(e) =>
+                    setForm({ ...form, position: e.target.value })
+                  }
+                  style={{
+                    width: "100%",
+                    height: "40px",
+                    padding: "0 12px",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "6px",
+                    background: "white",
+                  }}
+                >
+                  <option value="">Seleccione puesto</option>
+                  {positions.map((position) => (
+                    <option key={position} value={position}>
+                      {position}
+                    </option>
+                  ))}
+                </select>
+              </Box>
+                      </Box>
+
+                            <HStack justify="flex-end" mt={4}>
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setIsModalOpen(false);
+                                  setEditingUser(null);
+                                  setForm(emptyForm);
+                                }}
+                              >
+                                Cancelar
+                              </Button>
+
+                              <Button colorPalette="blue" onClick={handleSaveUser}>
+                                Guardar
+                              </Button>
+                            </HStack>
+                          </VStack>
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
   );
 }

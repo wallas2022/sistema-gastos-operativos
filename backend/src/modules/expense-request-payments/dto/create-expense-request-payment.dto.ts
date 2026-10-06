@@ -5,8 +5,10 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum PaymentMethodDto {
   CHEQUE = 'CHEQUE',
@@ -21,6 +23,10 @@ export class CreateExpenseRequestPaymentDto {
   @IsNotEmpty()
   expenseRequestId: string;
 
+  @IsOptional()
+  @IsUUID()
+  bankAccountId?: string;
+
   @IsEnum(PaymentMethodDto)
   paymentMethod: PaymentMethodDto;
 
@@ -30,6 +36,7 @@ export class CreateExpenseRequestPaymentDto {
 
   @IsNumber()
   @Min(0.01)
+  @Type(() => Number)
   amountPaid: number;
 
   @IsOptional()
@@ -40,9 +47,17 @@ export class CreateExpenseRequestPaymentDto {
   @IsString()
   accountNumber?: string;
 
+  @IsString()
+  @IsNotEmpty()
+  referenceNumber: string;
+
   @IsOptional()
   @IsString()
-  referenceNumber?: string;
+  beneficiaryName?: string;
+
+  @IsOptional()
+  @IsString()
+  beneficiaryTaxId?: string;
 
   @IsOptional()
   @IsString()

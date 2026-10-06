@@ -1,0 +1,22 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam backgroundColor white
+component "Solicitud React" as RequestUI
+component "Tesorería React" as TreasuryUI
+component "ExpenseRequestsController" as RequestAPI
+component "ExpenseRequestPaymentsController" as PaymentAPI
+component "ExpenseRequestPaymentsService" as PaymentService
+component "SettlementsService" as SettlementService
+component "StorageService" as Storage
+database PostgreSQL
+cloud MinIO
+RequestUI --> RequestAPI
+TreasuryUI --> PaymentAPI
+PaymentAPI --> PaymentService
+PaymentService --> PostgreSQL
+PaymentService --> Storage
+Storage --> MinIO
+SettlementService --> PostgreSQL
+PaymentService ..> SettlementService : ExpenseRequestPayment PAGADO
+@enduml

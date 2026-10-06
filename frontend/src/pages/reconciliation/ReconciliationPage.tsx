@@ -113,22 +113,18 @@ export function ReconciliationPage() {
         </Box>
 
         <HStack>
-          <Button
-            as={RouterLink}
-            to="/rendicion-conciliacion/ocr/documentos"
-            colorPalette="blue"
-          >
+          <Button asChild colorPalette="blue">
+            <RouterLink to="/rendicion-conciliacion/ocr/documentos">
             <UploadCloud size={18} />
             Subir comprobante OCR
+            </RouterLink>
           </Button>
 
-          <Button
-            as={RouterLink}
-            to="/rendicion-conciliacion/liquidaciones"
-            variant="outline"
-          >
+          <Button asChild variant="outline">
+            <RouterLink to="/rendicion-conciliacion/liquidaciones">
             <ReceiptText size={18} />
             Ver liquidaciones
+            </RouterLink>
           </Button>
         </HStack>
       </Flex>
@@ -419,14 +415,13 @@ function QuickAction({
 }) {
   return (
     <Button
-      as={RouterLink}
-      to={to}
+      asChild
       variant="ghost"
       justifyContent="flex-start"
       h="auto"
       py="3"
       px="3"
-    >
+    ><RouterLink to={to}>
       <HStack align="start" gap="3">
         <Box color="blue.600" mt="1">
           <Icon size={19} />
@@ -439,6 +434,6 @@ function QuickAction({
           </Text>
         </Box>
       </HStack>
-    </Button>
+    </RouterLink></Button>
   );
 }

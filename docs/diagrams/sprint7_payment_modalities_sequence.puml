@@ -1,0 +1,23 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam backgroundColor white
+actor Tesoreria
+participant Frontend
+participant PaymentController
+participant PaymentService
+database PostgreSQL
+participant MinIO
+Tesoreria -> Frontend : selecciona solicitud y modalidad
+Frontend -> PaymentController : POST pago + comprobante
+PaymentController -> PaymentService : create(dto, archivo, usuario)
+PaymentService -> PostgreSQL : validar APROBADA y pago no duplicado
+alt desembolso al solicitante
+  PaymentService -> PostgreSQL : validar cuenta y moneda triple
+else pago directo
+  PaymentService -> PostgreSQL : validar beneficiario y moneda
+end
+PaymentService -> MinIO : almacenar comprobante
+PaymentService -> PostgreSQL : crear pago PAGADO y traza
+PaymentService --> Frontend : operación registrada
+@enduml

@@ -1,337 +1,221 @@
+import gc
 import io
 import logging
-import gc
-from typing import Optional, List
+import time
+from dataclasses import dataclass
+from typing import Any, Optional
 
+import fitz
 import numpy as np
-from PIL import Image
-
-try:
-    import fitz  # PyMuPDF
-except Exception:
-    fitz = None
-
+import paddleocr
+from PIL import Image, ImageOps
 from paddleocr import PaddleOCR
 
-from app.schemas import (
-    OCRProcessResponse,
-    DocumentContext,
-    CurrencyContext,
-    NormalizedField,
-    ExtraField,
-    Totals,
-    LineItem,
-)
-from app.utils.parsers import (
-    detect_country,
-    detect_currency,
-    detect_document_type,
-    extract_amount,
-    extract_simple_field,
-)
+from app.config import settings
+from app.schemas import OCRProcessResponse, ProcessingMetrics
 
-logger = logging.getLogger(__name__)
-
+logger = logging.getLogger("ocr.processor")
 ocr_engine: Optional[PaddleOCR] = None
+
+
+@dataclass
+class PageText:
+    text: str
+    confidences: list[float]
+    used_ocr: bool
+    retries: int = 0
+
 
 def get_ocr_engine() -> PaddleOCR:
     global ocr_engine
-
     if ocr_engine is None:
-        logger.info("Inicializando motor PaddleOCR...")
-
+        logger.info("ocr_engine_initializing", extra={"engine": "PaddleOCR", "language": "es"})
         ocr_engine = PaddleOCR(
             lang="es",
             use_doc_orientation_classify=False,
             use_doc_unwarping=False,
             use_textline_orientation=False,
+            enable_mkldnn=False,
         )
-
     return ocr_engine
 
-def reset_ocr_engine():
+
+def reset_ocr_engine() -> None:
     global ocr_engine
     ocr_engine = None
     gc.collect()
 
 
-def resize_if_needed(image: Image.Image, max_side: int = 3000) -> Image.Image:
-    width, height = image.size
-    largest = max(width, height)
-
-    if largest <= max_side:
-        return image
-
-    ratio = max_side / float(largest)
-    new_width = int(width * ratio)
-    new_height = int(height * ratio)
-
-    logger.warning(
-        f"Imagen redimensionada de {width}x{height} a {new_width}x{new_height}"
-    )
-
-    return image.resize((new_width, new_height), Image.LANCZOS)
-
-
-def prepare_image_for_ocr(file_bytes: bytes, max_side: int = 3000) -> np.ndarray:
-    image = Image.open(io.BytesIO(file_bytes)).convert("RGB")
-    image = resize_if_needed(image, max_side=max_side)
-    return np.array(image)
-
-def extract_text_from_ocr_result(result) -> str:
-    lines: List[str] = []
-
-    if not result:
-        return ""
-
-    for item in result:
-        if hasattr(item, "json"):
-            try:
-                data = item.json
-                if isinstance(data, dict):
-                    rec_texts = data.get("rec_texts") or data.get("texts")
-                    if rec_texts:
-                        lines.extend([str(t) for t in rec_texts if t])
-                        continue
-            except Exception:
-                pass
-
-        if hasattr(item, "to_dict"):
-            try:
-                data = item.to_dict()
-                rec_texts = data.get("rec_texts") or data.get("texts")
-                if rec_texts:
-                    lines.extend([str(t) for t in rec_texts if t])
-                    continue
-            except Exception:
-                pass
-
-        if isinstance(item, dict):
-            rec_texts = item.get("rec_texts") or item.get("texts")
-            if rec_texts:
-                lines.extend([str(t) for t in rec_texts if t])
-                continue
-
-        if isinstance(item, list):
-            for block in item:
-                if not block:
-                    continue
-
-                if isinstance(block, list):
-                    for line in block:
-                        if not line or len(line) < 2:
-                            continue
-
-                        text_info = line[1]
-                        if isinstance(text_info, (list, tuple)) and len(text_info) > 0:
-                            text = text_info[0]
-                            if text:
-                                lines.append(str(text))
-
-    return "\n".join(lines).strip()
-
-
-def run_ocr_on_image(file_bytes: bytes) -> str:
-    """
-    Ejecuta OCR sobre imagen con reintento controlado.
-    """
-    image_np = prepare_image_for_ocr(file_bytes, max_side=3000)
-
+def _normalize_confidence(value: Any) -> Optional[float]:
     try:
-        engine = get_ocr_engine()
-        result = engine.predict(image_np)
-        return extract_text_from_ocr_result(result)
+        score = float(value)
+    except (TypeError, ValueError):
+        return None
+    if 0 <= score <= 1:
+        score *= 100
+    return round(max(0.0, min(score, 100.0)), 2)
 
-    except Exception as e:
-        logger.exception("Primer intento OCR falló. Se reiniciará el engine.")
 
-        reset_ocr_engine()
-
-        # Reintento con imagen aún más pequeña
-        image_np = prepare_image_for_ocr(file_bytes, max_side=2200)
-
+def _collect_text_scores(value: Any, texts: list[str], scores: list[float]) -> None:
+    if value is None:
+        return
+    if hasattr(value, "json"):
         try:
-            engine = get_ocr_engine()
-            result = engine.predict(image_np)
-            return extract_text_from_ocr_result(result)
-        except Exception as e2:
-            logger.exception("Segundo intento OCR falló.")
-            raise RuntimeError(f"Error OCR: {str(e2)}")
+            _collect_text_scores(value.json, texts, scores)
+            return
+        except Exception:
+            pass
+    if hasattr(value, "to_dict"):
+        try:
+            _collect_text_scores(value.to_dict(), texts, scores)
+            return
+        except Exception:
+            pass
+    if isinstance(value, dict):
+        rec_texts = value.get("rec_texts") or value.get("texts")
+        rec_scores = value.get("rec_scores") or value.get("scores") or []
+        if isinstance(rec_texts, (list, tuple)):
+            for index, text in enumerate(rec_texts):
+                if text:
+                    texts.append(str(text))
+                    if index < len(rec_scores):
+                        score = _normalize_confidence(rec_scores[index])
+                        if score is not None:
+                            scores.append(score)
+            return
+        for nested in value.values():
+            _collect_text_scores(nested, texts, scores)
+        return
+    if isinstance(value, (list, tuple)):
+        # PaddleOCR 2.x: [box, (text, score)]
+        if len(value) >= 2 and isinstance(value[1], (list, tuple)) and value[1]:
+            candidate = value[1]
+            if isinstance(candidate[0], str):
+                texts.append(candidate[0])
+                if len(candidate) > 1:
+                    score = _normalize_confidence(candidate[1])
+                    if score is not None:
+                        scores.append(score)
+                return
+        for nested in value:
+            _collect_text_scores(nested, texts, scores)
 
 
-def extract_text_from_pdf(file_bytes: bytes) -> str:
-    """
-    Intenta extraer texto directo del PDF.
-    Si no encuentra, renderiza la primera página a imagen y aplica OCR.
-    """
-    if fitz is None:
-        raise RuntimeError("PyMuPDF no está instalado. Instala pymupdf.")
+def extract_text_and_confidences(result: Any) -> tuple[str, list[float]]:
+    texts: list[str] = []
+    scores: list[float] = []
+    _collect_text_scores(result, texts, scores)
+    return "\n".join(texts).strip(), scores
 
-    doc = fitz.open(stream=file_bytes, filetype="pdf")
 
+def _prepare_image(file_bytes: bytes, max_side: int) -> np.ndarray:
+    with Image.open(io.BytesIO(file_bytes)) as source:
+        width, height = source.size
+        if width * height > settings.max_image_pixels:
+            raise ValueError(
+                f"La imagen excede el máximo de {settings.max_image_pixels} píxeles."
+            )
+        image = ImageOps.exif_transpose(source).convert("RGB")
+        largest = max(image.size)
+        if largest > max_side:
+            ratio = max_side / float(largest)
+            image = image.resize(
+                (max(1, int(image.width * ratio)), max(1, int(image.height * ratio))),
+                Image.Resampling.LANCZOS,
+            )
+        return np.asarray(image)
+
+
+def run_ocr_on_image(file_bytes: bytes) -> PageText:
+    for attempt, max_side in enumerate((settings.max_image_side, settings.retry_image_side)):
+        try:
+            image = _prepare_image(file_bytes, max_side)
+            result = get_ocr_engine().predict(image)
+            text, scores = extract_text_and_confidences(result)
+            if not text:
+                raise RuntimeError("PaddleOCR no devolvió texto reconocido.")
+            return PageText(text=text, confidences=scores, used_ocr=True, retries=attempt)
+        except ValueError:
+            raise
+        except Exception:
+            logger.exception("ocr_image_attempt_failed attempt=%s", attempt + 1)
+            reset_ocr_engine()
+            if attempt == 1:
+                raise
+    raise RuntimeError("No fue posible procesar la imagen.")
+
+
+def extract_text_from_pdf(file_bytes: bytes) -> tuple[list[PageText], int]:
+    document = fitz.open(stream=file_bytes, filetype="pdf")
     try:
-        full_text = []
-
-        for page in doc:
-            page_text = page.get_text("text")
-            if page_text and page_text.strip():
-                full_text.append(page_text)
-
-        joined = "\n".join(full_text).strip()
-        if joined:
-            return joined
-
-        # fallback OCR sobre primera página
-        page = doc[0]
-        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
-        image_bytes = pix.tobytes("png")
-        return run_ocr_on_image(image_bytes)
-
+        page_count = document.page_count
+        if page_count == 0:
+            raise ValueError("El PDF no contiene páginas.")
+        if page_count > settings.max_pdf_pages:
+            raise ValueError(
+                f"El PDF excede el máximo de {settings.max_pdf_pages} páginas."
+            )
+        pages: list[PageText] = []
+        scale = settings.pdf_render_dpi / 72.0
+        for index, page in enumerate(document):
+            direct_text = page.get_text("text").strip()
+            if direct_text:
+                pages.append(PageText(direct_text, [100.0], used_ocr=False))
+                logger.info("ocr_pdf_page_direct_text page=%s", index + 1)
+                continue
+            pixmap = page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
+            page_result = run_ocr_on_image(pixmap.tobytes("png"))
+            pages.append(page_result)
+            logger.info("ocr_pdf_page_image_processed page=%s", index + 1)
+        return pages, page_count
     finally:
-        doc.close()
+        document.close()
 
 
 def process_document_bytes(file_bytes: bytes, filename: str, content_type: str) -> OCRProcessResponse:
-    raw_text = ""
-    success = True
-    process_status = "OK"
-    error_message = None
-
+    started = time.perf_counter()
+    metrics = ProcessingMetrics(engineVersion=getattr(paddleocr, "__version__", None))
     try:
-        if "pdf" in content_type.lower() or filename.lower().endswith(".pdf"):
-            raw_text = extract_text_from_pdf(file_bytes)
-        elif content_type.lower().startswith("image/"):
-            raw_text = run_ocr_on_image(file_bytes)
+        if not file_bytes:
+            raise ValueError("El archivo está vacío.")
+        if len(file_bytes) > settings.max_file_size_bytes:
+            raise ValueError("El archivo excede el tamaño máximo permitido.")
+
+        normalized_type = content_type.split(";", 1)[0].strip().lower()
+        if normalized_type == "application/pdf" or filename.lower().endswith(".pdf"):
+            pages, metrics.pageCount = extract_text_from_pdf(file_bytes)
+        elif normalized_type.startswith("image/"):
+            pages = [run_ocr_on_image(file_bytes)]
+        elif normalized_type == "text/plain":
+            pages = [PageText(file_bytes.decode("utf-8"), [100.0], used_ocr=False)]
         else:
-            try:
-                raw_text = file_bytes.decode("utf-8")
-            except Exception:
-                raw_text = f"Documento recibido: {filename}\nTipo MIME: {content_type}"
+            raise ValueError(f"Tipo MIME no soportado: {normalized_type or 'desconocido'}.")
 
-    except Exception as e:
-        logger.exception("Error general OCR")
-        raw_text = f"Documento recibido: {filename}\nTipo MIME: {content_type}"
-        success = False
-        process_status = "ERROR_OCR"
-        error_message = f"Error general OCR: {str(e)}"
-
-    country = detect_country(raw_text)
-    currency = detect_currency(raw_text)
-    document_type = detect_document_type(raw_text)
-
-    supplier_name = extract_simple_field(raw_text, ["Proveedor", "Emisor", "Razón Social", "Nombre"])
-    tax_identifier = extract_simple_field(raw_text, ["NIT", "RTN", "RUC", "NRC", "Cédula Jurídica"])
-    document_number = extract_simple_field(raw_text, ["Factura No", "Número", "No. Documento", "Serie", "No."])
-    document_date = extract_simple_field(raw_text, ["Fecha", "Fecha Emisión", "Fecha de Emisión"])
-
-    subtotal = extract_amount(raw_text, ["Subtotal", "Sub-Total"])
-    tax = extract_amount(raw_text, ["IVA", "Impuesto", "Tax"])
-    total = extract_amount(raw_text, ["Total", "TOTAL A PAGAR", "Total a pagar"])
-
-    normalized_fields = []
-
-    if supplier_name:
-        normalized_fields.append(
-            NormalizedField(
-                name="supplier_name",
-                rawLabel="Proveedor",
-                rawValue=supplier_name,
-                normalizedValue=supplier_name,
-                confidence=92.0,
-            )
+        metrics.ocrPageCount = sum(1 for page in pages if page.used_ocr)
+        metrics.directTextPageCount = sum(1 for page in pages if not page.used_ocr)
+        metrics.retryCount = sum(page.retries for page in pages)
+        all_scores = [score for page in pages for score in page.confidences]
+        confidence = round(sum(all_scores) / len(all_scores), 2) if all_scores else None
+        raw_text = "\n\n".join(
+            f"--- Página {index + 1} ---\n{page.text}" for index, page in enumerate(pages)
+        ).strip()
+        return OCRProcessResponse(
+            success=bool(raw_text),
+            processStatus="OK" if raw_text else "ERROR_OCR",
+            rawText=raw_text,
+            confidenceAvg=confidence,
+            errorMessage=None if raw_text else "No se reconoció texto en el documento.",
+            metrics=metrics,
         )
-
-    if tax_identifier:
-        normalized_fields.append(
-            NormalizedField(
-                name="tax_identifier",
-                rawLabel="Identificación tributaria",
-                rawValue=tax_identifier,
-                normalizedValue=tax_identifier,
-                confidence=91.0,
-            )
+    except Exception as exc:
+        logger.exception("ocr_document_failed document_name=%s", filename)
+        return OCRProcessResponse(
+            success=False,
+            processStatus="ERROR_OCR",
+            rawText=None,
+            confidenceAvg=None,
+            errorMessage=str(exc),
+            metrics=metrics,
         )
-
-    if document_number:
-        normalized_fields.append(
-            NormalizedField(
-                name="document_number",
-                rawLabel="Número de documento",
-                rawValue=document_number,
-                normalizedValue=document_number,
-                confidence=89.0,
-            )
-        )
-
-    if document_date:
-        normalized_fields.append(
-            NormalizedField(
-                name="document_date",
-                rawLabel="Fecha",
-                rawValue=document_date,
-                normalizedValue=document_date,
-                confidence=88.0,
-            )
-        )
-
-    if subtotal is not None:
-        normalized_fields.append(
-            NormalizedField(
-                name="subtotal",
-                rawLabel="Subtotal",
-                rawValue=str(subtotal),
-                normalizedValue=str(subtotal),
-                confidence=93.0,
-            )
-        )
-
-    if tax is not None:
-        normalized_fields.append(
-            NormalizedField(
-                name="tax",
-                rawLabel="IVA",
-                rawValue=str(tax),
-                normalizedValue=str(tax),
-                confidence=92.0,
-            )
-        )
-
-    if total is not None:
-        normalized_fields.append(
-            NormalizedField(
-                name="total",
-                rawLabel="Total",
-                rawValue=str(total),
-                normalizedValue=str(total),
-                confidence=94.0,
-            )
-        )
-
-    return OCRProcessResponse(
-        success=success,
-        processStatus=process_status,
-        rawText=raw_text,
-        confidenceAvg=91.5 if success else 0.0,
-        documentContext=DocumentContext(
-            countryDetected=country,
-            languageDetected="es",
-            documentType=document_type,
-            currency=CurrencyContext(**currency),
-        ),
-        normalizedFields=normalized_fields,
-        extraFields=[
-            ExtraField(
-                rawLabel="Fuente",
-                rawValue="PaddleOCR real",
-                confidence=95.0,
-            )
-        ],
-        items=[],
-        totals=Totals(
-            subtotal=subtotal,
-            tax=tax,
-            total=total,
-            taxIncludedInPrices=False,
-        ),
-        errorMessage=error_message,
-    )
+    finally:
+        metrics.processingDurationMs = round((time.perf_counter() - started) * 1000)

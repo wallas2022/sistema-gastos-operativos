@@ -61,9 +61,9 @@ export class CatalogService {
 
   // ─── Currencies ──────────────────────────────────────────────────────────────
 
-  async findCurrencies() {
+  async findCurrencies(includeInactive = false) {
     return this.prisma.currency.findMany({
-      where: { active: true },
+      where: includeInactive ? undefined : { active: true },
       orderBy: { code: "asc" },
     });
   }
@@ -76,6 +76,7 @@ export class CatalogService {
   }
 
   async createCurrency(dto: CreateCurrencyDto) {
+    dto.code = dto.code.trim().toUpperCase();
     const exists = await this.prisma.currency.findUnique({
       where: { code: dto.code },
     });
@@ -87,6 +88,7 @@ export class CatalogService {
 
   async updateCurrency(id: string, dto: UpdateCurrencyDto) {
     await this.findCurrencyById(id);
+    if (dto.code) dto.code = dto.code.trim().toUpperCase();
 
     if (dto.code) {
       const conflict = await this.prisma.currency.findFirst({
@@ -130,6 +132,7 @@ export class CatalogService {
   }
 
   async createCompany(dto: CreateCompanyDto) {
+    if (dto.taxId) dto.taxId = this.normalizeTaxId(dto.taxId);
     const exists = await this.prisma.company.findUnique({
       where: { code: dto.code },
     });
@@ -148,7 +151,16 @@ export class CatalogService {
   }
 
   async updateCompany(id: string, dto: UpdateCompanyDto) {
+    if (dto.taxId) dto.taxId = this.normalizeTaxId(dto.taxId);
     await this.findCompanyById(id);
+
+    if (dto.taxId) {
+      const taxConflict = await this.prisma.company.findFirst({
+        where: { taxId: dto.taxId, NOT: { id } },
+        select: { code: true, name: true },
+      });
+      if (taxConflict) throw new ConflictException(`El identificador fiscal ${dto.taxId} ya está asignado a ${taxConflict.code} · ${taxConflict.name}.`);
+    }
 
     if (dto.code) {
       const conflict = await this.prisma.company.findFirst({
@@ -177,4 +189,6 @@ export class CatalogService {
       data: { active: false },
     });
   }
+
+  private normalizeTaxId(value: string) { return value.trim().toUpperCase().replace(/\s+/g, ''); }
 }

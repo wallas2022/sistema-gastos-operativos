@@ -22,6 +22,8 @@ class NormalizedField(BaseModel):
     rawValue: Optional[str] = None
     normalizedValue: Optional[str] = None
     confidence: Optional[float] = None
+    sourceBlock: Optional[str] = None
+    extractionRule: Optional[str] = None
 
 
 class ExtraField(BaseModel):
@@ -50,6 +52,15 @@ class Totals(BaseModel):
     taxIncludedInPrices: Optional[bool] = None
 
 
+class ProcessingMetrics(BaseModel):
+    processingDurationMs: int = 0
+    pageCount: int = 1
+    ocrPageCount: int = 0
+    directTextPageCount: int = 0
+    retryCount: int = 0
+    engineVersion: Optional[str] = None
+
+
 class OCRProcessResponse(BaseModel):
     success: bool
     processStatus: str
@@ -61,3 +72,4 @@ class OCRProcessResponse(BaseModel):
     items: List[LineItem] = Field(default_factory=list)
     totals: Optional[Totals] = None
     errorMessage: Optional[str] = None
+    metrics: ProcessingMetrics = Field(default_factory=ProcessingMetrics)

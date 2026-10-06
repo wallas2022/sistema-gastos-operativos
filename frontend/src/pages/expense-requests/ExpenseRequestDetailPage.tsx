@@ -14,22 +14,28 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import {
-  AlertTriangle,
   ArrowLeft,
+  Ban,
   CheckCircle2,
   ClipboardList,
   FileText,
-  ShieldCheck,
-  UserCheck,
-  WalletCards,
-  XCircle,
+  Paperclip,
+  Pencil,
 } from "lucide-react";
 
 import {
   ExpenseRequest,
+  associateExpenseRequestDocuments,
+  cancelExpenseRequest,
   getExpenseRequestById,
-  submitExpenseRequest
+  submitExpenseRequest,
+  resubmitExpenseRequest
 } from "../../services/expenseRequests.service";
+import {
+  getDocuments,
+  type DocumentItem,
+} from "../../modules/documents/services/documents.service";
+import { getBudgetEvaluation } from "../../services/budget.service";
 
 export default function ExpenseRequestDetailPage() {
   const { id } = useParams();
@@ -39,6 +45,11 @@ export default function ExpenseRequestDetailPage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [savingDocuments, setSavingDocuments] = useState(false);
+  const [availableDocuments, setAvailableDocuments] = useState<DocumentItem[]>([]);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [budget, setBudget] = useState<any>(null);
 
   const loadRequest = async () => {
     if (!id) {
@@ -53,6 +64,13 @@ export default function ExpenseRequestDetailPage() {
 
       const data = await getExpenseRequestById(id);
       setRequest(data);
+      getBudgetEvaluation(id).then(setBudget).catch(() => setBudget(null));
+      setSelectedDocumentIds((data.documents || []).map((document) => document.id));
+
+      if (data.status === "BORRADOR") {
+        const documentResponse = await getDocuments(1, 100);
+        setAvailableDocuments(documentResponse.data || []);
+      }
     } catch (error) {
       console.error(error);
       setErrorMessage("No se pudo cargar el detalle de la solicitud.");
@@ -139,7 +157,59 @@ export default function ExpenseRequestDetailPage() {
   } finally {
     setSubmitting(false);
   }
-};
+  };
+
+  const handleResubmit = async () => {
+    if (!request || request.status !== 'OBSERVADA') return;
+    if (!window.confirm('¿Deseas reenviar esta solicitud después de corregirla?')) return;
+    try { setSubmitting(true); setRequest(await resubmitExpenseRequest(request.id)); alert('Solicitud reenviada a autorización correctamente.'); }
+    catch (error) { console.error(error); alert('No se pudo reenviar la solicitud.'); }
+    finally { setSubmitting(false); }
+  };
+
+  const handleCancelRequest = async () => {
+    if (request.status !== "BORRADOR") return;
+    if (!window.confirm("¿Deseas cancelar esta solicitud? Esta acción no la elimina.")) {
+      return;
+    }
+
+    try {
+      setCancelling(true);
+      setRequest(await cancelExpenseRequest(request.id));
+      alert("Solicitud cancelada correctamente.");
+    } catch (error: any) {
+      console.error(error);
+      alert(error.response?.data?.message || "No se pudo cancelar la solicitud.");
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleSaveDocuments = async () => {
+    try {
+      setSavingDocuments(true);
+      setRequest(
+        await associateExpenseRequestDocuments(request.id, selectedDocumentIds)
+      );
+      alert("Documentos asociados correctamente.");
+    } catch (error: any) {
+      console.error(error);
+      alert(
+        error.response?.data?.message ||
+          "No se pudieron asociar los documentos seleccionados."
+      );
+    } finally {
+      setSavingDocuments(false);
+    }
+  };
+
+  const toggleDocument = (documentId: string) => {
+    setSelectedDocumentIds((current) =>
+      current.includes(documentId)
+        ? current.filter((id) => id !== documentId)
+        : [...current, documentId]
+    );
+  };
 
   return (
     <VStack align="stretch" gap="6" p="6">
@@ -171,23 +241,46 @@ export default function ExpenseRequestDetailPage() {
           </Text>
         </Box>
 
-        <HStack>
-      <HStack>
+        <HStack flexWrap="wrap">
           {request.status === "BORRADOR" ? (
-            <Button
-              colorPalette="blue"
-              loading={submitting}
-              onClick={handleSubmitToApproval}
-            >
+            <>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(`/solicitudes-gastos/nueva?edit=${request.id}`)
+                }
+              >
+                <Pencil size={18} />
+                Editar
+              </Button>
+              <Button
+                colorPalette="red"
+                variant="outline"
+                loading={cancelling}
+                onClick={handleCancelRequest}
+              >
+                <Ban size={18} />
+                Cancelar solicitud
+              </Button>
+              <Button
+                colorPalette="blue"
+                loading={submitting}
+                onClick={handleSubmitToApproval}
+              >
+                <CheckCircle2 size={18} />
+                Enviar a autorización
+              </Button>
+            </>
+          ) : request.status === "OBSERVADA" ? (
+            <Button colorPalette="blue" loading={submitting} onClick={handleResubmit}>
               <CheckCircle2 size={18} />
-              Enviar a autorización
+              Reenviar a autorización
             </Button>
           ) : (
-            <Badge colorPalette="green" p="2" rounded="md">
-              Solicitud enviada
+            <Badge colorPalette="blue" p="2" rounded="md">
+              {formatStatus(request.status)}
             </Badge>
           )}
-</HStack>
         </HStack>
       </Flex>
 
@@ -230,16 +323,18 @@ export default function ExpenseRequestDetailPage() {
               <InfoItem label="Tipo de gasto" value={formatType(request.type)} />
               <InfoItem label="Prioridad" value={formatPriority(request.priority)} />
               <InfoItem label="Empresa" value={request.companyName} />
-              <InfoItem label="Moneda" value={`${request.currencySymbol || ""} ${request.currency}`} />
+              <InfoItem label="Moneda de origen" value={`${request.currencySymbol || ""} ${request.originalCurrencyCode || request.currency}`} />
               <InfoItem label="Centro de costo" value={request.costCenter} />
               <InfoItem
                 label="Cuenta presupuestaria"
                 value={request.budgetAccount}
               />
               <InfoItem
-                label="Monto estimado"
-                value={formatMoney(request.currency, request.estimatedAmount)}
+                label="Importe original"
+                value={formatMoney(request.originalCurrencyCode || request.currency, request.originalAmount ?? request.estimatedAmount)}
               />
+              <InfoItem label="Tasa aplicada" value={Number(request.exchangeRate || 1).toLocaleString('es-GT', { maximumFractionDigits: 10 })} />
+              <InfoItem label="Importe presupuestario" value={request.budgetAmount == null ? 'Pendiente' : formatMoney(request.budgetCurrencyCode || request.currency, request.budgetAmount)} />
               <InfoItem label="Destino" value={request.destination || "No aplica"} />
               <InfoItem
                 label="Días"
@@ -260,6 +355,81 @@ export default function ExpenseRequestDetailPage() {
               </Text>
               <Text fontWeight="semibold">{request.justification}</Text>
             </Box>
+          </Box>
+          {budget && <Box bg="white" border="1px solid" borderColor="gray.200" rounded="2xl" p="5"><Flex justify="space-between" align="center" mb="4"><Box><Heading size="md">Disponibilidad presupuestaria</Heading><Text fontSize="sm" color="gray.500">{request.budgetLine?.businessUnit} · {request.budgetLine?.area} · Versión {request.budgetLine?.version?.fiscalYear}.{request.budgetLine?.version?.versionNumber} · Mes {request.budgetPeriod?.month}</Text></Box><Badge colorPalette={budget.status === "AVAILABLE" ? "green" : budget.status === "PARTIAL" ? "orange" : "red"}>{budget.status}</Badge></Flex><Grid templateColumns={{ base: "1fr 1fr", md: "repeat(4,1fr)" }} gap="4"><InfoItem label="Anual aprobado" value={formatMoney(budget.detail.currency, budget.approved)} /><InfoItem label="Anual comprometido" value={formatMoney(budget.detail.currency, budget.reserved)} /><InfoItem label="Anual ejecutado" value={formatMoney(budget.detail.currency, budget.executed)} /><InfoItem label="Anual disponible" value={formatMoney(budget.detail.currency, budget.available)} /><InfoItem label="Mensual aprobado" value={formatMoney(budget.detail.currency, budget.monthlyApproved)} /><InfoItem label="Mensual comprometido" value={formatMoney(budget.detail.currency, budget.monthlyCommitted)} /><InfoItem label="Mensual ejecutado" value={formatMoney(budget.detail.currency, budget.monthlyExecuted)} /><InfoItem label="Mensual disponible" value={formatMoney(budget.detail.currency, budget.monthlyAvailable)} /></Grid><Text mt="4" color="gray.600">{budget.message}</Text></Box>}
+          <Box
+            bg="white"
+            border="1px solid"
+            borderColor="gray.200"
+            rounded="2xl"
+            p="5"
+          >
+            <HStack mb="1">
+              <Paperclip size={19} />
+              <Heading size="md">Documentos asociados</Heading>
+            </HStack>
+            <Text fontSize="sm" color="gray.500" mb="4">
+              Los comprobantes OCR se incorporan desde la liquidación. Aquí sólo se conservan documentos técnicos o asociaciones históricas.
+            </Text>
+
+            {request.status === "BORRADOR" && availableDocuments.length > 0 && (
+              <VStack align="stretch" gap="2" mb="4">
+                {availableDocuments
+                  .filter(
+                    (document) =>
+                      !document.ocrResult && (
+                        !document.expenseRequestId ||
+                        document.expenseRequestId === request.id
+                      )
+                  )
+                  .map((document) => (
+                    <Flex
+                      key={document.id}
+                      align="center"
+                      gap="3"
+                      border="1px solid"
+                      borderColor="gray.100"
+                      rounded="lg"
+                      p="3"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedDocumentIds.includes(document.id)}
+                        onChange={() => toggleDocument(document.id)}
+                      />
+                      <Box flex="1">
+                        <Text fontWeight="semibold">{document.fileName}</Text>
+                        <Text fontSize="xs" color="gray.500">
+                          {document.status} · {formatFileSize(document.sizeBytes)}
+                        </Text>
+                      </Box>
+                    </Flex>
+                  ))}
+
+                <Button
+                  alignSelf="flex-start"
+                  size="sm"
+                  colorPalette="blue"
+                  loading={savingDocuments}
+                  onClick={handleSaveDocuments}
+                >
+                  Guardar asociaciones
+                </Button>
+              </VStack>
+            )}
+
+            {(request.documents || []).length === 0 ? (
+              <Text color="gray.500">No hay documentos asociados.</Text>
+            ) : (
+              <VStack align="stretch" gap="2">
+                {(request.documents || []).map((document) => (
+                  <Flex key={document.id} justify="space-between" gap="3">
+                    <Text>{document.fileName}</Text>
+                    <Badge>{document.status}</Badge>
+                  </Flex>
+                ))}
+              </VStack>
+            )}
           </Box>
             <RequestTypeDetail request={request} />
           <Box
@@ -383,41 +553,22 @@ export default function ExpenseRequestDetailPage() {
             </Text>
 
             <VStack align="stretch" gap="4">
-              <TimelineItem
-                icon={FileText}
-                title="Solicitud creada"
-                description="El usuario registró la solicitud de gasto."
-                date={formatDateTime(request.createdAt)}
-                status="Completado"
-                color="green"
-              />
-
-              <TimelineItem
-                icon={ShieldCheck}
-                title="Validación de política"
-                description="El sistema registró validaciones asociadas a la solicitud."
-                date={formatDateTime(request.createdAt)}
-                status={validations.length > 0 ? "Completado" : "Pendiente"}
-                color={validations.length > 0 ? "green" : "yellow"}
-              />
-
-              <TimelineItem
-                icon={WalletCards}
-                title="Validación presupuestaria"
-                description="Consulta de disponibilidad presupuestaria del centro de costo."
-                date={formatDateTime(request.updatedAt)}
-                status={validations.length > 0 ? "Completado" : "Pendiente"}
-                color={validations.length > 0 ? "green" : "yellow"}
-              />
-
-              <TimelineItem
-                icon={UserCheck}
-                title="Autorización"
-                description="La solicitud queda disponible para revisión del aprobador."
-                date="Pendiente"
-                status={request.status === "APROBADA" ? "Completado" : "En proceso"}
-                color={request.status === "APROBADA" ? "green" : "yellow"}
-              />
+              {(request.traces || []).map((trace) => (
+                <TimelineItem
+                  key={trace.id}
+                  icon={FileText}
+                  title={formatTraceEvent(trace.event)}
+                  description={trace.description}
+                  date={formatDateTime(trace.createdAt)}
+                  status={trace.toStatus ? formatStatus(trace.toStatus) : "Registrado"}
+                  color={
+                    trace.toStatus === "CANCELADA" ||
+                    trace.toStatus === "RECHAZADA"
+                      ? "red"
+                      : "blue"
+                  }
+                />
+              ))}
             </VStack>
           </Box>
         </VStack>
@@ -728,6 +879,8 @@ function getStatusColor(status: string) {
       return "green";
     case "RECHAZADA":
       return "red";
+    case "CANCELADA":
+      return "red";
     case "ANULADA":
       return "purple";
     default:
@@ -747,6 +900,8 @@ function formatStatus(status: string) {
       return "Aprobada";
     case "RECHAZADA":
       return "Rechazada";
+    case "CANCELADA":
+      return "Cancelada";
     case "ANULADA":
       return "Anulada";
     case "APROBADO":
@@ -805,6 +960,26 @@ function formatValidationType(type: string) {
   }
 }
 
+function formatTraceEvent(event: string) {
+  const labels: Record<string, string> = {
+    SOLICITUD_CREADA: "Solicitud creada",
+    SOLICITUD_EDITADA: "Solicitud editada",
+    SOLICITUD_ENVIADA_AUTORIZACION: "Solicitud enviada",
+    SOLICITUD_CANCELADA: "Solicitud cancelada",
+    SOLICITUD_APROBADA: "Solicitud aprobada",
+    SOLICITUD_RECHAZADA: "Solicitud rechazada",
+    SOLICITUD_OBSERVADA: "Solicitud observada",
+  };
+
+  return labels[event] || event.replace(/_/g, " ");
+}
+
+function formatFileSize(sizeBytes: number) {
+  if (sizeBytes < 1024) return `${sizeBytes} B`;
+  if (sizeBytes < 1024 * 1024) return `${(sizeBytes / 1024).toFixed(1)} KB`;
+  return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function formatMoney(currency: string, amount: number) {
   return `${currency} ${Number(amount || 0).toLocaleString("es-GT", {
     minimumFractionDigits: 2,
@@ -832,155 +1007,5 @@ function formatDateTime(date?: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   });
-
-  function RequestTypeDetail({ request }: { request: ExpenseRequest }) {
-  if (request.type === "GASTO_VIAJE") {
-    return (
-      <Box
-        bg="white"
-        border="1px solid"
-        borderColor="gray.200"
-        rounded="2xl"
-        p="5"
-      >
-        <Heading size="md">Detalle de viaje / viáticos</Heading>
-        <Text fontSize="sm" color="gray.500" mt="1" mb="4">
-          Información específica relacionada con la solicitud de viaje.
-        </Text>
-
-        <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap="4">
-          <InfoItem label="Destino" value={request.destination || "No aplica"} />
-          <InfoItem
-            label="Días estimados"
-            value={request.days ? `${request.days} día(s)` : "No registrado"}
-          />
-          <InfoItem
-            label="Política aplicada"
-            value={`Viáticos según rol: ${request.requesterRole}`}
-          />
-          <InfoItem
-            label="Naturaleza del gasto"
-            value="Alimentación, hospedaje y transporte"
-          />
-        </Grid>
-      </Box>
-    );
-  }
-
-  if (request.type === "PAGO_PROVEEDOR") {
-    const providerInfo = extractProviderInfo(request.description);
-
-    return (
-      <Box
-        bg="white"
-        border="1px solid"
-        borderColor="gray.200"
-        rounded="2xl"
-        p="5"
-      >
-        <Heading size="md">Detalle de pago a proveedor</Heading>
-        <Text fontSize="sm" color="gray.500" mt="1" mb="4">
-          Información específica relacionada con el pago de facturas,
-          servicios o proveedores.
-        </Text>
-
-        <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap="4">
-          <InfoItem label="Proveedor" value={providerInfo.providerName} />
-          <InfoItem label="NIT" value={providerInfo.nit} />
-          <InfoItem label="Rubro del pago" value={request.concept} />
-          <InfoItem
-            label="Cuenta presupuestaria"
-            value={request.budgetAccount}
-          />
-          <InfoItem
-            label="Naturaleza del gasto"
-            value="Pago de servicios o facturas de proveedor"
-          />
-          <InfoItem label="Destino" value="No aplica" />
-        </Grid>
-      </Box>
-    );
-  }
-
-  if (request.type === "COMPRA_INSUMO") {
-    const firstItem = request.items?.[0];
-
-    return (
-      <Box
-        bg="white"
-        border="1px solid"
-        borderColor="gray.200"
-        rounded="2xl"
-        p="5"
-      >
-        <Heading size="md">Detalle de compra de insumos</Heading>
-        <Text fontSize="sm" color="gray.500" mt="1" mb="4">
-          Información específica relacionada con ítems o insumos provenientes de
-          catálogo ERP.
-        </Text>
-
-        <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap="4">
-          <InfoItem label="Ítem solicitado" value={firstItem?.name} />
-          <InfoItem
-            label="Descripción del ítem"
-            value={firstItem?.description}
-          />
-          <InfoItem
-            label="Cantidad solicitada"
-            value={firstItem?.quantity}
-          />
-          <InfoItem
-            label="Monto unitario estimado"
-            value={
-              firstItem
-                ? formatMoney(request.currency, firstItem.unitAmount)
-                : "No registrado"
-            }
-          />
-          <InfoItem
-            label="Cuenta presupuestaria"
-            value={request.budgetAccount}
-          />
-          <InfoItem
-            label="Naturaleza del gasto"
-            value="Compra de materiales, útiles o suministros"
-          />
-        </Grid>
-      </Box>
-    );
-  }
-
-  return (
-    <Box
-      bg="white"
-      border="1px solid"
-      borderColor="gray.200"
-      rounded="2xl"
-      p="5"
-    >
-      <Heading size="md">Detalle del tipo de gasto</Heading>
-      <Text fontSize="sm" color="gray.500" mt="1">
-        No existe una vista especializada para este tipo de gasto.
-      </Text>
-    </Box>
-  );
-}
-
-function extractProviderInfo(description?: string | null) {
-  if (!description) {
-    return {
-      providerName: "No registrado",
-      nit: "No registrado",
-    };
-  }
-
-  const providerMatch = description.match(/proveedor\s(.+?)\.\sNIT/i);
-  const nitMatch = description.match(/NIT:\s([^\.]+)/i);
-
-  return {
-    providerName: providerMatch?.[1] || "No registrado",
-    nit: nitMatch?.[1] || "No registrado",
-  };
-}
 }
 

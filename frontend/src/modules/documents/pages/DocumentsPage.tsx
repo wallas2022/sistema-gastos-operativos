@@ -1,3 +1,4 @@
+import { readUser } from '../../../navigation/navigation';
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -40,6 +41,9 @@ const STATUS_OPTIONS = [
 
 export default function DocumentsPage() {
   const navigate = useNavigate();
+  const user = readUser();
+  const mayProcess = user.role === 'ADMIN' || user.permissions?.includes('OCR_PROCESS');
+  const mayUpload = user.role === 'ADMIN' || user.permissions?.includes('OCR_UPLOAD');
 
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -126,11 +130,11 @@ export default function DocumentsPage() {
   };
 
   const handleViewDetail = (id: string) => {
-    navigate(`/documents/${id}`);
+    navigate(`/rendicion-conciliacion/ocr/documentos/${id}`);
   };
 
   const canProcessOcr = (status: string) => {
-    return status === "CARGADO" || status === "ERROR_OCR";
+    return mayProcess && (status === "CARGADO" || status === "ERROR_OCR");
   };
 
   const getStatusColor = (status: string) => {
@@ -246,14 +250,14 @@ export default function DocumentsPage() {
               </Text>
             ) : null}
           </Stack>
-                      <Button
+                      {mayUpload && <Button
                               colorPalette="blue"
                               onClick={handleUpload}
                               loading={uploading}
                               minW={{ md: "180px" }}
                             >
                               Subir archivo
-                            </Button>
+                            </Button>}
                              
           </Box>
     <Flex
@@ -386,7 +390,7 @@ export default function DocumentsPage() {
                         sizeBytes={doc.sizeBytes}
                         createdAt={doc.createdAt}
                         onViewDetail={handleViewDetail}
-                        onProcessOcr={handleProcessOcr}
+                        onProcessOcr={mayProcess ? handleProcessOcr : undefined}
                         canProcessOcr={canProcessOcr(doc.status)}
                         processing={processingId === doc.id}
                       />
@@ -430,7 +434,7 @@ export default function DocumentsPage() {
                               Ver detalle
                             </Button>
 
-                            <Button
+                            {mayProcess && <Button
                               size="sm"
                               colorPalette="blue"
                               onClick={() => handleProcessOcr(doc.id)}
@@ -438,7 +442,7 @@ export default function DocumentsPage() {
                               disabled={!canProcessOcr(doc.status)}
                             >
                               Procesar OCR
-                            </Button>
+                            </Button>}
                           </Flex>
                         </Table.Cell>
                       </Table.Row>

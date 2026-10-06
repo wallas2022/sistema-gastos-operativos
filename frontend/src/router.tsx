@@ -3,14 +3,19 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { LoginPage } from "./modules/auth/pages/LoginPage";
 import { MainLayout } from "./layout/MainLayout";
 
-import { DashboardPage } from "./pages/dashboard/DashboardPage";
+import { ExecutiveDashboardPage } from "./pages/dashboard/ExecutiveDashboardPage";
 import { PlanningPage } from "./pages/planning/PlanningPage";
 import { WorkflowPage } from "./pages/workflow/WorkflowPage";
 import { ReconciliationPage } from "./pages/reconciliation/ReconciliationPage";
 import { BudgetControlPage } from "./pages/budget-control/BudgetControlPage";
 import { GovernancePage } from "./pages/governance/GovernancePage";
 import { UsersAccessPage } from "./pages/users-access/UsersAccessPage";
-import { ReportsAnalyticsPage } from "./pages/reports/ReportsAnalyticsPage";
+import { BudgetReportPage } from "./pages/reports/BudgetReportPage";
+import { RequestsReportPage } from "./pages/reports/RequestsReportPage";
+import { ApprovalsReportPage } from "./pages/reports/ApprovalsReportPage";
+import { PoliciesReportPage } from "./pages/reports/PoliciesReportPage";
+import { ExecutiveReportPage } from "./pages/reports/ExecutiveReportPage";
+import { RoleProtectedRoute } from "./shared/services/RoleProtectedRoute";
 import  DocumentsPage  from "./modules/documents/pages/DocumentsPage";
 import DocumentDetailPage from "./modules/documents/pages/DocumentDetailPage";
 import { LiquidationsPage } from "./pages/reconciliation/LiquidationsPage";
@@ -18,7 +23,6 @@ import { NewLiquidationPage } from "./pages/reconciliation/NewLiquidationPage";
 import { LiquidationDetailPage } from "./pages/reconciliation/LiquidationDetailPage";
 import  NewExpenseRequestPage from "./pages/expense-requests/NewExpenseRequestPage";
 import  ExpenseRequestDetailPage  from "./pages/expense-requests/ExpenseRequestDetailPage";
-import { AuthorizationsCenterPage } from "./pages/authorizations/AuthorizationsCenterPage";
 import { FlowMonitorPage } from "./pages/flow-monitor/FlowMonitorPage";
 import { AuditEventsPage } from "./pages/audit-events/AuditEventsPage";
 import { NotFoundPage } from "./pages/error/NotFoundPage";
@@ -32,6 +36,22 @@ import AccessMatrixPage from "./pages/security/AccessMatrixPage";
 import UsersPage from "./pages/security/UsersPage";
 import RolesPage from "./pages/security/RolesPage";
 import PermissionsPage from "./pages/security/PermissionsPage";
+import { StatusMonitorPage } from "./pages/traceability/StatusMonitorPage";
+import { SlaEscalationsPage } from "./pages/traceability/SlaEscalationsPage";
+import { EventLogsPage } from "./pages/traceability/EventLogsPage";
+import { PoliciesRulesPage } from "./pages/planning/PoliciesRulesPage";
+import { BudgetIntegrationPage } from "./pages/budget-integration/BudgetIntegrationPage";
+import { CurrenciesExchangeRatesPage } from "./pages/planning/CurrenciesExchangeRatesPage";
+import { OcrAnalyticsPage, OcrReportPage } from "./pages/ocr/OcrAnalyticsPage";
+import { FiscalCompaniesPage } from "./pages/governance/FiscalCompaniesPage";
+import { MyBankAccountsPage } from "./pages/banking/MyBankAccountsPage";
+import { TreasuryDisbursementsPage } from "./pages/treasury/TreasuryDisbursementsPage";
+import { TreasuryRefundsPage } from "./pages/treasury/TreasuryRefundsPage";
+import { BanksCatalogPage } from "./pages/banking/BanksCatalogPage";
+import { ForgotPasswordPage } from './pages/security/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/security/ResetPasswordPage';
+import { ChangePasswordPage } from './pages/security/ChangePasswordPage';
+import { FunctionalTestsPage } from './pages/functional-tests/FunctionalTestsPage';
 
 
 export const router = createBrowserRouter([
@@ -39,6 +59,8 @@ export const router = createBrowserRouter([
     path: "/login",
     element: <LoginPage />,
   },
+  { path: '/olvide-contrasena', element: <ForgotPasswordPage /> },
+  { path: '/restablecer-contrasena', element: <ResetPasswordPage /> },
   {
     element: <ProtectedRoute />,
     children: [
@@ -48,8 +70,10 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <DashboardPage />,
+            element: <ExecutiveDashboardPage />,
           },
+          { path: 'mi-perfil/seguridad', element: <ChangePasswordPage /> },
+          { path: 'pruebas-funcionales', element: <FunctionalTestsPage /> },
            {
           path: "security/access-matrix",
           element: <AccessMatrixPage />,
@@ -78,11 +102,10 @@ export const router = createBrowserRouter([
             path: "solicitudes-gastos/:id",
             element: <ExpenseRequestDetailPage />,
             },
-
-           {
-            path: "autorizaciones",
-            element: <AuthorizationsCenterPage />,
-            }, 
+             {
+            path: "/politicas-reglas",
+            element: <PoliciesRulesPage />,
+            },
 
             {
               path: "autorizaciones",
@@ -94,17 +117,17 @@ export const router = createBrowserRouter([
             element: <ApprovalsPage />,
           },
          {
-            path: "monitor-estados",
-            element: <FlowMonitorPage />,
+            path: "/trazabilidad-flujos/monitor-estados",
+            element: <StatusMonitorPage />,
             },                           
           {
-            path: "trazabilidad-flujos",
-            element: <WorkflowPage />,
+            path: "trazabilidad-flujos/escalamientos-sla",
+            element: <SlaEscalationsPage />,
           },
 
           {
-            path: "bitacora-eventos",
-            element: <AuditEventsPage />,
+            path: "trazabilidad-flujos/bitacora-eventos",
+            element: <EventLogsPage />,
             },
           {
             path: "rendicion-conciliacion",
@@ -113,7 +136,11 @@ export const router = createBrowserRouter([
           {
             path: "rendicion-conciliacion/liquidaciones",
             element: <LiquidationsPage />,
-            },
+          },
+          { path: "mis-cuentas-bancarias", element: <MyBankAccountsPage /> },
+          { path: "configuracion/bancos", element: <RoleProtectedRoute roles={["ADMIN"]}><BanksCatalogPage /></RoleProtectedRoute> },
+          { path: "tesoreria/desembolsos", element: <RoleProtectedRoute roles={["ADMIN", "FINANZAS", "TESORERIA"]}><TreasuryDisbursementsPage /></RoleProtectedRoute> },
+          { path: "tesoreria/devoluciones", element: <RoleProtectedRoute roles={["ADMIN", "FINANZAS", "TESORERIA"]}><TreasuryRefundsPage /></RoleProtectedRoute> },
             {
               path: "rendicion-conciliacion/liquidaciones/nueva",
               element: <NewLiquidationPage />,
@@ -136,16 +163,6 @@ export const router = createBrowserRouter([
                   />
                 ),
               },
-{
-  path: "politicas-reglas",
-  element: (
-    <ModulePlaceholderPage
-      title="Políticas y reglas"
-      moduleName="MPN"
-      description="Visualizador de normativas vigentes, límites permitidos, reglas por empresa, área, centro de costo, tipo de gasto y jerarquía del solicitante."
-    />
-  ),
-},
 {
   path: "verificador-presupuestario",
   element: (
@@ -340,6 +357,9 @@ export const router = createBrowserRouter([
             path: "rendicion-conciliacion/ocr/documentos/:id",
             element: <DocumentDetailPage />,
           },
+          { path: "rendicion-conciliacion/ocr/dashboard", element: <OcrAnalyticsPage /> },
+          { path: "rendicion-conciliacion/ocr/reportes", element: <OcrReportPage /> },
+          { path: "configuracion/empresas-fiscales", element: <FiscalCompaniesPage /> },
           {
             path: "documents",
             element: <DocumentsPage />,
@@ -353,6 +373,14 @@ export const router = createBrowserRouter([
             element: <BudgetControlPage />,
           },
           {
+            path: "integracion-presupuestaria",
+            element: <BudgetIntegrationPage />,
+          },
+          {
+            path: "configuracion/monedas-tasas",
+            element: <RoleProtectedRoute roles={["ADMIN", "FINANZAS"]}><CurrenciesExchangeRatesPage /></RoleProtectedRoute>,
+          },
+          {
             path: "gobernanza-configuracion",
             element: <GovernancePage />,
           },
@@ -362,7 +390,27 @@ export const router = createBrowserRouter([
           },
           {
             path: "reportes-analitica",
-            element: <ReportsAnalyticsPage />,
+            element: <RoleProtectedRoute roles={["ADMIN", "FINANZAS", "GERENTE"]}><ExecutiveReportPage /></RoleProtectedRoute>,
+          },
+          {
+            path: "reportes/presupuesto",
+            element: <RoleProtectedRoute roles={["ADMIN", "FINANZAS", "GERENTE"]}><BudgetReportPage /></RoleProtectedRoute>,
+          },
+          {
+            path: "reportes/solicitudes",
+            element: <RoleProtectedRoute roles={["ADMIN", "FINANZAS", "GERENTE"]}><RequestsReportPage /></RoleProtectedRoute>,
+          },
+          {
+            path: "reportes/aprobaciones",
+            element: <RoleProtectedRoute roles={["ADMIN", "FINANZAS", "GERENTE"]}><ApprovalsReportPage /></RoleProtectedRoute>,
+          },
+          {
+            path: "reportes/politicas",
+            element: <RoleProtectedRoute roles={["ADMIN", "FINANZAS", "GERENTE"]}><PoliciesReportPage /></RoleProtectedRoute>,
+          },
+          {
+            path: "reportes/ejecutivo",
+            element: <RoleProtectedRoute roles={["ADMIN", "FINANZAS", "GERENTE"]}><ExecutiveReportPage /></RoleProtectedRoute>,
           },
           {
             path: "*",
@@ -373,10 +421,6 @@ export const router = createBrowserRouter([
           path: "planificacion-normativa",
           element: <PlanningPage />,
         }, 
-      {
-  path: "notificaciones",
-  element: <NotificationsPage />,
-},
 {
   path: "notificaciones/:id",
   element: <NotificationDetailPage />,

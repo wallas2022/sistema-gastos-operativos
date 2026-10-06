@@ -1,5 +1,6 @@
 import {
   IsArray,
+  ArrayMinSize,
   IsDateString,
   IsEnum,
   IsInt,
@@ -8,11 +9,12 @@ import {
   IsOptional,
   IsString,
   Min,
+  IsUUID,
   ValidateNested,
 } from "class-validator";
 import { Type } from "class-transformer";
 
-import { ExpenseType, RequestPriority } from "@prisma/client";
+import { ExpenseType, PaymentModality, RequestPriority } from "@prisma/client";
 
 export class CreateExpenseRequestItemDto {
   @IsString()
@@ -28,18 +30,43 @@ export class CreateExpenseRequestItemDto {
   quantity: number;
 
   @IsNumber()
-  @Min(0)
+  @Min(0.01)
   unitAmount: number;
 }
 
 export class CreateExpenseRequestDto {
+  // Se aceptan por compatibilidad con clientes anteriores, pero el servicio
+  // obtiene siempre estos valores del JWT y nunca los persiste desde el body.
+  @IsOptional()
+  @IsUUID()
+  requesterId?: string;
+
+  @IsOptional()
   @IsString()
+  requesterName?: string;
+
+  @IsOptional()
+  @IsString()
+  requesterRole?: string;
+
+  @IsEnum(ExpenseType)
   @IsNotEmpty()
   type: ExpenseType;
 
-  @IsString()
+  @IsEnum(RequestPriority)
+  @IsNotEmpty()
+  priority: RequestPriority;
+
+  @IsEnum(PaymentModality)
+  paymentModality: PaymentModality;
+
   @IsOptional()
-  priority?: RequestPriority;
+  @IsString()
+  intendedBeneficiaryName?: string;
+
+  @IsOptional()
+  @IsString()
+  intendedBeneficiaryTaxId?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -50,27 +77,13 @@ export class CreateExpenseRequestDto {
   description?: string;
 
   @IsString()
-  @IsOptional()
-  justification?: string;
-
-  @IsString()
   @IsNotEmpty()
-  requesterName: string;
+  justification: string;
 
-  @IsString()
-  @IsNotEmpty()
-  requesterRole: string;
-
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID()
   companyId!: string;
 
-  @IsOptional()
-  @IsString()
-  companyName?: string;
-
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID()
   currencyId!: string;
 
   @IsString()
@@ -84,6 +97,12 @@ export class CreateExpenseRequestDto {
   @IsString()
   @IsOptional()
   budgetAccount?: string;
+
+  @IsUUID()
+  budgetLineId!: string;
+
+  @IsUUID()
+  budgetPeriodId!: string;
 
   @IsString()
   @IsOptional()
@@ -102,12 +121,20 @@ export class CreateExpenseRequestDto {
   @IsOptional()
   estimatedDate?: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID()
   countryId!: string;
 
   @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => CreateExpenseRequestItemDto)
   items: CreateExpenseRequestItemDto[];
+}
+
+export class UpdateExpenseRequestDto extends CreateExpenseRequestDto {}
+
+export class AssociateExpenseRequestDocumentsDto {
+  @IsArray()
+  @IsUUID('4', { each: true })
+  documentIds: string[];
 }

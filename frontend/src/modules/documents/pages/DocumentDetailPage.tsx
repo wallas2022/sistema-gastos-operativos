@@ -1,3 +1,4 @@
+import { readUser } from '../../../navigation/navigation';
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -17,11 +18,14 @@ import {
   getDocumentById,
   processOcrDocument,
   updateOcrFields,
+  updateOcrTotal,
   type OcrField,
   type OcrResultResponse,
 } from "../services/documents.service";
 import DocumentPreview from "../../../shared/components/DocumentPreview";
 import { updateOcrLineItems } from "../services/documents.service";
+import { OcrReviewPanel } from "../../ocr/components/OcrReviewPanel";
+import { FiscalDecisionPanel } from "../../ocr/components/FiscalDecisionPanel";
 
 function formatValue(value: unknown) {
   if (value === null || value === undefined || value === "") return "-";
@@ -57,11 +61,17 @@ function getLineItems(data: OcrResultResponse): EditableLineItem[] {
 export default function DocumentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const user = readUser();
+  const can = (permission: string) => user.role === 'ADMIN' || user.permissions?.includes(permission);
+  const canProcess = can('OCR_PROCESS'), canCorrect = can('OCR_REVIEW'), canConfirm = can('OCR_CONFIRM');
 
   const [documentData, setDocumentData] = useState<OcrResultResponse | null>(null);
   const [editableFields, setEditableFields] = useState<OcrField[]>([]);
   const [editableItems, setEditableItems] = useState<EditableLineItem[]>([]);
   const [comment, setComment] = useState("");
+  const [correctionReason, setCorrectionReason] = useState("");
+  const [manualTotal, setManualTotal] = useState("");
+  const [manualTotalReason, setManualTotalReason] = useState("");
   const [loading, setLoading] = useState(true);
   const [processingOcr, setProcessingOcr] = useState(false);
   const [savingFields, setSavingFields] = useState(false);
@@ -71,7 +81,7 @@ export default function DocumentDetailPage() {
 
   const loadData = async () => {
     if (!id) {
-      navigate("/documents");
+      navigate("/rendicion-conciliacion/ocr/documentos");
       return;
     }
 
@@ -83,11 +93,28 @@ export default function DocumentDetailPage() {
       setDocumentData(data);
       setEditableFields(data.ocrResult?.extractedFields ?? []);
       setEditableItems(getLineItems(data));
+      setManualTotal(data.ocrResult?.totalAmount == null ? "" : String(data.ocrResult.totalAmount));
     } catch (error) {
       console.error("Error cargando detalle del documento:", error);
       setErrorMessage("No se pudo cargar el detalle del documento.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveTotal = async () => {
+    if (!id || !manualTotal || !manualTotalReason.trim()) return;
+    try {
+      setSavingFields(true);
+      setErrorMessage("");
+      await updateOcrTotal(id, manualTotal, manualTotalReason.trim());
+      await loadData();
+      setManualTotalReason("");
+      setSuccessMessage("Total corregido y auditado correctamente.");
+    } catch (error: any) {
+      setErrorMessage(error.response?.data?.message || "No se pudo corregir el total.");
+    } finally {
+      setSavingFields(false);
     }
   };
 
@@ -195,6 +222,7 @@ export default function DocumentDetailPage() {
             field.confidence === null || field.confidence === undefined
               ? null
               : Number(field.confidence),
+          reason: correctionReason || undefined,
         }))
       );
 
@@ -287,7 +315,7 @@ export default function DocumentDetailPage() {
       <Container maxW="7xl" py={10}>
         <Stack gap={4}>
           <Text>No se encontró el documento.</Text>
-          <Button variant="outline" onClick={() => navigate("/documents")}>
+          <Button variant="outline" onClick={() => navigate("/rendicion-conciliacion/ocr/documentos")}>
             Volver
           </Button>
         </Stack>
@@ -308,18 +336,18 @@ export default function DocumentDetailPage() {
           </Box>
 
           <Flex gap={3} wrap="wrap">
-            <Button variant="outline" onClick={() => navigate("/documents")}>
+            <Button variant="outline" onClick={() => navigate("/rendicion-conciliacion/ocr/documentos")}>
               Volver
             </Button>
 
-            <Button
+            {canProcess && <Button
               colorPalette="blue"
               onClick={handleProcessOcr}
               loading={processingOcr}
               disabled={documentData.status === "PROCESANDO"}
             >
               Procesar OCR
-            </Button>
+            </Button>}
           </Flex>
         </Flex>
 
@@ -348,6 +376,7 @@ export default function DocumentDetailPage() {
           />
 
           <Stack gap={6}>
+            {documentData.ocrResult && <FiscalDecisionPanel ocr={documentData.ocrResult}/>}
             <Box borderWidth="1px" borderRadius="2xl" bg="white" p={5}>
               <Heading size="md" mb={4}>
                 Información general
@@ -380,6 +409,7 @@ export default function DocumentDetailPage() {
                   <Text><b>Subtotal:</b> {formatValue(documentData.ocrResult?.subtotalAmount)}</Text>
                   <Text><b>Impuesto:</b> {formatValue(documentData.ocrResult?.taxAmount)}</Text>
                   <Text><b>Total:</b> {formatValue(documentData.ocrResult?.totalAmount)}</Text>
+                  {canCorrect && !documentData.ocrResult?.usedInSettlement && <Flex gap={2} align="end" wrap="wrap"><Box><Text fontSize="sm">Corrección manual del total</Text><Input type="number" min="0.01" step="0.01" value={manualTotal} onChange={(event) => setManualTotal(event.target.value)} placeholder="0.00" /></Box><Box minW={{ base: '100%', md: '320px' }}><Text fontSize="sm">Motivo de la corrección</Text><Input value={manualTotalReason} onChange={(event) => setManualTotalReason(event.target.value)} placeholder="Ej. El OCR no detectó el total visible" /></Box><Button onClick={handleSaveTotal} loading={savingFields} disabled={!manualTotal || !manualTotalReason.trim()}>Guardar total</Button></Flex>}
                 </Stack>
               )}
             </Box>
@@ -393,34 +423,16 @@ export default function DocumentDetailPage() {
                 <Text color="gray.500">No hay campos OCR disponibles.</Text>
               ) : (
                 <Stack gap={4}>
-                  {editableFields.map((field) => (
-                    <Box key={field.id} borderWidth="1px" borderRadius="xl" p={4}>
-                      <Stack gap={2}>
-                        <Text fontWeight="bold">
-                          {field.rawLabel || field.fieldName}
-                        </Text>
-
-                        <Text fontSize="sm" color="gray.500">
-                          Detectado: {formatValue(field.detectedValue)}
-                        </Text>
-
-                        <Input
-                          value={field.finalValue ?? ""}
-                          onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                          placeholder="Valor final"
-                          disabled={isConfirmed}
-                        />
-                      </Stack>
-                    </Box>
-                  ))}
-                <Button
+                  <OcrReviewPanel fields={editableFields} disabled={isConfirmed || !canCorrect} onChange={handleFieldChange}/>
+                  <Input value={correctionReason} onChange={(event) => setCorrectionReason(event.target.value)} placeholder="Motivo de la correccion (opcional)" disabled={isConfirmed || !canCorrect}/>
+                {canCorrect && <Button
                   colorPalette="blue"
                   onClick={handleSaveChanges}
                   loading={savingFields}
-                  disabled={isConfirmed}
+                  disabled={isConfirmed || !canCorrect}
                 >
                   Guardar cambios
-                </Button>
+                </Button>}
                 </Stack>
               )}
             </Box>
@@ -429,15 +441,15 @@ export default function DocumentDetailPage() {
               <Flex justify="space-between" align="center" mb={4} gap={3} wrap="wrap">
                 <Heading size="md">Detalle de factura</Heading>
 
-                <Button
+                {canCorrect && <Button
                   size="sm"
                   colorPalette="blue"
                   variant="outline"
                   onClick={handleAddItem}
-                  disabled={isConfirmed}
+                  disabled={isConfirmed || !canCorrect}
                 >
                   Agregar línea
-                </Button>
+                </Button>}
               </Flex>
 
               {!hasOcrResult || editableItems.length === 0 ? (
@@ -482,7 +494,7 @@ export default function DocumentDetailPage() {
                                 onChange={(e) =>
                                   handleItemChange(index, "description", e.target.value)
                                 }
-                                disabled={isConfirmed}
+                                disabled={isConfirmed || !canCorrect}
                                 placeholder="Descripción"
                               />
                             </Box>
@@ -493,7 +505,7 @@ export default function DocumentDetailPage() {
                                 onChange={(e) =>
                                   handleItemChange(index, "quantity", e.target.value)
                                 }
-                                disabled={isConfirmed}
+                                disabled={isConfirmed || !canCorrect}
                                 placeholder="Cantidad"
                               />
                             </Box>
@@ -504,7 +516,7 @@ export default function DocumentDetailPage() {
                                 onChange={(e) =>
                                   handleItemChange(index, "unitPrice", e.target.value)
                                 }
-                                disabled={isConfirmed}
+                                disabled={isConfirmed || !canCorrect}
                                 placeholder="Precio"
                               />
                             </Box>
@@ -515,7 +527,7 @@ export default function DocumentDetailPage() {
                                 onChange={(e) =>
                                   handleItemChange(index, "lineTotal", e.target.value)
                                 }
-                                disabled={isConfirmed}
+                                disabled={isConfirmed || !canCorrect}
                                 placeholder="Total"
                               />
                             </Box>
@@ -525,15 +537,15 @@ export default function DocumentDetailPage() {
                             </Box>
 
                             <Box as="td" p={3} borderBottomWidth="1px" textAlign="center">
-                              <Button
+                              {canCorrect && <Button
                                 size="sm"
                                 colorPalette="red"
                                 variant="outline"
                                 onClick={() => handleDeleteItem(index)}
-                                disabled={isConfirmed}
+                                disabled={isConfirmed || !canCorrect}
                               >
                                 Eliminar
-                              </Button>
+                              </Button>}
                             </Box>
                           </Box>
                         );
@@ -554,17 +566,17 @@ export default function DocumentDetailPage() {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Observaciones de confirmación"
-                  disabled={isConfirmed}
+                  disabled={isConfirmed || !canCorrect}
                 />
 
-                <Button
+                {canConfirm && <Button
                   colorPalette="green"
                   onClick={handleConfirm}
                   loading={confirming}
                   disabled={!hasOcrResult || isConfirmed}
                 >
                   Confirmar documento
-                </Button>
+                </Button>}
               </Stack>
             </Box>
           </Stack>

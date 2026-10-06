@@ -11,10 +11,12 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
+import { AuthService } from '../auth/auth.service';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class SecurityService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private auth: AuthService) {}
 
   // ─── Users ────────────────────────────────────────────────────────────────
 
@@ -24,7 +26,7 @@ export class SecurityService {
         id: true,
         name: true,
         email: true,
-        active: true,
+        active: true, blocked: true, forcePasswordChange: true,
         costCenter: true,
         position: true,
         companyId: true,
@@ -47,7 +49,7 @@ export class SecurityService {
         id: true,
         name: true,
         email: true,
-        active: true,
+        active: true, blocked: true, forcePasswordChange: true,
         costCenter: true,
         position: true,
         companyId: true,
@@ -106,14 +108,45 @@ export class SecurityService {
     });
   }
 
-  async activateUser(id: string) {
+  async activateUser(id: string, actor?: any, ipAddress?: string) {
     await this.findOneUser(id);
-    return this.prisma.user.update({ where: { id }, data: { active: true }, select: { id: true, active: true } });
+    const result = await this.prisma.user.update({ where: { id }, data: { active: true }, select: { id: true, active: true } });
+    await this.auth.audit(id, actor?.id, 'ACTIVACION_USUARIO', 'EXITOSO', 'Usuario activado.', ipAddress); return result;
   }
 
-  async deactivateUser(id: string) {
+  async deactivateUser(id: string, actor?: any, ipAddress?: string) {
     await this.findOneUser(id);
-    return this.prisma.user.update({ where: { id }, data: { active: false }, select: { id: true, active: true } });
+    const result = await this.prisma.user.update({ where: { id }, data: { active: false, credentialVersion: { increment: 1 } }, select: { id: true, active: true } });
+    await this.auth.invalidateResetTokens(id); await this.auth.audit(id, actor?.id, 'DESACTIVACION_USUARIO', 'EXITOSO', 'Usuario desactivado.', ipAddress); return result;
+  }
+
+  async setBlocked(id: string, blocked: boolean, actor: any, ipAddress?: string) {
+    await this.findOneUser(id);
+    const result = await this.prisma.user.update({ where: { id }, data: { blocked, credentialVersion: { increment: 1 } }, select: { id: true, blocked: true, active: true } });
+    await this.auth.invalidateResetTokens(id);
+    await this.auth.audit(id, actor.id, blocked ? 'BLOQUEO_USUARIO' : 'DESBLOQUEO_USUARIO', 'EXITOSO', blocked ? 'Usuario bloqueado.' : 'Usuario desbloqueado.', ipAddress);
+    return result;
+  }
+
+  async forcePasswordChange(id: string, actor: any, ipAddress?: string) {
+    await this.findOneUser(id);
+    const result = await this.prisma.user.update({ where: { id }, data: { forcePasswordChange: true }, select: { id: true, forcePasswordChange: true } });
+    await this.auth.audit(id, actor.id, 'CAMBIO_OBLIGATORIO', 'EXITOSO', 'Cambio requerido en el próximo inicio.', ipAddress);
+    return result;
+  }
+
+  async generateResetLink(id: string, actor: any, ipAddress?: string) {
+    await this.findOneUser(id); const issued = await this.auth.issueResetToken(id);
+    await this.auth.audit(id, actor.id, 'ENLACE_RECUPERACION_ADMIN', 'EXITOSO', 'Enlace generado por administrador.', ipAddress);
+    return { resetUrl: issued.resetUrl, expiresMinutes: issued.expiresMinutes };
+  }
+
+  async adminResetPassword(id: string, temporaryPassword: string | undefined, forceChange: boolean | undefined, actor: any, ipAddress?: string) {
+    await this.findOneUser(id); const password = temporaryPassword || `Tmp-${randomBytes(8).toString('base64url')}9!`;
+    const result = await this.prisma.user.update({ where: { id }, data: { passwordHash: await bcrypt.hash(password, 10), passwordChangedAt: new Date(), forcePasswordChange: forceChange !== false, credentialVersion: { increment: 1 } }, select: { id: true, forcePasswordChange: true } });
+    await this.auth.invalidateResetTokens(id);
+    await this.auth.audit(id, actor.id, 'RESTABLECIMIENTO_ADMIN', 'EXITOSO', 'Contraseña temporal establecida.', ipAddress);
+    return { ...result, temporaryPassword: password };
   }
 
   // ─── Roles ────────────────────────────────────────────────────────────────

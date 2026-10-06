@@ -9,6 +9,7 @@ export interface DocumentItem {
   sizeBytes: number;
   status: string;
   userId: string;
+  expenseRequestId?: string | null;
   createdAt: string;
   updatedAt: string;
   ocrResult?: OcrResultData | null;
@@ -24,6 +25,9 @@ export interface OcrField {
   finalValue?: string | null;
   confidence?: number | string | null;
   wasCorrected?: boolean;
+  sourceBlock?: string | null;
+  extractionRule?: string | null;
+  corrections?: { id: string; ocrValue?: string | null; previousValue?: string | null; finalValue: string; reason?: string | null; createdAt: string; user: { id: string; name: string; email: string } }[];
 }
 
 export interface OcrExtraField {
@@ -68,6 +72,31 @@ export interface OcrResultData {
   taxAmount?: number | string | null;
   totalAmount?: number | string | null;
   taxIncludedInPrices?: boolean | null;
+  processingDurationMs?: number | null;
+  reviewStartedAt?: string | null;
+  confirmedAt?: string | null;
+  modificationCount?: number;
+  validationRuns?: unknown[];
+  detectedVoucherType?: string | null;
+  finalVoucherType?: string | null;
+  receiverTaxId?: string | null;
+  receiverName?: string | null;
+  receiverTradeName?: string | null;
+  receiverType?: string;
+  fiscalCompanyId?: string | null;
+  fiscalCompanyTaxId?: string | null;
+  fiscalCompanyLegalName?: string | null;
+  fiscalCompanyTradeName?: string | null;
+  fiscalCompanyIdentifiedAt?: string | null;
+  fiscalCompanyIdentificationMethod?: string | null;
+  fiscalCompanyIdentificationStatus?: string;
+  fiscalCompanyWarning?: string | null;
+  fiscalCompany?: { id: string; code: string; name: string; legalName?: string | null; tradeName?: string | null; taxId?: string | null } | null;
+  complianceResult?: string | null;
+  complianceReason?: string | null;
+  eligibleForSettlement?: boolean;
+  usedInSettlement?: boolean;
+  complianceDecisions?: ComplianceDecision[];
 
   extractedFields?: OcrField[];
   extractedExtraFields?: OcrExtraField[];
@@ -133,9 +162,14 @@ export const getDocumentById = async (id: string): Promise<OcrResultResponse> =>
 
 export const updateOcrFields = async (
   id: string,
-  fields: { id: string; fieldValue: string; confidence?: number | null }[]
+  fields: { id: string; fieldValue: string; confidence?: number | null; reason?: string }[]
 ) => {
   const response = await api.put(`/ocr/${id}/fields`, { fields });
+  return response.data;
+};
+
+export const updateOcrTotal = async (id: string, total: string, reason: string) => {
+  const response = await api.put(`/ocr/${id}/total`, { total, reason });
   return response.data;
 };
 
@@ -188,3 +222,4 @@ export async function updateOcrLineItems(
 
   return response.data;
 }
+export interface ComplianceDecision { id: string; documentType: string; expectedTaxId?: string | null; foundTaxId?: string | null; receiverName?: string | null; receiverType: string; receiverConfidence?: number | string | null; appliedRule: string; appliedPolicyCode?: string | null; appliedPolicyName?: string | null; result: string; reason: string; actorName: string; createdAt: string; }

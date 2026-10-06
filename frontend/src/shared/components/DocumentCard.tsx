@@ -77,14 +77,14 @@ export default function DocumentCard({
             Ver detalle
           </Button>
 
-          <Button
+          {onProcessOcr && <Button
             colorPalette="blue"
             onClick={() => onProcessOcr?.(id)}
             loading={processing}
             disabled={!canProcessOcr || processing}
           >
             Procesar OCR
-          </Button>
+          </Button>}
         </Flex>
       </Flex>
     </Box>

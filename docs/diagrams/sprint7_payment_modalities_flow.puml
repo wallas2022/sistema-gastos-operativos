@@ -1,0 +1,23 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam backgroundColor white
+start
+:Solicitud aprobada;
+:Leer modalidad de ejecución;
+if (¿Pago al solicitante?) then (Sí)
+  :Validar cuenta activa;
+  :Validar moneda solicitud = pago = cuenta;
+  :Registrar desembolso;
+else (No)
+  :Validar beneficiario identificado;
+  :Validar moneda solicitud = pago;
+  :Registrar pago directo;
+endif
+:Almacenar comprobante en MinIO;
+:Registrar trazabilidad;
+:Crear liquidación con operación PAGADA;
+:Vincular documentos OCR a liquidación;
+:Conciliar;
+stop
+@enduml

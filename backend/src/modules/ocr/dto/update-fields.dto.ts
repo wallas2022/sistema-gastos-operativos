@@ -17,6 +17,10 @@ class UpdateFieldItemDto {
   @IsOptional()
   @IsNumber()
   confidence?: number | null;
+
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }
 
 export class UpdateDocumentFieldsDto {

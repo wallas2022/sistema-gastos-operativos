@@ -1,0 +1,33 @@
+﻿const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..');
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const flow = read('src/modules/approval/approval-flow.service.ts');
+const engine = read('src/modules/approval/approval-engine.service.ts');
+const requests = read('src/modules/expense-requests/expense-requests.service.ts');
+const requestController = read('src/modules/expense-requests/expense-requests.controller.ts');
+const trace = read('src/modules/traceability/traceability.service.ts');
+const bus = read('src/modules/workflow/workflow-event-bus.service.ts');
+
+test('policy ERROR blocks submit before budget reservation', () => { assert.match(requests, /policyEvaluation\.errors\.length/); assert.ok(requests.indexOf('policyEvaluation.errors.length') < requests.indexOf('this.budgetReservations.reserve(id)')); });
+test('blocking policy does not generate a flow', () => assert.ok(requests.indexOf('policyEvaluation.errors.length') < requests.indexOf('this.approvalEngine.generateFlow')));
+test('approval and traceability use one decision service', () => { assert.match(trace, /ApprovalDecisionService/); assert.match(trace, /decideByRequest\(id, 'approve'/); assert.doesNotMatch(trace, /status: ExpenseRequestStatus\.APROBADA,\s*traces:/); });
+test('self approval is rejected at decision time', () => assert.match(flow, /El solicitante no puede aprobar su propia solicitud/));
+test('self approval is rejected when the flow is generated', () => assert.match(engine, /El solicitante no puede ser designado como aprobador/));
+test('approval requires an approval permission', () => assert.match(flow, /EXPENSE_REQUEST_APPROVE.*AUTHORIZATION_APPROVE/));
+test('approval authority is checked against the configured level', () => assert.match(flow, /No tiene autoridad para este nivel de aprobación/));
+test('previous approval levels must be complete', () => assert.match(flow, /incompletePrevious/));
+test('delegation preserves company, self approval and authority constraints', () => { assert.match(flow, /findValidTarget\(flow, targetUserId, user.id, current\)/); assert.match(flow, /target\.companyId !== flow\.expenseRequest\.companyId/); assert.match(flow, /target\.role !== currentStep\.approverRoleCode/); });
+test('idempotency uses conditional step update', () => assert.match(flow, /changed\.count !== 1/));
+test('event bus fails fast for critical effects', () => { assert.match(bus, /Promise\.all\(executions\)/); assert.match(bus, /isCritical/); });
+test('event bus isolates non-critical notification failures', () => assert.match(bus, /Promise\.allSettled\(executions\)/));
+test('observations require a comment and preserve status', () => { assert.match(flow, /requireComment\(comment, 'observaci/); assert.match(flow, /ApprovalFlowStatus\.OBSERVADA/); });
+test('rejections require a comment and close remaining levels', () => { assert.match(flow, /requireComment\(comment, 'rechazo/); assert.match(flow, /ApprovalStepStatus\.OMITIDA/); });
+
+test('resubmit only accepts observed requests', () => { assert.match(requests, /async resubmit\(id: string/); assert.match(requests, /request\.status !== ExpenseRequestStatus\.OBSERVADA/); });
+test('resubmit reevaluates policies before resetting the flow', () => { assert.match(requests, /const evaluation = await this\.evaluateAndPersistPolicies/); assert.ok(requests.indexOf('evaluation.errors.length') < requests.indexOf('this.approvalFlows.resetForResubmit')); });
+test('resubmit resets prior decisions and activates the first level', () => { const flowSource = read('src/modules/approval/approval-flow.service.ts'); assert.match(flowSource, /resetForResubmit/); assert.match(flowSource, /decidedByUserId: null/); assert.match(flowSource, /currentStepOrder: first\.order/); });
+test('resubmit endpoint requires submit permission', () => { assert.match(requestController, /@Patch\(':id\/resubmit'\)/); assert.match(requestController, /resubmit/); assert.match(requestController, /EXPENSE_REQUEST_SUBMIT/); });
+test('delegated target cannot be the requester', () => assert.match(flow, /target\.id\) throw new BadRequestException\('El solicitante/));

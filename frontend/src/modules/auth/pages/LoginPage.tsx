@@ -14,6 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { api } from "../../../shared/services/api";
 import { LockKeyhole } from "lucide-react";
+import { routeAccess } from '../../../navigation/navigation';
 
 const slides = [
   {
@@ -95,7 +96,8 @@ export function LoginPage() {
         localStorage.setItem("user", JSON.stringify(response.data.user));
       }
       console.log("debe dirigirse al dashboard");
-      navigate("/");
+      const remembered = localStorage.getItem('lastAuthorizedRoute') || '/';
+      navigate(response.data?.user?.forcePasswordChange ? '/mi-perfil/seguridad' : routeAccess(remembered, response.data.user) ? remembered : '/');
     } catch (err) {
       console.error(err);
       setError("No fue posible iniciar sesión. Verifica tus credenciales.");
@@ -370,6 +372,7 @@ export function LoginPage() {
                     size="sm"
                     colorPalette="blue"
                     px="0"
+                    onClick={() => navigate('/olvide-contrasena')}
                   >
                     ¿Olvidaste tu contraseña?
                   </Button>

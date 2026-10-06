@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Box,
@@ -6,68 +7,17 @@ import {
   Heading,
   HStack,
   SimpleGrid,
+  Spinner,
   Table,
   Text,
   VStack,
 } from "@chakra-ui/react";
-
-const kpis = [
-  {
-    label: "Pendientes de aprobación",
-    value: "11",
-    description: "Solicitudes esperando autorización",
-  },
-  {
-    label: "Aprobadas hoy",
-    value: "7",
-    description: "Procesos autorizados durante el día",
-  },
-  {
-    label: "SLA vencidos",
-    value: "2",
-    description: "Solicitudes fuera del tiempo esperado",
-  },
-  {
-    label: "Rechazos registrados",
-    value: "4",
-    description: "Solicitudes rechazadas este mes",
-  },
-];
-
-const approvalRows = [
-  {
-    code: "SG-2026-0008",
-    requester: "Juan Pérez",
-    area: "Comercial",
-    stage: "Gerencia",
-    priority: "Alta",
-    status: "Pendiente",
-  },
-  {
-    code: "SG-2026-0011",
-    requester: "María López",
-    area: "Operaciones",
-    stage: "Finanzas",
-    priority: "Media",
-    status: "En revisión",
-  },
-  {
-    code: "SG-2026-0015",
-    requester: "Carlos Méndez",
-    area: "Administración",
-    stage: "Jefatura",
-    priority: "Baja",
-    status: "Aprobada",
-  },
-  {
-    code: "SG-2026-0017",
-    requester: "Ana Gómez",
-    area: "Finanzas",
-    stage: "Gerencia",
-    priority: "Alta",
-    status: "SLA vencido",
-  },
-];
+import {
+  approveAuthorization,
+  getPendingAuthorizations,
+  rejectAuthorization,
+  type AuthorizationItem,
+} from "../../traceability/traceability.service";
 
 const timelineItems = [
   {
@@ -92,7 +42,119 @@ const timelineItems = [
   },
 ];
 
+const formatMoney = (amount: number, currency = "GTQ") => {
+  return new Intl.NumberFormat("es-GT", {
+    style: "currency",
+    currency: currency || "GTQ",
+  }).format(Number(amount || 0));
+};
+
 export function WorkflowPage() {
+  const [authorizations, setAuthorizations] = useState<AuthorizationItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const loadAuthorizations = async () => {
+    try {
+      setLoading(true);
+      const data = await getPendingAuthorizations();
+      setAuthorizations(data);
+    } catch (error) {
+      console.error("Error al cargar autorizaciones:", error);
+      alert("No se pudieron cargar las autorizaciones");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAuthorizations();
+  }, []);
+
+  const kpis = useMemo(() => {
+    const totalPending = authorizations.length;
+
+    const urgent = authorizations.filter((item) => {
+      const priority = item.priority?.toUpperCase();
+      return priority === "URGENTE" || priority === "ALTA";
+    }).length;
+
+    const totalAmount = authorizations.reduce(
+      (sum, item) => sum + Number(item.estimatedAmount || 0),
+      0,
+    );
+
+    const inReview = authorizations.filter((item) => {
+      const status = item.status?.toUpperCase();
+      return status.includes("REVISION") || status.includes("REVISIÓN");
+    }).length;
+
+    return [
+      {
+        label: "Pendientes de aprobación",
+        value: String(totalPending),
+        description: "Solicitudes esperando autorización",
+      },
+      {
+        label: "Urgentes",
+        value: String(urgent),
+        description: "Solicitudes con prioridad alta",
+      },
+      {
+        label: "En revisión",
+        value: String(inReview),
+        description: "Procesos actualmente en análisis",
+      },
+      {
+        label: "Monto en revisión",
+        value: formatMoney(totalAmount, "GTQ"),
+        description: "Total pendiente por autorizar",
+      },
+    ];
+  }, [authorizations]);
+
+  const handleApprove = async (request: AuthorizationItem) => {
+    const comment = prompt("Comentario de aprobación:");
+
+    try {
+      setProcessingId(request.id);
+
+      await approveAuthorization(
+        request.id,
+        comment || "Solicitud aprobada desde centro de autorizaciones.",
+      );
+
+      await loadAuthorizations();
+    } catch (error) {
+      console.error("Error al aprobar solicitud:", error);
+      alert("No se pudo aprobar la solicitud");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleReject = async (request: AuthorizationItem) => {
+    const comment = prompt("Motivo del rechazo:");
+
+    if (!comment) {
+      alert("Debe ingresar un motivo de rechazo");
+      return;
+    }
+
+    try {
+      setProcessingId(request.id);
+
+      await rejectAuthorization(request.id, comment);
+
+      await loadAuthorizations();
+    } catch (error) {
+      console.error("Error al rechazar solicitud:", error);
+      alert("No se pudo rechazar la solicitud");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   return (
     <Box>
       <Flex
@@ -159,41 +221,126 @@ export function WorkflowPage() {
               </Text>
             </Box>
 
-            <Badge colorPalette="orange">11 pendientes</Badge>
+            <Badge colorPalette="orange">
+              {authorizations.length} pendientes
+            </Badge>
           </Flex>
 
-          <Table.Root size="sm">
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeader>Código</Table.ColumnHeader>
-                <Table.ColumnHeader>Solicitante</Table.ColumnHeader>
-                <Table.ColumnHeader>Área</Table.ColumnHeader>
-                <Table.ColumnHeader>Etapa</Table.ColumnHeader>
-                <Table.ColumnHeader>Prioridad</Table.ColumnHeader>
-                <Table.ColumnHeader>Estado</Table.ColumnHeader>
-              </Table.Row>
-            </Table.Header>
-
-            <Table.Body>
-              {approvalRows.map((row) => (
-                <Table.Row key={row.code}>
-                  <Table.Cell fontWeight="medium">{row.code}</Table.Cell>
-                  <Table.Cell>{row.requester}</Table.Cell>
-                  <Table.Cell>{row.area}</Table.Cell>
-                  <Table.Cell>{row.stage}</Table.Cell>
-                  <Table.Cell>
-                    <PriorityBadge priority={row.priority} />
-                  </Table.Cell>
-                  <Table.Cell>
-                    <StatusBadge status={row.status} />
-                  </Table.Cell>
+          {loading ? (
+            <VStack py="10">
+              <Spinner />
+              <Text color="gray.500">Cargando autorizaciones...</Text>
+            </VStack>
+          ) : (
+            <Table.Root size="sm">
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeader>Código</Table.ColumnHeader>
+                  <Table.ColumnHeader>Solicitante</Table.ColumnHeader>
+                  <Table.ColumnHeader>Área / centro</Table.ColumnHeader>
+                  <Table.ColumnHeader>Etapa</Table.ColumnHeader>
+                  <Table.ColumnHeader>Monto</Table.ColumnHeader>
+                  <Table.ColumnHeader>Prioridad</Table.ColumnHeader>
+                  <Table.ColumnHeader>Estado</Table.ColumnHeader>
+                  <Table.ColumnHeader textAlign="end">
+                    Acciones
+                  </Table.ColumnHeader>
                 </Table.Row>
-              ))}
-            </Table.Body>
-          </Table.Root>
+              </Table.Header>
+
+              <Table.Body>
+                {authorizations.map((request) => (
+                  <Table.Row key={request.id}>
+                    <Table.Cell fontWeight="medium">
+                      {request.code}
+                    </Table.Cell>
+
+                    <Table.Cell>
+                      <Box>
+                        <Text>{request.requesterName}</Text>
+                        <Text fontSize="xs" color="gray.500">
+                          {request.requesterRole ?? "Solicitante"}
+                        </Text>
+                      </Box>
+                    </Table.Cell>
+
+                    <Table.Cell>
+                      <Box>
+                        <Text>
+                          {request.companyName ?? "Sin empresa"}
+                        </Text>
+                        <Text fontSize="xs" color="gray.500">
+                          {request.costCenter ?? "Sin centro de costo"}
+                        </Text>
+                      </Box>
+                    </Table.Cell>
+
+                    <Table.Cell>
+                      {request.currentStep ?? "Autorización"}
+                    </Table.Cell>
+
+                    <Table.Cell>
+                      {formatMoney(
+                        Number(request.estimatedAmount || 0),
+                        request.currency || "GTQ",
+                      )}
+                    </Table.Cell>
+
+                    <Table.Cell>
+                      <PriorityBadge priority={request.priority ?? "Normal"} />
+                    </Table.Cell>
+
+                    <Table.Cell>
+                      <StatusBadge status={request.status} />
+                    </Table.Cell>
+
+                    <Table.Cell>
+                      <HStack justify="flex-end">
+                        <Button
+                          size="xs"
+                          colorPalette="green"
+                          disabled={processingId === request.id}
+                          onClick={() => handleApprove(request)}
+                        >
+                          Aprobar
+                        </Button>
+
+                        <Button
+                          size="xs"
+                          colorPalette="red"
+                          variant="outline"
+                          disabled={processingId === request.id}
+                          onClick={() => handleReject(request)}
+                        >
+                          Rechazar
+                        </Button>
+                      </HStack>
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+
+                {authorizations.length === 0 && (
+                  <Table.Row>
+                    <Table.Cell colSpan={8}>
+                      <Text textAlign="center" color="gray.500" py="6">
+                        No hay solicitudes pendientes de autorización.
+                      </Text>
+                    </Table.Cell>
+                  </Table.Row>
+                )}
+              </Table.Body>
+            </Table.Root>
+          )}
 
           <Flex justify="flex-end" mt="5">
-            <Button colorPalette="blue">Revisar autorizaciones</Button>
+            <Button
+              colorPalette="blue"
+              variant="outline"
+              onClick={loadAuthorizations}
+              disabled={loading}
+            >
+              Actualizar bandeja
+            </Button>
           </Flex>
         </Box>
 
@@ -293,7 +440,9 @@ function TimelineCard({
           {number}
         </Box>
 
-        <Badge colorPalette={isCompleted ? "green" : isCurrent ? "blue" : "gray"}>
+        <Badge
+          colorPalette={isCompleted ? "green" : isCurrent ? "blue" : "gray"}
+        >
           {status}
         </Badge>
       </Flex>
@@ -325,7 +474,15 @@ function FeatureCard({
           </Text>
         </Box>
 
-        <Badge colorPalette={status === "Base funcional" ? "green" : status === "Pendiente" ? "orange" : "gray"}>
+        <Badge
+          colorPalette={
+            status === "Base funcional"
+              ? "green"
+              : status === "Pendiente"
+                ? "orange"
+                : "gray"
+          }
+        >
           {status}
         </Badge>
       </Flex>
@@ -334,21 +491,31 @@ function FeatureCard({
 }
 
 function PriorityBadge({ priority }: { priority: string }) {
+  const normalized = priority.toUpperCase();
+
   const color =
-    priority === "Alta" ? "red" : priority === "Media" ? "orange" : "gray";
+    normalized === "URGENTE" || normalized === "ALTA"
+      ? "red"
+      : normalized === "MEDIA" || normalized === "NORMAL"
+        ? "orange"
+        : "gray";
 
   return <Badge colorPalette={color}>{priority}</Badge>;
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const normalized = status.toUpperCase();
+
   const color =
-    status === "Aprobada"
+    normalized.includes("APROB")
       ? "green"
-      : status === "SLA vencido"
+      : normalized.includes("RECH")
         ? "red"
-        : status === "En revisión"
+        : normalized.includes("REVISION") || normalized.includes("REVISIÓN")
           ? "blue"
-          : "orange";
+          : normalized.includes("PENDIENTE")
+            ? "orange"
+            : "gray";
 
   return <Badge colorPalette={color}>{status}</Badge>;
 }

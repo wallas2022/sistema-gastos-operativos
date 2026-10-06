@@ -22,40 +22,116 @@ enum DocumentStatus {
   PROCESADO
   PENDIENTE_REVISION
   CONFIRMADO
+  ASOCIADO_SOLICITUD
   ERROR_OCR
 }
 
-model User {
-  id                  String                  @id @default(uuid())
-  name                String
-  email               String                  @unique
-  passwordHash        String
-  role                RoleName?               // temporal, mientras migramos
-  active              Boolean                 @default(true)
-
-  companyId           String?
-  company             Company?                @relation(fields: [companyId], references: [id])
-
-  managerId           String?
-  manager             User?                   @relation("UserManager", fields: [managerId], references: [id])
-  subordinates        User[]                  @relation("UserManager")
-
-  costCenter          String?
-  position            String?
-
-  roles               UserRole[]
-
-  documents           Document[]
-  confirmations       OCRConfirmation[]
-  paidExpenseRequests ExpenseRequestPayment[]
-
-  createdAt           DateTime                @default(now())
-  updatedAt           DateTime                @updatedAt
+enum DocumentVoucherType {
+  FACTURA
+  RECIBO
+  COMPROBANTE_DE_PAGO
+  NOTA_DE_CREDITO
+  NOTA_DE_DEBITO
+  OTRO
 }
 
+enum FiscalReceiverType {
+  EMPRESA
+  CONSUMIDOR_FINAL
+  NO_IDENTIFICADO
+}
 
+enum DocumentComplianceResult {
+  VALIDACION_FISCAL_APROBADA
+  VALIDACION_FISCAL_RECHAZADA
+  VALIDACION_FISCAL_PENDIENTE_REVISION
+  DOCUMENTO_PERMITIDO_POR_POLITICA
+  DOCUMENTO_NO_PERMITIDO
+  OCR_ERROR
+}
 
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         RoleName? // temporal, mientras migramos
+  active       Boolean   @default(true)
+  blocked      Boolean   @default(false)
+  forcePasswordChange Boolean @default(false)
+  credentialVersion Int @default(0)
+  passwordChangedAt DateTime?
 
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  managerId    String?
+  manager      User?   @relation("UserManager", fields: [managerId], references: [id])
+  subordinates User[]  @relation("UserManager")
+
+  costCenter String?
+  position   String?
+
+  roles UserRole[]
+
+  documents              Document[]
+  confirmations          OCRConfirmation[]
+  ocrFieldCorrections    OCRFieldCorrection[]
+  ocrValidationRuns      OCRValidationRun[]
+  ocrComplianceDecisions OCRComplianceDecision[]
+  paidExpenseRequests    ExpenseRequestPayment[]
+  policyApprovalSteps    PolicyApprovalStep[]        @relation("PolicyApprovalUser")
+  assignedApprovalSteps  ApprovalStep[]              @relation("ApprovalAssignedUser")
+  delegatedApprovalSteps ApprovalStep[]              @relation("ApprovalDelegatedFromUser")
+  decidedApprovalSteps   ApprovalStep[]              @relation("ApprovalDecisionUser")
+  notifications          Notification[]
+  budgetVersions         BudgetVersion[]
+  preparedSettlements    ExpenseSettlement[]         @relation("SettlementPreparer")
+  certifiedSettlements   ExpenseSettlement[]         @relation("SettlementCertifier")
+  settlementSelections   ExpenseSettlementDocument[] @relation("SettlementDocumentSelector")
+  settlementRefunds      SettlementRefund[]          @relation("SettlementRefundCreator")
+  validatedRefunds       SettlementRefund[]          @relation("SettlementRefundValidator")
+  settlementAudits       SettlementAudit[]
+  testRecordsCreated    FunctionalTestRecord[] @relation("TestRecordCreator")
+  testCasesExecuted     FunctionalTestCase[] @relation("TestCaseExecutor")
+  testEvidenceUploaded  FunctionalTestEvidence[] @relation("TestEvidenceUploader")
+  bankAccounts           ApplicantBankAccount[]
+  bankAccountAudits      BankAccountAudit[]
+  passwordResetTokens    PasswordResetToken[]
+  securityAudits         SecurityAudit[]             @relation("SecurityAuditSubject")
+  performedSecurityAudits SecurityAudit[]            @relation("SecurityAuditActor")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model SecurityAudit {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation("SecurityAuditSubject", fields: [userId], references: [id])
+  actorUserId String?
+  actor       User?    @relation("SecurityAuditActor", fields: [actorUserId], references: [id])
+  action      String
+  result      String
+  comment     String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
 
 enum AccessScope {
   OWN
@@ -65,58 +141,57 @@ enum AccessScope {
 }
 
 model Role {
-  id          String   @id @default(uuid())
-  code        String   @unique
+  id          String  @id @default(uuid())
+  code        String  @unique
   name        String
   description String?
-  active      Boolean  @default(true)
+  active      Boolean @default(true)
 
-  users       UserRole[]
-  permissions RolePermission[]
+  users               UserRole[]
+  permissions         RolePermission[]
+  policyApprovalSteps PolicyApprovalStep[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-
 model Permission {
-  id          String   @id @default(uuid())
-  code        String   @unique
+  id          String  @id @default(uuid())
+  code        String  @unique
   name        String
   description String?
   module      String
   action      String
-  active      Boolean  @default(true)
+  active      Boolean @default(true)
 
-  roles       RolePermission[]
+  roles RolePermission[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-
 model RolePermission {
-  id           String     @id @default(uuid())
+  id String @id @default(uuid())
 
-  roleId       String
-  role         Role       @relation(fields: [roleId], references: [id])
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id])
 
   permissionId String
   permission   Permission @relation(fields: [permissionId], references: [id])
 
-  createdAt    DateTime   @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([roleId, permissionId])
 }
 
 model UserRole {
-  id        String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  roleId    String
-  role      Role     @relation(fields: [roleId], references: [id])
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id])
 
   createdAt DateTime @default(now())
 
@@ -124,21 +199,25 @@ model UserRole {
 }
 
 model Document {
-  id               String           @id @default(uuid())
+  id               String                     @id @default(uuid())
   fileName         String
   fileType         String
   mimeType         String
   storagePath      String
   sizeBytes        BigInt
-  status           DocumentStatus   @default(CARGADO)
+  status           DocumentStatus             @default(CARGADO)
   userId           String
-  user             User             @relation(fields: [userId], references: [id])
+  user             User                       @relation(fields: [userId], references: [id])
   ocrResult        OCRResult?
   confirmation     OCRConfirmation?
   expenseRequestId String?
-  expenseRequest   ExpenseRequest?  @relation(fields: [expenseRequestId], references: [id])
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  expenseRequest   ExpenseRequest?            @relation(fields: [expenseRequestId], references: [id])
+  settlementItem   ExpenseSettlementDocument?
+  refundEvidence   SettlementRefund?          @relation("SettlementRefundEvidence")
+  paymentEvidence  ExpenseRequestPayment?     @relation("ExpensePaymentEvidence")
+  functionalEvidence FunctionalTestEvidence[]
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
 }
 
 model OCRResult {
@@ -165,9 +244,42 @@ model OCRResult {
   totalAmount         Decimal? @db.Decimal(14, 2)
   taxIncludedInPrices Boolean?
 
-  extractedFields    ExtractedField[]
-  extraFields        ExtractedExtraField[]
-  extractedLineItems ExtractedLineItem[]
+  processingDurationMs  Int?
+  pageCount             Int?
+  ocrPageCount          Int?
+  directTextPageCount   Int?
+  retryCount            Int?
+  engineVersion         String?
+  reviewStartedAt       DateTime?
+  confirmedAt           DateTime?
+  fieldsDetectedCount   Int                       @default(0)
+  fieldsOmittedCount    Int                       @default(0)
+  modificationCount     Int                       @default(0)
+  detectedVoucherType   DocumentVoucherType?
+  finalVoucherType      DocumentVoucherType?
+  receiverTaxId         String?
+  receiverName          String?
+  receiverTradeName     String?
+  receiverType          FiscalReceiverType        @default(NO_IDENTIFICADO)
+  fiscalCompanyId       String?
+  fiscalCompany         Company?                  @relation("DetectedFiscalCompany", fields: [fiscalCompanyId], references: [id])
+  fiscalCompanyTaxId    String?
+  fiscalCompanyLegalName String?
+  fiscalCompanyTradeName String?
+  fiscalCompanyIdentifiedAt DateTime?
+  fiscalCompanyIdentificationMethod FiscalCompanyIdentificationMethod?
+  fiscalCompanyIdentificationStatus FiscalCompanyIdentificationStatus @default(EMPRESA_NO_IDENTIFICADA)
+  fiscalCompanyWarning  String?
+  complianceResult      DocumentComplianceResult?
+  complianceReason      String?
+  eligibleForSettlement Boolean                   @default(false)
+  usedInSettlement      Boolean                   @default(false)
+
+  extractedFields     ExtractedField[]
+  extraFields         ExtractedExtraField[]
+  extractedLineItems  ExtractedLineItem[]
+  validationRuns      OCRValidationRun[]
+  complianceDecisions OCRComplianceDecision[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -183,11 +295,75 @@ model ExtractedField {
   detectedValue   String?
   normalizedValue String?
   finalValue      String?
-  confidence      Decimal? @db.Decimal(5, 2)
-  wasCorrected    Boolean  @default(false)
+  confidence      Decimal?             @db.Decimal(5, 2)
+  sourceBlock     String?
+  extractionRule  String?
+  wasCorrected    Boolean              @default(false)
+  corrections     OCRFieldCorrection[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model OCRFieldCorrection {
+  id               String         @id @default(uuid())
+  extractedFieldId String
+  extractedField   ExtractedField @relation(fields: [extractedFieldId], references: [id], onDelete: Cascade)
+  ocrValue         String?
+  previousValue    String?
+  finalValue       String
+  reason           String?
+  userId           String
+  user             User           @relation(fields: [userId], references: [id])
+  createdAt        DateTime       @default(now())
+
+  @@index([extractedFieldId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model OCRValidationRun {
+  id             String    @id @default(uuid())
+  ocrResultId    String
+  ocrResult      OCRResult @relation(fields: [ocrResultId], references: [id], onDelete: Cascade)
+  documentType   String
+  expectedResult Json
+  obtainedResult Json
+  correct        Boolean
+  observations   String?
+  executedById   String
+  executedBy     User      @relation(fields: [executedById], references: [id])
+  createdAt      DateTime  @default(now())
+
+  @@index([ocrResultId, createdAt])
+  @@index([documentType, correct, createdAt])
+}
+
+model OCRComplianceDecision {
+  id                 String                   @id @default(uuid())
+  ocrResultId        String
+  ocrResult          OCRResult                @relation(fields: [ocrResultId], references: [id], onDelete: Cascade)
+  documentType       DocumentVoucherType
+  companyId          String?
+  company            Company?                 @relation(fields: [companyId], references: [id])
+  expectedTaxId      String?
+  foundTaxId         String?
+  receiverName       String?
+  receiverType       FiscalReceiverType
+  receiverConfidence Decimal?                 @db.Decimal(5, 2)
+  appliedRule        String
+  appliedPolicyId    String?
+  appliedPolicyCode  String?
+  appliedPolicyName  String?
+  result             DocumentComplianceResult
+  reason             String
+  actorUserId        String?
+  actorUser          User?                    @relation(fields: [actorUserId], references: [id])
+  actorName          String
+  createdAt          DateTime                 @default(now())
+
+  @@index([ocrResultId, createdAt])
+  @@index([companyId, result, createdAt])
+  @@index([documentType, result, createdAt])
 }
 
 model ExtractedExtraField {
@@ -267,6 +443,102 @@ enum RequestPriority {
   URGENTE
 }
 
+enum PolicyField {
+  AMOUNT
+  COMPANY
+  COUNTRY
+  COST_CENTER
+  BUDGET_ACCOUNT
+  EXPENSE_TYPE
+  PRIORITY
+  REQUESTER_ROLE
+  DESTINATION
+  CURRENCY
+  DAYS
+  DOCUMENT_TYPE
+}
+
+enum PolicyOperator {
+  EQUALS
+  NOT_EQUALS
+  GREATER_THAN
+  GREATER_THAN_OR_EQUAL
+  LESS_THAN
+  LESS_THAN_OR_EQUAL
+  CONTAINS
+  IN
+}
+
+enum PolicyResultStatus {
+  OK
+  WARNING
+  ERROR
+  APPROVAL_REQUIRED
+  NOT_APPLICABLE
+}
+
+enum ApprovalFlowStatus {
+  PENDIENTE
+  EN_REVISION
+  APROBADA
+  RECHAZADA
+  OBSERVADA
+  EXPIRADA
+  CANCELADA
+}
+
+enum ApprovalStepStatus {
+  PENDIENTE
+  ASIGNADA
+  EN_REVISION
+  APROBADA
+  RECHAZADA
+  OBSERVADA
+  OMITIDA
+  EXPIRADA
+  CANCELADA
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  MICROSOFT_TEAMS
+  PUSH
+  WEBHOOK
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+}
+
+enum BudgetSourceType {
+  EXCEL
+  ORACLE_JDE_API
+  ORACLE_JDE_DATABASE
+  ETL
+}
+
+enum BudgetVersionStatus {
+  VALIDATED
+  ACTIVE
+  SUPERSEDED
+  REJECTED
+}
+
+enum BudgetReservationStatus {
+  RESERVED
+  RELEASED
+  EXECUTED
+}
+
 enum PaymentStatus {
   PENDIENTE
   EN_PROCESO
@@ -283,6 +555,19 @@ enum PaymentMethod {
   OTRO
 }
 
+enum PaymentModality {
+  REEMBOLSO
+  ANTICIPO_VIATICOS
+  PAGO_PROVEEDOR
+  PAGO_SERVICIO
+  PAGO_DIRECTO
+}
+
+enum FinancialOperationType {
+  DESEMBOLSO_SOLICITANTE
+  PAGO_DIRECTO
+}
+
 model ExpenseRequestPayment {
   id               String         @id @default(uuid())
   expenseRequestId String
@@ -290,6 +575,10 @@ model ExpenseRequestPayment {
 
   paymentMethod PaymentMethod
   paymentStatus PaymentStatus @default(PENDIENTE)
+  operationType FinancialOperationType @default(DESEMBOLSO_SOLICITANTE)
+
+  beneficiaryName  String
+  beneficiaryTaxId String?
 
   bankName        String?
   accountNumber   String?
@@ -306,6 +595,13 @@ model ExpenseRequestPayment {
 
   notes String?
 
+  bankAccountId     String?
+  bankAccount       ApplicantBankAccount? @relation(fields: [bankAccountId], references: [id])
+  evidenceDocumentId String?              @unique
+  evidenceDocument   Document?            @relation("ExpensePaymentEvidence", fields: [evidenceDocumentId], references: [id])
+
+  settlements ExpenseSettlement[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -316,14 +612,19 @@ model ExpenseRequest {
   type     ExpenseType
   status   ExpenseRequestStatus @default(BORRADOR)
   priority RequestPriority      @default(NORMAL)
+  paymentModality PaymentModality @default(REEMBOLSO)
+  intendedBeneficiaryName  String?
+  intendedBeneficiaryTaxId String?
 
   requesterId   String
   requesterName String
   requesterRole String
 
-  companyName   String
-  costCenter    String
-  budgetAccount String?
+  companyName    String
+  costCenter     String
+  budgetAccount  String?
+  budgetLineId   String?
+  budgetPeriodId String?
 
   concept       String
   justification String?
@@ -335,23 +636,34 @@ model ExpenseRequest {
   companyId  String?
   currencyId String?
 
-  estimatedAmount Decimal @db.Decimal(14, 2)
-  currency        String  @default("GTQ")
+  estimatedAmount  Decimal  @db.Decimal(14, 2)
+  currency         String   @default("GTQ")
+  exchangeRate     Decimal  @default(1) @db.Decimal(20, 10)
+  budgetAmount     Decimal? @db.Decimal(18, 2)
+  budgetCurrencyId String?
 
-  payments ExpenseRequestPayment[]
+  payments    ExpenseRequestPayment[]
+  settlements ExpenseSettlement[]
 
   documents Document[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items       ExpenseRequestItem[]
-  validations ExpenseRequestValidation[]
-  traces      ExpenseRequestTrace[]
-  company     Company?                   @relation("CompanyExpenseRequests", fields: [companyId], references: [id])
-  currencyRef Currency?                  @relation("CurrencyExpenseRequests", fields: [currencyId], references: [id])
-  Country     Country?                   @relation(fields: [countryId], references: [id])
-  countryId   String?
+  items              ExpenseRequestItem[]
+  validations        ExpenseRequestValidation[]
+  traces             ExpenseRequestTrace[]
+  company            Company?                   @relation("CompanyExpenseRequests", fields: [companyId], references: [id])
+  currencyRef        Currency?                  @relation("CurrencyExpenseRequests", fields: [currencyId], references: [id])
+  budgetCurrency     Currency?                  @relation("BudgetCurrencyExpenseRequests", fields: [budgetCurrencyId], references: [id])
+  Country            Country?                   @relation(fields: [countryId], references: [id])
+  countryId          String?
+  approvalFlow       ApprovalFlow?
+  budgetReservations BudgetReservation[]
+  budgetLine         BudgetLine?                @relation("SelectedBudgetLine", fields: [budgetLineId], references: [id])
+  budgetPeriod       BudgetPeriod?              @relation("SelectedBudgetPeriod", fields: [budgetPeriodId], references: [id])
+
+  @@index([budgetLineId, budgetPeriodId])
 }
 
 model ExpenseRequestItem {
@@ -394,6 +706,243 @@ model ExpenseRequestTrace {
   createdAt DateTime @default(now())
 }
 
+model PolicyRule {
+  id              String             @id @default(uuid())
+  code            String             @unique
+  name            String
+  description     String?
+  field           PolicyField
+  operator        PolicyOperator
+  comparisonValue String
+  action          PolicyResultStatus
+  message         String
+  priority        Int                @default(100)
+  companyId       String?
+  expenseType     ExpenseType?
+  active          Boolean            @default(true)
+  validFrom       DateTime?
+  validTo         DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  company       Company?             @relation(fields: [companyId], references: [id])
+  approvalSteps PolicyApprovalStep[]
+
+  @@index([active, deletedAt, validFrom, validTo])
+  @@index([companyId, expenseType, priority])
+  @@index([field, action])
+}
+
+model PolicyApprovalStep {
+  id             String   @id @default(uuid())
+  policyRuleId   String
+  order          Int
+  approverRoleId String?
+  approverUserId String?
+  required       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  policyRule   PolicyRule @relation(fields: [policyRuleId], references: [id], onDelete: Cascade)
+  approverRole Role?      @relation(fields: [approverRoleId], references: [id])
+  approverUser User?      @relation("PolicyApprovalUser", fields: [approverUserId], references: [id])
+
+  @@unique([policyRuleId, order])
+  @@index([approverRoleId])
+  @@index([approverUserId])
+}
+
+model ApprovalFlow {
+  id                 String             @id @default(uuid())
+  entityType         String
+  entityId           String
+  expenseRequestId   String?            @unique
+  status             ApprovalFlowStatus @default(PENDIENTE)
+  currentStepOrder   Int?
+  generatedAt        DateTime           @default(now())
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancelledByUserId  String?
+  cancellationReason String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  expenseRequest ExpenseRequest?    @relation(fields: [expenseRequestId], references: [id])
+  settlement     ExpenseSettlement?
+  steps          ApprovalStep[]
+
+  @@unique([entityType, entityId])
+  @@index([status, currentStepOrder])
+}
+
+model ApprovalStep {
+  id                   String             @id @default(uuid())
+  flowId               String
+  order                Int
+  sourcePolicyRuleId   String?
+  sourcePolicyRuleCode String?
+  approverRoleCode     String?
+  assignedUserId       String?
+  delegatedFromUserId  String?
+  status               ApprovalStepStatus @default(PENDIENTE)
+  required             Boolean            @default(true)
+  assignedAt           DateTime?
+  startedAt            DateTime?
+  decidedAt            DateTime?
+  decidedByUserId      String?
+  comment              String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  flow              ApprovalFlow @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  assignedUser      User?        @relation("ApprovalAssignedUser", fields: [assignedUserId], references: [id])
+  delegatedFromUser User?        @relation("ApprovalDelegatedFromUser", fields: [delegatedFromUserId], references: [id])
+  decidedByUser     User?        @relation("ApprovalDecisionUser", fields: [decidedByUserId], references: [id])
+
+  @@unique([flowId, order])
+  @@index([assignedUserId, status])
+  @@index([flowId, status])
+}
+
+model Notification {
+  id          String               @id @default(uuid())
+  userId      String
+  channel     NotificationChannel  @default(IN_APP)
+  eventType   String
+  title       String
+  description String
+  priority    NotificationPriority @default(NORMAL)
+  status      NotificationStatus   @default(UNREAD)
+  link        String?
+  entityType  String?
+  entityId    String?
+  metadata    Json?
+  readAt      DateTime?
+  createdAt   DateTime             @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, createdAt])
+  @@index([userId, eventType, createdAt])
+  @@index([entityType, entityId])
+}
+
+model SlaRule {
+  id             String          @id @default(uuid())
+  priority       RequestPriority @unique
+  targetMinutes  Int
+  warningMinutes Int
+  active         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model BudgetVersion {
+  id               String              @id @default(uuid())
+  fiscalYear       Int
+  versionNumber    Int
+  sourceType       BudgetSourceType
+  sourceFileName   String?
+  sourceHash       String
+  sourceSheet      String?
+  sourceUpdatedAt  String?
+  comment          String?
+  status           BudgetVersionStatus @default(VALIDATED)
+  active           Boolean             @default(false)
+  importedByUserId String
+  importedAt       DateTime            @default(now())
+  rowCount         Int
+  warningCount     Int                 @default(0)
+  approvedTotal    Decimal             @db.Decimal(18, 2)
+  metadata         Json?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  currencyId       String
+
+  importedBy User         @relation(fields: [importedByUserId], references: [id])
+  currency   Currency     @relation("BudgetVersionCurrency", fields: [currencyId], references: [id])
+  lines      BudgetLine[]
+
+  @@unique([fiscalYear, versionNumber])
+  @@unique([fiscalYear, sourceHash])
+  @@index([fiscalYear, active, status])
+}
+
+model BudgetLine {
+  id                 String   @id @default(uuid())
+  versionId          String
+  naturalKey         String
+  sourceRow          Int
+  sourceCountryCode  String
+  countryId          String?
+  companyId          String?
+  businessUnit       String
+  objectCode         String
+  subCode            String
+  accountCode        String
+  accountDescription String
+  detailDescription  String
+  area               String
+  frequency          String?
+  currency           String   @default("USD")
+  annualAmount       Decimal  @db.Decimal(18, 2)
+  sourceAnnualAmount Decimal? @db.Decimal(18, 2)
+  sourceComment      String?
+  createdAt          DateTime @default(now())
+
+  version          BudgetVersion       @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  country          Country?            @relation(fields: [countryId], references: [id])
+  company          Company?            @relation(fields: [companyId], references: [id])
+  periods          BudgetPeriod[]
+  reservations     BudgetReservation[]
+  selectedRequests ExpenseRequest[]    @relation("SelectedBudgetLine")
+
+  @@unique([versionId, naturalKey])
+  @@index([versionId, accountCode, businessUnit])
+  @@index([companyId, countryId, accountCode])
+}
+
+model BudgetPeriod {
+  id             String   @id @default(uuid())
+  budgetLineId   String
+  fiscalYear     Int
+  month          Int
+  approvedAmount Decimal  @db.Decimal(18, 2)
+  createdAt      DateTime @default(now())
+
+  budgetLine       BudgetLine          @relation(fields: [budgetLineId], references: [id], onDelete: Cascade)
+  selectedRequests ExpenseRequest[]    @relation("SelectedBudgetPeriod")
+  reservations     BudgetReservation[]
+
+  @@unique([budgetLineId, fiscalYear, month])
+  @@index([fiscalYear, month])
+}
+
+model BudgetReservation {
+  id               String                  @id @default(uuid())
+  expenseRequestId String
+  budgetLineId     String
+  budgetPeriodId   String?
+  amount           Decimal                 @db.Decimal(18, 2)
+  currency         String
+  status           BudgetReservationStatus @default(RESERVED)
+  reservedAt       DateTime                @default(now())
+  releasedAt       DateTime?
+  executedAt       DateTime?
+  releaseReason    String?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  expenseRequest ExpenseRequest @relation(fields: [expenseRequestId], references: [id])
+  budgetLine     BudgetLine     @relation(fields: [budgetLineId], references: [id])
+  budgetPeriod   BudgetPeriod?  @relation(fields: [budgetPeriodId], references: [id])
+
+  @@unique([expenseRequestId, budgetLineId])
+  @@index([budgetLineId, status])
+  @@index([budgetPeriodId, status])
+}
+
 model Country {
   id        String   @id @default(uuid())
   code      String   @unique
@@ -405,6 +954,7 @@ model Country {
   currencies      Currency[]
   companies       Company[]
   expenseRequests ExpenseRequest[]
+  budgetLines     BudgetLine[]
 }
 
 model Currency {
@@ -418,14 +968,119 @@ model Currency {
 
   countries              Country[]
   companies              Company[]
-  expenseRequests        ExpenseRequest[]        @relation("CurrencyExpenseRequests")
+  expenseRequests        ExpenseRequest[]            @relation("CurrencyExpenseRequests")
+  budgetVersions         BudgetVersion[]             @relation("BudgetVersionCurrency")
+  budgetExpenseRequests  ExpenseRequest[]            @relation("BudgetCurrencyExpenseRequests")
   expenseRequestPayments ExpenseRequestPayment[]
+  exchangeRatesFrom      ExchangeRate[]              @relation("ExchangeRateFromCurrency")
+  exchangeRatesTo        ExchangeRate[]              @relation("ExchangeRateToCurrency")
+  settlements            ExpenseSettlement[]
+  settlementDocuments    ExpenseSettlementDocument[] @relation("SettlementDocumentCurrency")
+  settlementRefunds      SettlementRefund[]
+  applicantBankAccounts  ApplicantBankAccount[]
+}
+
+model Bank {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts ApplicantBankAccount[]
+  settlementRefunds SettlementRefund[]
+}
+
+enum BankAccountType {
+  AHORRO
+  MONETARIA
+  CORRIENTE
+  OTRO
+}
+
+model ApplicantBankAccount {
+  id            String          @id @default(uuid())
+  userId        String
+  bankId        String
+  accountType   BankAccountType
+  accountNumber String
+  holderName    String
+  currencyId    String
+  active        Boolean         @default(true)
+  isDefault     Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id])
+  bank     Bank     @relation(fields: [bankId], references: [id])
+  currency Currency @relation(fields: [currencyId], references: [id])
+  payments ExpenseRequestPayment[]
+  audits   BankAccountAudit[]
+
+  @@unique([userId, bankId, accountNumber])
+  @@index([userId, currencyId, active])
+}
+
+model BankAccountAudit {
+  id            String   @id @default(uuid())
+  bankAccountId String
+  userId        String
+  action        String
+  comment       String?
+  result        String
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  bankAccount ApplicantBankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  user        User                 @relation(fields: [userId], references: [id])
+
+  @@index([bankAccountId, createdAt])
+}
+
+model ExchangeRate {
+  id             String   @id @default(uuid())
+  fromCurrencyId String
+  toCurrencyId   String
+  rate           Decimal  @db.Decimal(20, 10)
+  effectiveDate  DateTime @db.Date
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  fromCurrency Currency            @relation("ExchangeRateFromCurrency", fields: [fromCurrencyId], references: [id])
+  toCurrency   Currency            @relation("ExchangeRateToCurrency", fields: [toCurrencyId], references: [id])
+  audits       ExchangeRateAudit[]
+
+  @@unique([fromCurrencyId, toCurrencyId, effectiveDate])
+  @@index([fromCurrencyId, toCurrencyId, active, effectiveDate])
+}
+
+model ExchangeRateAudit {
+  id             String   @id @default(uuid())
+  exchangeRateId String
+  action         String
+  previousRate   Decimal? @db.Decimal(20, 10)
+  newRate        Decimal? @db.Decimal(20, 10)
+  previousActive Boolean?
+  newActive      Boolean?
+  changedById    String?
+  changedByName  String
+  createdAt      DateTime @default(now())
+
+  exchangeRate ExchangeRate @relation(fields: [exchangeRateId], references: [id], onDelete: Cascade)
+
+  @@index([exchangeRateId, createdAt])
+  @@index([changedById, createdAt])
 }
 
 model Company {
   id         String   @id @default(uuid())
   code       String   @unique
   name       String
+  legalName  String?
+  tradeName  String?
+  taxId      String?  @unique
   countryId  String
   currencyId String
   active     Boolean  @default(true)
@@ -435,9 +1090,170 @@ model Company {
   country         Country          @relation(fields: [countryId], references: [id])
   currency        Currency         @relation(fields: [currencyId], references: [id])
   expenseRequests ExpenseRequest[] @relation("CompanyExpenseRequests")
-  users User[]
+  budgetLines     BudgetLine[]
+  users           User[]
 
-  documentSeries DocumentSeries[]
+  documentSeries         DocumentSeries[]
+  policyRules            PolicyRule[]
+  ocrComplianceDecisions OCRComplianceDecision[]
+  detectedFiscalDocuments OCRResult[]             @relation("DetectedFiscalCompany")
+  settlements            ExpenseSettlement[]
+  testRecords            FunctionalTestRecord[]
+}
+
+enum FiscalCompanyIdentificationMethod {
+  OCR
+  CORRECCION_MANUAL
+}
+
+enum FiscalCompanyIdentificationStatus {
+  EMPRESA_NO_IDENTIFICADA
+  EMPRESA_IDENTIFICADA
+}
+
+enum SettlementStatus {
+  BORRADOR
+  PENDIENTE_REVISION
+  OBSERVADA
+  APROBADA
+  CERRADA
+  RECHAZADA
+}
+
+enum SettlementBalanceStatus {
+  PENDIENTE_DEVOLUCION
+  DEVOLUCION_EN_VALIDACION
+  CUADRADA
+  EXCESO_DE_RENDICION
+}
+
+enum SettlementRefundStatus {
+  PENDIENTE
+  EN_VALIDACION
+  VALIDADA
+  RECHAZADA
+  DEVOLUCION_REGISTRADA
+  DEVOLUCION_EN_REVISION
+  DEVOLUCION_VALIDADA
+  DEVOLUCION_RECHAZADA
+  CORRECCION_SOLICITADA
+}
+
+enum SettlementCertificationStatus {
+  PENDIENTE
+  CERTIFICADA
+}
+
+model ExpenseSettlement {
+  id                   String                  @id @default(uuid())
+  code                 String                  @unique
+  expenseRequestId     String                  @unique
+  paymentId            String
+  companyId            String?
+  preparedByUserId     String
+  currencyId           String
+  disbursedAmount      Decimal                 @db.Decimal(14, 2)
+  documentsTotal       Decimal                 @default(0) @db.Decimal(14, 2)
+  validatedRefundTotal Decimal                 @default(0) @db.Decimal(14, 2)
+  differenceAmount     Decimal                 @db.Decimal(14, 2)
+  status               SettlementStatus        @default(BORRADOR)
+  balanceStatus        SettlementBalanceStatus @default(PENDIENTE_DEVOLUCION)
+  currentObservation   String?
+  submittedAt          DateTime?
+  approvedAt           DateTime?
+  closedAt             DateTime?
+  certificationStatus  SettlementCertificationStatus @default(PENDIENTE)
+  certifiedAt          DateTime?
+  certifiedByUserId    String?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+
+  expenseRequest ExpenseRequest              @relation(fields: [expenseRequestId], references: [id])
+  payment        ExpenseRequestPayment       @relation(fields: [paymentId], references: [id])
+  company        Company?                    @relation(fields: [companyId], references: [id])
+  preparedBy     User                        @relation("SettlementPreparer", fields: [preparedByUserId], references: [id])
+  certifiedBy    User?                       @relation("SettlementCertifier", fields: [certifiedByUserId], references: [id])
+  currency       Currency                    @relation(fields: [currencyId], references: [id])
+  documents      ExpenseSettlementDocument[]
+  refunds        SettlementRefund[]
+  audits         SettlementAudit[]
+  approvalFlow   ApprovalFlow?               @relation(fields: [approvalFlowId], references: [id])
+  approvalFlowId String?                     @unique
+
+  @@index([companyId, status, createdAt])
+  @@index([preparedByUserId, status])
+}
+
+model ExpenseSettlementDocument {
+  id                       String   @id @default(uuid())
+  settlementId             String
+  documentId               String   @unique
+  selectedByUserId         String
+  originalAmount           Decimal  @db.Decimal(14, 2)
+  originalCurrencyId       String
+  exchangeRate             Decimal  @db.Decimal(20, 10)
+  exchangeRateId           String?
+  settlementCurrencyAmount Decimal  @db.Decimal(14, 2)
+  selectedAt               DateTime @default(now())
+
+  settlement       ExpenseSettlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  document         Document          @relation(fields: [documentId], references: [id])
+  selectedBy       User              @relation("SettlementDocumentSelector", fields: [selectedByUserId], references: [id])
+  originalCurrency Currency          @relation("SettlementDocumentCurrency", fields: [originalCurrencyId], references: [id])
+
+  @@index([settlementId])
+}
+
+model SettlementRefund {
+  id                 String                 @id @default(uuid())
+  settlementId       String
+  paymentMethod      PaymentMethod
+  amount             Decimal                @db.Decimal(14, 2)
+  currencyId         String
+  exchangeRate       Decimal                @db.Decimal(20, 10)
+  exchangeRateId     String?
+  settlementAmount   Decimal                @db.Decimal(14, 2)
+  operationDate      DateTime
+  referenceNumber    String
+  bankId             String?
+  observations       String?
+  evidenceDocumentId String                 @unique
+  status             SettlementRefundStatus @default(EN_VALIDACION)
+  createdByUserId    String
+  validatedByUserId  String?
+  validatedAt        DateTime?
+  rejectionReason    String?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  settlement       ExpenseSettlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  currency         Currency          @relation(fields: [currencyId], references: [id])
+  bank             Bank?              @relation(fields: [bankId], references: [id])
+  evidenceDocument Document          @relation("SettlementRefundEvidence", fields: [evidenceDocumentId], references: [id])
+  createdBy        User              @relation("SettlementRefundCreator", fields: [createdByUserId], references: [id])
+  validatedBy      User?             @relation("SettlementRefundValidator", fields: [validatedByUserId], references: [id])
+
+  @@index([settlementId, status])
+  @@index([bankId])
+}
+
+model SettlementAudit {
+  id           String   @id @default(uuid())
+  settlementId String
+  action       String
+  fromStatus   String?
+  toStatus     String?
+  description  String
+  metadata     Json?
+  userId       String
+  userName     String
+  userRole     String?
+  createdAt    DateTime @default(now())
+
+  settlement ExpenseSettlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  user       User              @relation(fields: [userId], references: [id])
+
+  @@index([settlementId, createdAt])
 }
 
 model DocumentSeries {
@@ -455,4 +1271,89 @@ model DocumentSeries {
   company Company @relation(fields: [companyId], references: [id])
 
   @@unique([companyId, documentType, year])
+}
+
+enum FunctionalTestRecordStatus {
+  BORRADOR
+  EN_EJECUCION
+  CERRADO
+}
+
+enum FunctionalTestCaseStatus {
+  PENDIENTE
+  EN_PROCESO
+  REALIZADA
+  NO_REALIZADA
+}
+
+enum FunctionalTestResult {
+  EXITOSA
+  NO_EXITOSA
+  NO_APLICA
+}
+
+model FunctionalTestRecord {
+  id                String @id @default(uuid())
+  project           String
+  analystName       String
+  performedByName   String
+  startedAt         DateTime
+  comments          String?
+  status            FunctionalTestRecordStatus @default(BORRADOR)
+  companyId         String?
+  company           Company? @relation(fields: [companyId], references: [id])
+  createdByUserId   String
+  createdBy         User @relation("TestRecordCreator", fields: [createdByUserId], references: [id])
+  cases             FunctionalTestCase[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  @@index([companyId, status])
+}
+
+model FunctionalRequirement {
+  id          String @id @default(uuid())
+  code        String
+  name        String
+  description String?
+  cases       FunctionalTestCase[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@unique([code, name])
+}
+
+model FunctionalTestCase {
+  id                String @id @default(uuid())
+  recordId          String
+  record            FunctionalTestRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  requirementId     String
+  requirement       FunctionalRequirement @relation(fields: [requirementId], references: [id])
+  testDescription   String
+  acceptanceCriteria String
+  estimatedTime     String?
+  testDate          DateTime?
+  status            FunctionalTestCaseStatus @default(PENDIENTE)
+  result            FunctionalTestResult?
+  observedResult    String?
+  observations     String?
+  executedByUserId String?
+  executedBy       User? @relation("TestCaseExecutor", fields: [executedByUserId], references: [id])
+  executedAt       DateTime?
+  evidence         FunctionalTestEvidence[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  @@index([recordId, status])
+  @@index([requirementId])
+}
+
+model FunctionalTestEvidence {
+  id             String @id @default(uuid())
+  testCaseId     String
+  testCase       FunctionalTestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  documentId     String
+  document       Document @relation(fields: [documentId], references: [id])
+  uploadedByUserId String
+  uploadedBy     User @relation("TestEvidenceUploader", fields: [uploadedByUserId], references: [id])
+  createdAt      DateTime @default(now())
+  @@unique([testCaseId, documentId])
+  @@index([documentId])
 }

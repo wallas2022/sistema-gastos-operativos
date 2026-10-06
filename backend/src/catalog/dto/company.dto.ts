@@ -9,6 +9,10 @@ export class CreateCompanyDto {
   @Length(1, 150)
   name: string;
 
+  @IsOptional() @IsString() @Length(1, 200) legalName?: string;
+  @IsOptional() @IsString() @Length(1, 150) tradeName?: string;
+  @IsOptional() @IsString() @Length(3, 30) taxId?: string;
+
   @IsUUID()
   countryId: string;
 
@@ -26,6 +30,10 @@ export class UpdateCompanyDto {
   @IsString()
   @Length(1, 150)
   name?: string;
+
+  @IsOptional() @IsString() @Length(1, 200) legalName?: string;
+  @IsOptional() @IsString() @Length(1, 150) tradeName?: string;
+  @IsOptional() @IsString() @Length(3, 30) taxId?: string;
 
   @IsOptional()
   @IsUUID()

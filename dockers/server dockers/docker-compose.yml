@@ -1,6 +1,22 @@
-version: '3.9'
+
 
 services:
+  ocr:
+    build:
+      context: ../../Microservicio-OCR
+    container_name: ocr_service
+    restart: unless-stopped
+    environment:
+      OCR_INTERNAL_API_KEY: ${OCR_INTERNAL_API_KEY:?Configure OCR_INTERNAL_API_KEY}
+      OCR_MAX_FILE_SIZE_MB: ${OCR_MAX_FILE_SIZE_MB:-20}
+      OCR_MAX_IMAGE_PIXELS: ${OCR_MAX_IMAGE_PIXELS:-40000000}
+      OCR_MAX_IMAGE_SIDE: ${OCR_MAX_IMAGE_SIDE:-3000}
+      OCR_RETRY_IMAGE_SIDE: ${OCR_RETRY_IMAGE_SIDE:-2200}
+      OCR_MAX_PDF_PAGES: ${OCR_MAX_PDF_PAGES:-25}
+      OCR_PDF_RENDER_DPI: ${OCR_PDF_RENDER_DPI:-200}
+    ports:
+      - "127.0.0.1:8000:8000"
+
   postgres:
     image: postgres:16
     container_name: ocr_postgres

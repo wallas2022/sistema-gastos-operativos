@@ -10,6 +10,17 @@ import { ExpenseRequestsModule } from './modules/expense-requests/expense-reques
 import { ExpenseRequestPaymentsModule } from './modules/expense-request-payments/expense-request-payments.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { SecurityModule } from './modules/security/security.module';
+import { TraceabilityModule } from './modules/traceability/traceability.module';
+import { PoliciesModule } from './modules/policies/policies.module';
+import { ApprovalModule } from './modules/approval/approval.module';
+import { WorkflowModule } from './modules/workflow/workflow.module';
+import { BudgetModule } from './modules/budget/budget.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { ExchangeRatesModule } from './modules/exchange-rates/exchange-rates.module';
+import { SettlementsModule } from './modules/settlements/settlements.module';
+import { BankingModule } from './modules/banking/banking.module';
+import { FunctionalTestsModule } from './modules/functional-tests/functional-tests.module';
 
 
 @Module({
@@ -19,6 +30,7 @@ import { SecurityModule } from './modules/security/security.module';
       load: [configuration],
     }),
     PrismaModule,
+    WorkflowModule,
     UsersModule,
     CatalogModule,
     AuthModule,
@@ -27,6 +39,16 @@ import { SecurityModule } from './modules/security/security.module';
     ExpenseRequestsModule,
     ExpenseRequestPaymentsModule,
     SecurityModule,
+    TraceabilityModule,
+    PoliciesModule,
+    ApprovalModule,
+    BudgetModule,
+    DashboardModule,
+    ReportsModule,
+    ExchangeRatesModule,
+    SettlementsModule,
+    BankingModule,
+    FunctionalTestsModule,
   ],
 })
 export class AppModule {}

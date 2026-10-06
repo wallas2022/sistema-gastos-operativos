@@ -18,6 +18,7 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
+import { AdminResetPasswordDto } from './dto/password-admin.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('security')
@@ -53,14 +54,20 @@ export class SecurityController {
   @Patch('users/:id/activate')
   activateUser(@Param('id') id: string, @Req() req: any) {
     requirePermission(req.user, 'SECURITY_USERS_WRITE');
-    return this.securityService.activateUser(id);
+    return this.securityService.activateUser(id, req.user, req.ip);
   }
 
   @Patch('users/:id/deactivate')
   deactivateUser(@Param('id') id: string, @Req() req: any) {
     requirePermission(req.user, 'SECURITY_USERS_WRITE');
-    return this.securityService.deactivateUser(id);
+    return this.securityService.deactivateUser(id, req.user, req.ip);
   }
+
+  @Patch('users/:id/block') blockUser(@Param('id') id: string, @Req() req: any) { requirePermission(req.user, 'SECURITY_USERS_WRITE'); return this.securityService.setBlocked(id, true, req.user, req.ip); }
+  @Patch('users/:id/unblock') unblockUser(@Param('id') id: string, @Req() req: any) { requirePermission(req.user, 'SECURITY_USERS_WRITE'); return this.securityService.setBlocked(id, false, req.user, req.ip); }
+  @Patch('users/:id/force-password-change') forcePasswordChange(@Param('id') id: string, @Req() req: any) { requirePermission(req.user, 'SECURITY_USERS_WRITE'); return this.securityService.forcePasswordChange(id, req.user, req.ip); }
+  @Post('users/:id/password-reset-link') generateResetLink(@Param('id') id: string, @Req() req: any) { requirePermission(req.user, 'SECURITY_USERS_WRITE'); return this.securityService.generateResetLink(id, req.user, req.ip); }
+  @Post('users/:id/reset-password') adminReset(@Param('id') id: string, @Body() dto: AdminResetPasswordDto, @Req() req: any) { requirePermission(req.user, 'SECURITY_USERS_WRITE'); return this.securityService.adminResetPassword(id, dto.temporaryPassword, dto.forceChange, req.user, req.ip); }
 
   // ─── Roles ────────────────────────────────────────────────────────────────
 

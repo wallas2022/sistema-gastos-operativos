@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
   Box,
@@ -9,8 +9,10 @@ import {
   Heading,
   Text,
   VStack,
+  Input,
+
 } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Building2,
   CalendarDays,
@@ -31,18 +33,23 @@ import {
 
 import {
   costCenters,
-  budgetAccounts,
   expenseTypes,
   priorities,
   providerPaymentRubrics,
   providers,
-  requesterRoles,
   supplyItems,
   travelSuggestedItemsByRole,
   type ExpenseType,
 } from "../../data/planningCatalogs";
 
-import { api } from "../../shared/services/api";
+import {
+  createExpenseRequest,
+  getExpenseRequestById,
+  updateExpenseRequest,
+  type ExpenseRequestPayload,
+} from "../../services/expenseRequests.service";
+import { getAvailableBudgetLines, type BudgetLineOption } from "../../services/budget.service";
+import { SearchableSelect } from "../../common/SearchableSelect";
 
 type ExpenseItem = {
   name: string;
@@ -54,11 +61,14 @@ type ExpenseItem = {
 type ExpenseForm = {
   type: ExpenseType;
   priority: string;
-  requesterName: string;
-  requesterRole: string;
+  paymentModality: string;
+  intendedBeneficiaryName: string;
+  intendedBeneficiaryTaxId: string;
   businessUnit: string;
   costCenter: string;
   budgetAccount: string;
+  budgetLineId: string;
+  budgetPeriodId: string;
   concept: string;
   description: string;
   justification: string;
@@ -90,6 +100,10 @@ const textareaStyle: React.CSSProperties = {
 
 export function ExpenseRequestCreatePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+  const isEditing = Boolean(editId);
+  const loadedDraftId = useRef<string | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -102,19 +116,33 @@ export function ExpenseRequestCreatePage() {
   const [currencyId, setCurrencyId] = useState("");
   const [loadingCatalogs, setLoadingCatalogs] = useState(false);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [budgetLines, setBudgetLines] = useState<BudgetLineOption[]>([]);
+  const [loadingBudgetLines, setLoadingBudgetLines] = useState(false);
 
   const [selectedProviderId, setSelectedProviderId] = useState("");
   const [selectedRubricId, setSelectedRubricId] = useState("");
   const [selectedSupplyCode, setSelectedSupplyCode] = useState("");
+  const storedUser = localStorage.getItem("user");
+  const loggedUser = useMemo(() => {
+    if (!storedUser) return null;
+    try {
+      return JSON.parse(storedUser);
+    } catch {
+      return null;
+    }
+  }, [storedUser]);
 
   const [form, setForm] = useState<ExpenseForm>({
     type: "GASTO_VIAJE",
     priority: "NORMAL",
-    requesterName: "Walter Rosales",
-    requesterRole: "Gerente",
-    businessUnit: "Administración",
+    paymentModality: "ANTICIPO_VIATICOS",
+    intendedBeneficiaryName: "",
+    intendedBeneficiaryTaxId: "",
+    businessUnit: "",
     costCenter: "CC-ADM-001",
-    budgetAccount: "6101 - Gastos administrativos",
+    budgetAccount: "",
+    budgetLineId: "",
+    budgetPeriodId: "",
     concept: "Viaje operativo para supervisión regional",
     description: "Solicitud de gastos para visita técnica a sucursal regional.",
     justification: "Supervisión operativa planificada.",
@@ -144,13 +172,7 @@ export function ExpenseRequestCreatePage() {
     },
   ]);
 
-  const selectedExpenseType = form.type;
-
-  const availableBudgetAccounts = useMemo(() => {
-    return budgetAccounts.filter((account) =>
-      account.expenseTypes.includes(selectedExpenseType)
-    );
-  }, [selectedExpenseType]);
+  const selectedBudgetLine = useMemo(() => budgetLines.find((line) => line.id === form.budgetLineId && line.periodId === form.budgetPeriodId), [budgetLines, form.budgetLineId, form.budgetPeriodId]);
 
   const selectedProvider = useMemo(() => {
     return providers.find((provider) => provider.id === selectedProviderId);
@@ -218,8 +240,14 @@ export function ExpenseRequestCreatePage() {
         const companiesData = await catalogsService.getCompanies(countryId);
 
         setRealCompanies(companiesData);
-        setCompanyId("");
-        setCurrencyId("");
+        setCompanyId((current) =>
+          companiesData.some((company) => company.id === current) ? current : ""
+        );
+        setCurrencyId((current) =>
+          companiesData.some((company) => company.currencyId === current)
+            ? current
+            : ""
+        );
       } catch (error) {
         console.error("Error cargando empresas por país:", error);
         setRealCompanies([]);
@@ -233,6 +261,76 @@ export function ExpenseRequestCreatePage() {
 
     loadCompaniesByCountry();
   }, [countryId]);
+
+  useEffect(() => {
+    if (!editId || loadingCatalogs || loadedDraftId.current === editId) return;
+    loadedDraftId.current = editId;
+
+    const loadDraft = async () => {
+      try {
+        setIsSaving(true);
+        const request = await getExpenseRequestById(editId);
+
+        if (request.status !== "BORRADOR") {
+          alert("Solo se pueden editar solicitudes en estado borrador.");
+          navigate(`/solicitudes-gastos/${editId}`);
+          return;
+        }
+
+        setCountryId(request.countryId || "");
+        setCompanyId(request.companyId || "");
+        setCurrencyId(request.currencyId || "");
+        setForm({
+          type: request.type as ExpenseType,
+          priority: request.priority,
+          paymentModality: request.paymentModality || "REEMBOLSO",
+          intendedBeneficiaryName: request.intendedBeneficiaryName || "",
+          intendedBeneficiaryTaxId: request.intendedBeneficiaryTaxId || "",
+          businessUnit: "",
+          costCenter: request.costCenter || "",
+          budgetAccount: request.budgetAccount || "",
+          budgetLineId: request.budgetLineId || "",
+          budgetPeriodId: request.budgetPeriodId || "",
+          concept: request.concept || "",
+          description: request.description || "",
+          justification: request.justification || "",
+          destination: request.destination || "",
+          days: request.days || 1,
+          startDate: request.estimatedDate
+            ? request.estimatedDate.slice(0, 10)
+            : "",
+        });
+        setItems(
+          (request.items || []).map((item) => ({
+            name: item.name,
+            description: item.description || "",
+            quantity: Number(item.quantity),
+            unitAmount: Number(item.unitAmount),
+          }))
+        );
+      } catch (error) {
+        loadedDraftId.current = null;
+        console.error("Error cargando borrador:", error);
+        alert("No se pudo cargar la solicitud para edición.");
+        navigate("/solicitudes-gastos");
+      } finally {
+        setIsSaving(false);
+      }
+    };
+
+    loadDraft();
+  }, [editId, loadingCatalogs, navigate]);
+
+  useEffect(() => {
+    if (!companyId || !countryId || !form.startDate) { setBudgetLines([]); return; }
+    let active = true;
+    setLoadingBudgetLines(true);
+    getAvailableBudgetLines({ companyId, countryId, estimatedDate: form.startDate })
+      .then((result) => { if (!active) return; setBudgetLines(result.data); setForm((current) => result.data.some((line) => line.id === current.budgetLineId && line.periodId === current.budgetPeriodId) ? current : { ...current, businessUnit: '', budgetAccount: '', budgetLineId: '', budgetPeriodId: '' }); })
+      .catch(() => { if (active) setBudgetLines([]); })
+      .finally(() => { if (active) setLoadingBudgetLines(false); });
+    return () => { active = false; };
+  }, [companyId, countryId, form.startDate]);
 
   useEffect(() => {
     if (!selectedCompany) {
@@ -254,10 +352,6 @@ export function ExpenseRequestCreatePage() {
   };
 
   const handleExpenseTypeChange = (value: ExpenseType) => {
-    const firstAccount = budgetAccounts.find((account) =>
-      account.expenseTypes.includes(value)
-    );
-
     setForm((prev) => ({
       ...prev,
       type: value,
@@ -265,9 +359,10 @@ export function ExpenseRequestCreatePage() {
       description: "",
       justification: "",
       destination: "",
-      budgetAccount: firstAccount
-        ? `${firstAccount.code} - ${firstAccount.name}`
-        : "",
+      businessUnit: "",
+      budgetAccount: "",
+      budgetLineId: "",
+      budgetPeriodId: "",
     }));
 
     setItems([]);
@@ -277,7 +372,10 @@ export function ExpenseRequestCreatePage() {
   };
 
   const applyTravelItems = () => {
-    const role = form.requesterRole as keyof typeof travelSuggestedItemsByRole;
+    const normalizedRole = String(loggedUser?.role || "")
+      .toLowerCase()
+      .replace(/^./, (character) => character.toUpperCase());
+    const role = normalizedRole as keyof typeof travelSuggestedItemsByRole;
     const suggestedItems = travelSuggestedItemsByRole[role] ?? [];
     const days = Number(form.days || 1);
 
@@ -311,7 +409,9 @@ export function ExpenseRequestCreatePage() {
       description: `Pago a proveedor ${selectedProvider.name}. NIT: ${selectedProvider.nit}.`,
       justification: `Pago operativo correspondiente al rubro ${selectedRubric.name}.`,
       destination: "No aplica",
-      budgetAccount: selectedRubric.budgetAccount,
+      budgetAccount: "",
+      budgetLineId: "",
+      budgetPeriodId: "",
     }));
 
     setItems([
@@ -333,7 +433,9 @@ export function ExpenseRequestCreatePage() {
       description: `Solicitud de compra del insumo ${selectedSupply.code}.`,
       justification: `Compra operativa de insumo para uso interno. Categoría: ${selectedSupply.category}.`,
       destination: "Uso interno",
-      budgetAccount: "6401 - Compra de insumos",
+      budgetAccount: "",
+      budgetLineId: "",
+      budgetPeriodId: "",
     }));
 
     setItems([
@@ -399,6 +501,21 @@ export function ExpenseRequestCreatePage() {
         return;
       }
 
+      if (!form.type) {
+        alert("Debe seleccionar un tipo de gasto.");
+        return;
+      }
+
+      if (!form.priority) {
+        alert("Debe seleccionar una prioridad.");
+        return;
+      }
+
+      if (!form.budgetLineId || !form.budgetPeriodId) {
+        alert("Debe seleccionar una partida del presupuesto activo para el mes de la solicitud.");
+        return;
+      }
+
       if (!form.concept.trim()) {
         alert("Debes ingresar el concepto de la solicitud.");
         return;
@@ -426,22 +543,28 @@ export function ExpenseRequestCreatePage() {
         return;
       }
 
+      if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+        alert("El total de la solicitud debe ser mayor que cero.");
+        return;
+      }
+
       setIsSaving(true);
 
-      const payload = {
+      const payload: ExpenseRequestPayload = {
         type: form.type,
         priority: form.priority,
-        requesterName: form.requesterName,
-        requesterRole: form.requesterRole,
-
+        paymentModality: form.paymentModality,
+        intendedBeneficiaryName: form.intendedBeneficiaryName || undefined,
+        intendedBeneficiaryTaxId: form.intendedBeneficiaryTaxId || undefined,
         countryId,
         companyId,
         currencyId,
-        companyName: selectedCompany?.name ?? "",
 
         businessUnit: form.businessUnit,
         costCenter: form.costCenter,
         budgetAccount: form.budgetAccount,
+        budgetLineId: form.budgetLineId,
+        budgetPeriodId: form.budgetPeriodId,
 
         concept: form.concept,
         description: form.description,
@@ -458,11 +581,17 @@ export function ExpenseRequestCreatePage() {
         })),
       };
 
-      const response = await api.post("/expense-requests", payload);
+      const response = editId
+        ? await updateExpenseRequest(editId, payload)
+        : await createExpenseRequest(payload);
 
-      alert("Solicitud de gasto creada correctamente.");
+      alert(
+        editId
+          ? "Solicitud de gasto actualizada correctamente."
+          : "Solicitud de gasto creada correctamente."
+      );
 
-      const requestId = response.data?.id ?? response.data?.expenseRequest?.id;
+      const requestId = response.id;
 
       if (requestId) {
         navigate(`/solicitudes-gastos/${requestId}`);
@@ -503,7 +632,9 @@ export function ExpenseRequestCreatePage() {
             </Box>
 
             <Box>
-              <Heading size="md">Nueva solicitud de gasto</Heading>
+              <Heading size="md">
+                {isEditing ? "Editar solicitud de gasto" : "Nueva solicitud de gasto"}
+              </Heading>
               <Text fontSize="sm" color="gray.500">
                 Registro inicial del ciclo de planificación y normativa.
               </Text>
@@ -573,17 +704,11 @@ export function ExpenseRequestCreatePage() {
                 </select>
               </Field>
 
-              <Field label="Moneda">
-                <input
-                  value={
-                    selectedCurrency
-                      ? `${selectedCurrency.code} - ${selectedCurrency.name}`
-                      : ""
-                  }
-                  readOnly
-                  placeholder="Se asigna automáticamente según la empresa"
-                  style={readonlyInputStyle}
-                />
+              <Field label="Moneda de origen">
+                <select style={inputStyle} value={currencyId} onChange={(event) => setCurrencyId(event.target.value)}>
+                  <option value="">Seleccione moneda</option>
+                  {currencies.map((currency) => <option key={currency.id} value={currency.id}>{currency.code} - {currency.name}</option>)}
+                </select>
               </Field>
 
               <Field label="Tipo de gasto">
@@ -601,6 +726,25 @@ export function ExpenseRequestCreatePage() {
                   ))}
                 </select>
               </Field>
+
+              <Field label="Modalidad de ejecución financiera">
+                <select style={inputStyle} value={form.paymentModality} onChange={(event) => updateForm("paymentModality", event.target.value)}>
+                  <option value="REEMBOLSO">Reembolso al solicitante</option>
+                  <option value="ANTICIPO_VIATICOS">Anticipo de viáticos</option>
+                  <option value="PAGO_PROVEEDOR">Pago directo a proveedor</option>
+                  <option value="PAGO_SERVICIO">Pago directo de servicio</option>
+                  <option value="PAGO_DIRECTO">Pago directo a beneficiario</option>
+                </select>
+              </Field>
+
+              {!["REEMBOLSO", "ANTICIPO_VIATICOS"].includes(form.paymentModality) && <>
+                <Field label="Beneficiario del pago">
+                  <input style={inputStyle} value={form.intendedBeneficiaryName} onChange={(event) => updateForm("intendedBeneficiaryName", event.target.value)} placeholder="Nombre o razón social" required />
+                </Field>
+                <Field label="Identificación fiscal del beneficiario">
+                  <input style={inputStyle} value={form.intendedBeneficiaryTaxId} onChange={(event) => updateForm("intendedBeneficiaryTaxId", event.target.value)} placeholder="NIT u otra identificación, cuando corresponda" />
+                </Field>
+              </>}
 
               <Field label="Prioridad">
                 <select
@@ -620,28 +764,26 @@ export function ExpenseRequestCreatePage() {
 
               <Field label="Solicitante">
                 <input
-                  style={inputStyle}
-                  value={form.requesterName}
-                  onChange={(event) =>
-                    updateForm("requesterName", event.target.value)
-                  }
+                    value={loggedUser?.name || "Usuario autenticado"}
+                    readOnly
+                    style={{
+                      backgroundColor: "#f9fafb",
+                      color: "#374151",
+                      cursor: "not-allowed",
+                      width: "100%",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
+                      padding: "10px 12px",
+                    }}
                 />
               </Field>
 
               <Field label="Rol del solicitante">
-                <select
-                  style={inputStyle}
-                  value={form.requesterRole}
-                  onChange={(event) =>
-                    updateForm("requesterRole", event.target.value)
-                  }
-                >
-                  {requesterRoles.map((role) => (
-                    <option key={role.value} value={role.value}>
-                      {role.label}
-                    </option>
-                  ))}
-                </select>
+                <input
+                  value={loggedUser?.role || "Sin rol"}
+                  readOnly
+                  style={readonlyInputStyle}
+                />
               </Field>
 
               <Field label="Centro de costo">
@@ -660,23 +802,15 @@ export function ExpenseRequestCreatePage() {
                 </select>
               </Field>
 
-              <Field label="Cuenta presupuestaria">
-                <select
+              <Field label="Partida del presupuesto activo">
+                <SearchableSelect
                   style={inputStyle}
-                  value={form.budgetAccount}
-                  onChange={(event) =>
-                    updateForm("budgetAccount", event.target.value)
-                  }
-                >
-                  {availableBudgetAccounts.map((account) => (
-                    <option
-                      key={account.code}
-                      value={`${account.code} - ${account.name}`}
-                    >
-                      {account.code} - {account.name}
-                    </option>
-                  ))}
-                </select>
+                  value={form.budgetLineId && form.budgetPeriodId ? `${form.budgetLineId}|${form.budgetPeriodId}` : ""}
+                  disabled={!companyId || !countryId || !form.startDate || loadingBudgetLines}
+                  placeholder={loadingBudgetLines ? 'Cargando partidas...' : !form.startDate ? 'Seleccione primero la fecha' : 'Escriba código, área o descripción'}
+                  options={budgetLines.map((line) => ({ value: `${line.id}|${line.periodId}`, label: `${line.area} · ${line.accountCode} - ${line.accountDescription} · Disponible mes: ${line.currency} ${Number(line.monthlyAvailable).toLocaleString('es-GT')}` }))}
+                  onChange={(value) => { const selected = budgetLines.find((line) => `${line.id}|${line.periodId}` === value); setForm((current) => selected ? { ...current, budgetLineId: selected.id, budgetPeriodId: selected.periodId, businessUnit: selected.businessUnit, budgetAccount: selected.accountCode } : { ...current, budgetLineId: '', budgetPeriodId: '', businessUnit: '', budgetAccount: '' }); }}
+                />
               </Field>
 
               <Field label="Fecha estimada">
@@ -690,6 +824,7 @@ export function ExpenseRequestCreatePage() {
                 />
               </Field>
             </Grid>
+            {selectedBudgetLine && <Box mt="4" bg="blue.50" borderWidth="1px" borderColor="blue.100" rounded="xl" p="4"><Text fontWeight="semibold">{selectedBudgetLine.businessUnit} · {selectedBudgetLine.area}</Text><Text fontSize="sm">Versión {selectedBudgetLine.version.fiscalYear}.{selectedBudgetLine.version.versionNumber} · Mes {selectedBudgetLine.month}</Text><Text fontSize="sm">Mensual: {selectedBudgetLine.currency} {Number(selectedBudgetLine.monthlyBudget).toLocaleString('es-GT')} · Comprometido: {Number(selectedBudgetLine.monthlyCommitted).toLocaleString('es-GT')} · Ejecutado: {Number(selectedBudgetLine.monthlyExecuted).toLocaleString('es-GT')} · Disponible: {Number(selectedBudgetLine.monthlyAvailable).toLocaleString('es-GT')}</Text></Box>}
           </Box>
 
           <Box
@@ -1004,7 +1139,8 @@ export function ExpenseRequestCreatePage() {
             <SummaryRow label="Moneda" value={selectedCurrency?.code ?? "-"} />
             <SummaryRow label="Tipo" value={form.type} />
             <SummaryRow label="Prioridad" value={form.priority} />
-            <SummaryRow label="Rol" value={form.requesterRole} />
+            <SummaryRow label="Solicitante" value={loggedUser?.name || "-"} />
+            <SummaryRow label="Rol" value={loggedUser?.role || "-"} />
             <SummaryRow label="Días" value={String(form.days)} />
             <SummaryRow label="Ítems" value={String(items.length)} />
           </VStack>
@@ -1030,7 +1166,7 @@ export function ExpenseRequestCreatePage() {
             onClick={handleSubmit}
           >
             <Save size={17} />
-            Crear solicitud
+            {isEditing ? "Guardar cambios" : "Crear solicitud"}
           </Button>
 
           <Button

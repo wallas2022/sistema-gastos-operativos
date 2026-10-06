@@ -1,428 +1,68 @@
-import {
-  Badge,
-  Box,
-  Button,
-  Flex,
-  Grid,
-  Heading,
-  HStack,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
-import { Link as RouterLink } from "react-router-dom";
-import {
-  ArrowLeft,
-  BadgeCheck,
-  Calculator,
-  CheckCircle2,
-  Download,
-  FileCheck,
-  FolderArchive,
-  ReceiptText,
-  Send,
-  User,
-  WalletCards,
-} from "lucide-react";
+import { Badge, Box, Button, Flex, Grid, Heading, Input, Spinner, Table, Text, Textarea, VStack } from '@chakra-ui/react';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { bankingApi } from '../../services/banking.service';
+import { Settlement, settlementsApi } from '../../services/settlements.service';
 
-const liquidation = {
-  code: "LIQ-0004",
-  requester: "Walter Rosales",
-  email: "admin@sistema.com",
-  area: "Administración",
-  costCenter: "CC-ADM-001",
-  company: "Servicios Compartidos",
-  type: "Gasto operativo",
-  status: "Lista para conciliación",
-  createdAt: "2026-04-28",
-  description:
-    "Liquidación de gastos operativos asociados a comprobantes procesados mediante OCR.",
-  advanceAmount: 5000,
-};
-
-const documents = [
-  {
-    code: "DOC-001",
-    provider: "Proveedor Demo S.A.",
-    type: "Factura",
-    date: "2026-04-24",
-    amount: 1250,
-    status: "Confirmado",
-  },
-  {
-    code: "DOC-004",
-    provider: "Servicios Técnicos GT",
-    type: "Factura",
-    date: "2026-04-25",
-    amount: 2000,
-    status: "Confirmado",
-  },
-  {
-    code: "DOC-009",
-    provider: "Suministros Corporativos",
-    type: "Recibo",
-    date: "2026-04-26",
-    amount: 875,
-    status: "Confirmado",
-  },
-];
-
-const totalDocuments = documents.reduce((sum, item) => sum + item.amount, 0);
-const balance = liquidation.advanceAmount - totalDocuments;
+const money = (value: any, code = 'GTQ') => new Intl.NumberFormat('es-GT', { style: 'currency', currency: code }).format(Number(value || 0));
 
 export function LiquidationDetailPage() {
-  return (
-    <VStack align="stretch" gap="6">
-      <Flex
-        justify="space-between"
-        align={{ base: "start", md: "center" }}
-        direction={{ base: "column", md: "row" }}
-        gap="4"
-      >
-        <Box>
-          <RouterLink to="/rendicion-conciliacion/liquidaciones">
-            <Button size="sm" variant="ghost" mb="3">
-              <ArrowLeft size={16} />
-              Volver a liquidaciones
-            </Button>
-          </RouterLink>
+  const { id = '' } = useParams();
+  const [data, setData] = useState<Settlement>();
+  const [eligible, setEligible] = useState<any[]>([]);
+  const [banks, setBanks] = useState<any[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [comment, setComment] = useState('');
+  const [file, setFile] = useState<File>();
+  const [refund, setRefund] = useState({ paymentMethod: 'TRANSFERENCIA', amount: '', currencyId: '', operationDate: '', referenceNumber: '', bankId: '', observations: '' });
 
-          <HStack>
-            <Heading size="lg">{liquidation.code}</Heading>
-            <Badge colorPalette="green">{liquidation.status}</Badge>
-          </HStack>
+  const load = async () => {
+    const current = await settlementsApi.get(id);
+    setData(current);
+    setRefund((value) => ({ ...value, currencyId: value.currencyId || current.currency.id }));
+    const [documents, bankRows] = await Promise.all([settlementsApi.eligible(current.id), bankingApi.banks()]);
+    setEligible(documents); setBanks(bankRows);
+  };
+  useEffect(() => { void load(); }, [id]);
+  useEffect(() => {
+    if (!data) return;
+    const pendingRefund = Math.max(0, Number(data.differenceAmount || 0));
+    setRefund((value) => ({ ...value, amount: pendingRefund.toFixed(2) }));
+  }, [data?.differenceAmount]);
+  const run = async (operation: () => Promise<any>) => { setBusy(true); setMessage(''); try { await operation(); await load(); } catch (error: any) { setMessage(error.response?.data?.message || 'No fue posible completar la operación.'); } finally { setBusy(false); } };
 
-          <Text color="gray.500" mt="1">
-            Expediente financiero asociado a documentos OCR confirmados.
-          </Text>
-        </Box>
+  if (!data) return <Spinner />;
+  const editable = ['BORRADOR', 'OBSERVADA'].includes(data.status);
+  const code = data.currency.code;
+  const pendingRefundAmount = Math.max(0, Number(data.differenceAmount || 0));
+  const hasPendingRefund = data.refunds?.some((row) => ['PENDIENTE', 'EN_VALIDACION', 'DEVOLUCION_REGISTRADA', 'DEVOLUCION_EN_REVISION', 'CORRECCION_SOLICITADA'].includes(row.status));
+  const refundReady = pendingRefundAmount > 0 && !hasPendingRefund && file && refund.bankId && refund.operationDate && refund.amount && refund.referenceNumber && refund.observations;
 
-        <HStack>
-          <Button variant="outline">
-            <Download size={18} />
-            Descargar expediente
-          </Button>
+  return <Box p={6}>
+    <Flex justify="space-between" mb={5}><Box><Heading size="lg">{data.code}</Heading><Text>Solicitud {data.expenseRequest.code} · {data.expenseRequest.requesterName} · {data.company?.name || data.expenseRequest.companyName}</Text></Box><Box textAlign="right"><Badge>{data.status}</Badge><Text fontSize="sm">{data.balanceStatus}</Text><Text fontSize="sm">Certificación: {data.certificationStatus}</Text></Box></Flex>
+    <Grid templateColumns={{ base: '1fr 1fr', lg: 'repeat(4,1fr)' }} gap={3} mb={6}>{[['Desembolso', data.disbursedAmount], ['Comprobantes', data.documentsTotal], ['Devolución validada', data.validatedRefundTotal], ['Diferencia', data.differenceAmount]].map(([label, value]) => <Box borderWidth="1px" borderRadius="md" p={4} key={label as string}><Text fontSize="sm" color="gray.600">{label}</Text><Text fontWeight="bold" fontSize="xl">{money(value, code)}</Text></Box>)}</Grid>
+    {data.currentObservation && <Box bg="orange.50" borderWidth="1px" borderColor="orange.300" p={3} mb={5}><b>Observación:</b> {data.currentObservation}</Box>}
+    {message && <Text color="red.600" mb={4}>{message}</Text>}
 
-          <Button colorPalette="blue">
-            <Send size={18} />
-            Enviar a conciliación
-          </Button>
-        </HStack>
-      </Flex>
+    <Heading size="md" mb={3}>Comprobantes seleccionados</Heading>
+    <Table.Root variant="outline" mb={6}><Table.Header><Table.Row><Table.ColumnHeader>Tipo / documento</Table.ColumnHeader><Table.ColumnHeader>Receptor / empresa fiscal</Table.ColumnHeader><Table.ColumnHeader>Original</Table.ColumnHeader><Table.ColumnHeader>Tasa snapshot</Table.ColumnHeader><Table.ColumnHeader>Total liquidación</Table.ColumnHeader><Table.ColumnHeader /></Table.Row></Table.Header><Table.Body>{data.documents?.map((item) => <Table.Row key={item.id}><Table.Cell>{item.document.ocrResult?.finalVoucherType}<br />{item.document.fileName}</Table.Cell><Table.Cell>{item.document.ocrResult?.receiverName || '—'}<br />{item.document.ocrResult?.receiverTaxId || '—'}<br /><Text fontSize="xs">{item.document.ocrResult?.fiscalCompany?.name || 'Empresa no identificada'}</Text></Table.Cell><Table.Cell>{money(item.originalAmount, item.originalCurrency.code)}</Table.Cell><Table.Cell>{item.exchangeRate}</Table.Cell><Table.Cell>{money(item.settlementCurrencyAmount, code)}</Table.Cell><Table.Cell>{editable && <Button size="xs" onClick={() => run(() => settlementsApi.remove(id, item.documentId))}>Retirar</Button>}</Table.Cell></Table.Row>)}</Table.Body></Table.Root>
 
-      <Grid templateColumns={{ base: "1fr", xl: "1.5fr 1fr" }} gap="5">
-        <VStack align="stretch" gap="5">
-          <Box
-            bg="white"
-            border="1px solid"
-            borderColor="gray.200"
-            rounded="2xl"
-            p="5"
-          >
-            <Flex align="center" gap="3" mb="5">
-              <Box
-                w="42px"
-                h="42px"
-                rounded="xl"
-                bg="blue.50"
-                color="blue.600"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <ReceiptText size={21} />
-              </Box>
+    {editable && <><Heading size="md" mb={3}>Comprobantes elegibles del Centro Documental</Heading>{eligible.length === 0 ? <Text mb={6}>No hay comprobantes confirmados y fiscalmente compatibles con la empresa de esta liquidación.</Text> : <Table.Root variant="outline" mb={6}><Table.Header><Table.Row><Table.ColumnHeader>Tipo</Table.ColumnHeader><Table.ColumnHeader>Archivo</Table.ColumnHeader><Table.ColumnHeader>Empresa fiscal</Table.ColumnHeader><Table.ColumnHeader>Total</Table.ColumnHeader><Table.ColumnHeader>Validación</Table.ColumnHeader><Table.ColumnHeader /></Table.Row></Table.Header><Table.Body>{eligible.map((document) => <Table.Row key={document.id}><Table.Cell>{document.ocrResult?.finalVoucherType}</Table.Cell><Table.Cell>{document.fileName}</Table.Cell><Table.Cell>{document.ocrResult?.fiscalCompany?.name || '—'}<br />{document.ocrResult?.fiscalCompanyTaxId || '—'}</Table.Cell><Table.Cell>{money(document.ocrResult?.totalAmount, document.ocrResult?.currencyCode)}</Table.Cell><Table.Cell>{document.ocrResult?.complianceResult}</Table.Cell><Table.Cell><Button size="xs" onClick={() => run(() => settlementsApi.select(id, document.id))}>Agregar</Button></Table.Cell></Table.Row>)}</Table.Body></Table.Root>}</>}
 
-              <Box>
-                <Heading size="md">Información general</Heading>
-                <Text fontSize="sm" color="gray.500">
-                  Datos principales del expediente de liquidación.
-                </Text>
-              </Box>
-            </Flex>
+    {editable && pendingRefundAmount > 0 && !hasPendingRefund && <Box borderWidth="1px" p={5} borderRadius="md" mb={6}><Heading size="md" mb={1}>Registrar devolución</Heading><Text color="gray.600">Saldo pendiente de devolución: <b>{money(pendingRefundAmount, code)}</b>. Se actualiza automáticamente al agregar o retirar comprobantes.</Text><Text color="gray.600" mb={4}>La evidencia documental PDF, JPG o PNG es obligatoria y será revisada por Tesorería.</Text><Grid templateColumns={{ base: '1fr', md: 'repeat(3,1fr)' }} gap={3}>
+      <select value={refund.paymentMethod} onChange={(event) => setRefund({ ...refund, paymentMethod: event.target.value })}><option>TRANSFERENCIA</option><option>DEPOSITO</option></select>
+      <select value={refund.bankId} onChange={(event) => setRefund({ ...refund, bankId: event.target.value })}><option value="">Banco</option>{banks.map((bank) => <option key={bank.id} value={bank.id}>{bank.name}</option>)}</select>
+      <Input type="date" value={refund.operationDate} onChange={(event) => setRefund({ ...refund, operationDate: event.target.value })} />
+      <Input type="number" aria-label="Monto pendiente de devolución" value={refund.amount} readOnly />
+      <Input placeholder="Número de referencia" value={refund.referenceNumber} onChange={(event) => setRefund({ ...refund, referenceNumber: event.target.value })} />
+      <Input placeholder="Observaciones" value={refund.observations} onChange={(event) => setRefund({ ...refund, observations: event.target.value })} />
+      <Input type="file" accept="application/pdf,image/png,image/jpeg" onChange={(event) => setFile(event.target.files?.[0])} />
+      <Button colorPalette="blue" disabled={!refundReady || busy} onClick={() => file && run(() => settlementsApi.refund(id, refund, file))}>Registrar devolución</Button>
+    </Grid></Box>}
 
-            <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap="4">
-              <InfoItem label="Código" value={liquidation.code} />
-              <InfoItem label="Fecha de creación" value={liquidation.createdAt} />
-              <InfoItem label="Tipo de gasto" value={liquidation.type} />
-              <InfoItem label="Empresa" value={liquidation.company} />
-              <InfoItem label="Área" value={liquidation.area} />
-              <InfoItem label="Centro de costo" value={liquidation.costCenter} />
-            </Grid>
-
-            <Box mt="5">
-              <Text fontSize="sm" color="gray.500">
-                Descripción
-              </Text>
-              <Text fontWeight="medium" mt="1">
-                {liquidation.description}
-              </Text>
-            </Box>
-          </Box>
-
-          <Box
-            bg="white"
-            border="1px solid"
-            borderColor="gray.200"
-            rounded="2xl"
-            p="5"
-          >
-            <Flex justify="space-between" align="center" mb="5">
-              <Box>
-                <Heading size="md">Documentos OCR asociados</Heading>
-                <Text fontSize="sm" color="gray.500">
-                  Comprobantes confirmados que forman parte de esta liquidación.
-                </Text>
-              </Box>
-
-              <Badge colorPalette="blue">{documents.length} documentos</Badge>
-            </Flex>
-
-            <VStack align="stretch" gap="3">
-              {documents.map((doc) => (
-                <Flex
-                  key={doc.code}
-                  justify="space-between"
-                  align={{ base: "start", md: "center" }}
-                  direction={{ base: "column", md: "row" }}
-                  gap="3"
-                  border="1px solid"
-                  borderColor="gray.100"
-                  rounded="xl"
-                  p="4"
-                >
-                  <HStack align="start" gap="3">
-                    <Box
-                      w="42px"
-                      h="42px"
-                      rounded="xl"
-                      bg="green.50"
-                      color="green.600"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <FileCheck size={19} />
-                    </Box>
-
-                    <Box>
-                      <Text fontWeight="semibold">
-                        {doc.code} · {doc.provider}
-                      </Text>
-                      <Text fontSize="sm" color="gray.500">
-                        {doc.type} · {doc.date}
-                      </Text>
-                    </Box>
-                  </HStack>
-
-                  <HStack>
-                    <Text fontWeight="bold">
-                      Q {doc.amount.toLocaleString("es-GT")}.00
-                    </Text>
-                    <Badge colorPalette="green">{doc.status}</Badge>
-                  </HStack>
-                </Flex>
-              ))}
-            </VStack>
-          </Box>
-        </VStack>
-
-        <VStack align="stretch" gap="5">
-          <Box
-            bg="white"
-            border="1px solid"
-            borderColor="gray.200"
-            rounded="2xl"
-            p="5"
-          >
-            <Flex align="center" gap="3" mb="5">
-              <Box
-                w="42px"
-                h="42px"
-                rounded="xl"
-                bg="purple.50"
-                color="purple.600"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <User size={21} />
-              </Box>
-
-              <Box>
-                <Heading size="md">Responsable</Heading>
-                <Text fontSize="sm" color="gray.500">
-                  Usuario propietario del expediente.
-                </Text>
-              </Box>
-            </Flex>
-
-            <VStack align="stretch" gap="3">
-              <InfoItem label="Solicitante" value={liquidation.requester} />
-              <InfoItem label="Correo" value={liquidation.email} />
-              <InfoItem label="Área" value={liquidation.area} />
-            </VStack>
-          </Box>
-
-          <Box
-            bg="white"
-            border="1px solid"
-            borderColor="gray.200"
-            rounded="2xl"
-            p="5"
-          >
-            <Flex align="center" gap="3" mb="5">
-              <Box
-                w="42px"
-                h="42px"
-                rounded="xl"
-                bg="blue.50"
-                color="blue.600"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <Calculator size={21} />
-              </Box>
-
-              <Box>
-                <Heading size="md">Conciliación preliminar</Heading>
-                <Text fontSize="sm" color="gray.500">
-                  Balance financiero calculado con documentos OCR.
-                </Text>
-              </Box>
-            </Flex>
-
-            <VStack align="stretch" gap="3">
-              <SummaryRow label="Anticipo asignado" value={liquidation.advanceAmount} />
-              <SummaryRow label="Total comprobantes" value={totalDocuments} />
-              <SummaryRow label="Diferencia" value={balance} strong />
-
-              <Box
-                mt="3"
-                bg={balance >= 0 ? "green.50" : "red.50"}
-                color={balance >= 0 ? "green.700" : "red.700"}
-                rounded="xl"
-                p="4"
-              >
-                <HStack align="start">
-                  <WalletCards size={21} />
-                  <Box>
-                    <Text fontWeight="semibold">
-                      {balance >= 0 ? "Saldo a favor" : "Reintegro requerido"}
-                    </Text>
-                    <Text fontSize="sm">
-                      {balance >= 0
-                        ? "El anticipo cubre los documentos asociados."
-                        : "El gasto ejecutado supera el anticipo disponible."}
-                    </Text>
-                  </Box>
-                </HStack>
-              </Box>
-            </VStack>
-          </Box>
-
-          <Box bg="blue.600" color="white" rounded="2xl" p="5">
-            <HStack align="start" gap="3">
-              <BadgeCheck size={24} />
-              <Box>
-                <Heading size="sm">Estado del expediente</Heading>
-                <Text fontSize="sm" mt="2" color="blue.50">
-                  La liquidación está lista para pasar a conciliación financiera.
-                  En esta etapa se validará el saldo final y se preparará el cierre.
-                </Text>
-              </Box>
-            </HStack>
-          </Box>
-
-          <Box
-            bg="white"
-            border="1px solid"
-            borderColor="gray.200"
-            rounded="2xl"
-            p="5"
-          >
-            <Heading size="md" mb="4">
-              Próximas etapas
-            </Heading>
-
-            <VStack align="stretch" gap="3">
-              <StageItem icon={CheckCircle2} title="Documentos confirmados" done />
-              <StageItem icon={Calculator} title="Conciliación financiera" />
-              <StageItem icon={FolderArchive} title="Certificación de cierre" />
-            </VStack>
-          </Box>
-        </VStack>
-      </Grid>
-    </VStack>
-  );
-}
-
-function InfoItem({ label, value }: { label: string; value: string }) {
-  return (
-    <Box>
-      <Text fontSize="sm" color="gray.500">
-        {label}
-      </Text>
-      <Text fontWeight="semibold">{value}</Text>
-    </Box>
-  );
-}
-
-function SummaryRow({
-  label,
-  value,
-  strong = false,
-}: {
-  label: string;
-  value: number;
-  strong?: boolean;
-}) {
-  return (
-    <Flex
-      justify="space-between"
-      align="center"
-      borderBottom="1px solid"
-      borderColor="gray.100"
-      py="2"
-    >
-      <Text
-        fontSize="sm"
-        color={strong ? "gray.900" : "gray.500"}
-        fontWeight={strong ? "bold" : "normal"}
-      >
-        {label}
-      </Text>
-
-      <Text fontWeight={strong ? "bold" : "semibold"}>
-        Q {value.toLocaleString("es-GT")}.00
-      </Text>
-    </Flex>
-  );
-}
-
-function StageItem({
-  icon: Icon,
-  title,
-  done = false,
-}: {
-  icon: React.ElementType;
-  title: string;
-  done?: boolean;
-}) {
-  return (
-    <HStack
-      border="1px solid"
-      borderColor={done ? "green.200" : "gray.100"}
-      bg={done ? "green.50" : "white"}
-      rounded="xl"
-      p="3"
-    >
-      <Box color={done ? "green.600" : "gray.500"}>
-        <Icon size={18} />
-      </Box>
-      <Text fontSize="sm" fontWeight="medium">
-        {title}
-      </Text>
-    </HStack>
-  );
+    <Heading size="md" mb={3}>Devoluciones</Heading>{data.refunds?.map((row) => <Flex key={row.id} borderWidth="1px" p={3} mb={2} justify="space-between"><Text>{row.paymentMethod} · {money(row.amount, row.currency.code)} · Ref. {row.referenceNumber} · <Badge>{row.status}</Badge></Text>{row.status === 'CORRECCION_SOLICITADA' && <Button size="xs" disabled={!refundReady} onClick={() => file && run(() => settlementsApi.correctRefund(id, row.id, refund, file))}>Corregir y reenviar</Button>}</Flex>)}
+    <Box mt={6} borderWidth="1px" p={5} borderRadius="md"><Heading size="md" mb={3}>Revisión, cierre y certificación</Heading><Textarea placeholder="Comentario u observación" value={comment} onChange={(event) => setComment(event.target.value)} mb={3}/><Flex gap={2} wrap="wrap">{editable && data.balanceStatus === 'CUADRADA' && <Button colorPalette="blue" onClick={() => run(() => settlementsApi.action(id, data.status === 'OBSERVADA' ? 'resubmit' : 'submit', comment || undefined))}>Enviar a revisión</Button>}{data.status === 'PENDIENTE_REVISION' && <><Button colorPalette="green" onClick={() => run(() => settlementsApi.action(id, 'approve', comment || undefined))}>Aprobar</Button><Button onClick={() => run(() => settlementsApi.action(id, 'observe', comment))} disabled={!comment}>Observar</Button><Button colorPalette="red" onClick={() => run(() => settlementsApi.action(id, 'reject', comment))} disabled={!comment}>Rechazar</Button></>}{data.status === 'APROBADA' && <Button colorPalette="green" onClick={() => run(() => settlementsApi.action(id, 'close'))}>Cerrar liquidación</Button>}{data.status === 'CERRADA' && data.certificationStatus !== 'CERTIFICADA' && <Button colorPalette="purple" onClick={() => run(() => settlementsApi.action(id, 'certify'))}>Certificar</Button>}</Flex></Box>
+    <Heading size="md" mt={7} mb={3}>Auditoría inmutable</Heading><VStack align="stretch">{data.audits?.map((audit) => <Box key={audit.id} borderLeftWidth="3px" borderColor="blue.400" pl={3}><Text fontWeight="semibold">{audit.action} · {audit.userName} ({audit.userRole || '—'})</Text><Text>{audit.description}</Text><Text fontSize="xs" color="gray.500">{new Date(audit.createdAt).toLocaleString()} · {audit.fromStatus || '—'} → {audit.toStatus || '—'}</Text></Box>)}</VStack>
+  </Box>;
 }

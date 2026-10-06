@@ -44,7 +44,7 @@ export class ApprovalFlowService {
 
   async getPending(user: any) {
     const companyId = authorizedCompanyId(user);
-    return this.prisma.approvalStep.findMany({
+    const pending = await this.prisma.approvalStep.findMany({
       where: {
         assignedUserId: user.id,
         status: {
@@ -55,7 +55,9 @@ export class ApprovalFlowService {
           ],
         },
         flow: {
-          ...(companyId ? { OR: [{ expenseRequest: { companyId } }, { settlement: { companyId } }] } : {}),
+          entityType: 'EXPENSE_REQUEST',
+          expenseRequestId: { not: null },
+          ...(companyId ? { expenseRequest: { companyId } } : {}),
           status: {
             in: [ApprovalFlowStatus.EN_REVISION, ApprovalFlowStatus.OBSERVADA],
           },
@@ -68,6 +70,8 @@ export class ApprovalFlowService {
       },
       orderBy: [{ assignedAt: 'asc' }, { createdAt: 'asc' }],
     });
+    // Only the current request level belongs in the request approval inbox.
+    return pending.filter((step) => step.flow.expenseRequest && step.order === step.flow.currentStepOrder);
   }
 
   async approve(id: string, comment: string | undefined, user: any) {
@@ -154,8 +158,12 @@ export class ApprovalFlowService {
     this.ensureDecidable(flow, current);
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.approvalStep.update({
-        where: { id: current.id },
+      const changed = await tx.approvalStep.updateMany({
+        where: {
+          id: current.id,
+          assignedUserId: user.id,
+          status: { in: [ApprovalStepStatus.ASIGNADA, ApprovalStepStatus.EN_REVISION, ApprovalStepStatus.OBSERVADA] },
+        },
         data: {
           status: ApprovalStepStatus.RECHAZADA,
           decidedAt: new Date(),
@@ -163,6 +171,9 @@ export class ApprovalFlowService {
           comment: comment.trim(),
         },
       });
+      if (changed.count !== 1) {
+        throw new BadRequestException('El paso ya fue procesado por otro usuario.');
+      }
       await tx.approvalStep.updateMany({
         where: { flowId: id, order: { gt: current.order }, status: ApprovalStepStatus.PENDIENTE },
         data: { status: ApprovalStepStatus.OMITIDA },

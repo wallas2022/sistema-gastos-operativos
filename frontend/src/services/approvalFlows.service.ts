@@ -66,7 +66,10 @@ export interface ApprovalFlow {
 }
 
 export interface PendingApproval extends ApprovalStep {
-  flow: ApprovalFlow;
+  flow: Omit<ApprovalFlow, "steps" | "expenseRequest"> & {
+    expenseRequestId: string;
+    expenseRequest: ApprovalExpenseSummary;
+  };
 }
 
 export interface ApprovalTrace {
@@ -83,6 +86,8 @@ export interface ApprovalHistory {
   flow: ApprovalFlow;
   traces: ApprovalTrace[];
 }
+
+export const APPROVAL_PENDING_CHANGED = "approvals:pending-changed";
 
 export const approvalFlowsService = {
   async pending(): Promise<PendingApproval[]> {

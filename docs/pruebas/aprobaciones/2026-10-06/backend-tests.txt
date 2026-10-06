@@ -1,0 +1,1482 @@
+TAP version 13
+# Subtest: pending query excludes settlement flows and preserves personal/company scope
+ok 1 - pending query excludes settlement flows and preserves personal/company scope
+  ---
+  duration_ms: 1.475867
+  type: 'test'
+  ...
+# Subtest: last approval updates request/flow and records trace
+ok 2 - last approval updates request/flow and records trace
+  ---
+  duration_ms: 5.07913
+  type: 'test'
+  ...
+# Subtest: intermediate approval assigns next level without finalizing request
+ok 3 - intermediate approval assigns next level without finalizing request
+  ---
+  duration_ms: 0.372249
+  type: 'test'
+  ...
+# Subtest: rejection updates request/flow and records trimmed mandatory reason
+ok 4 - rejection updates request/flow and records trimmed mandatory reason
+  ---
+  duration_ms: 0.906823
+  type: 'test'
+  ...
+# Subtest: empty rejection, wrong assignee and self approval cannot decide
+ok 5 - empty rejection, wrong assignee and self approval cannot decide
+  ---
+  duration_ms: 0.728865
+  type: 'test'
+  ...
+# Subtest: approve loses concurrent decision without updating request or trace
+ok 6 - approve loses concurrent decision without updating request or trace
+  ---
+  duration_ms: 0.308243
+  type: 'test'
+  ...
+# Subtest: reject loses concurrent decision without updating request or trace
+ok 7 - reject loses concurrent decision without updating request or trace
+  ---
+  duration_ms: 0.182146
+  type: 'test'
+  ...
+# Subtest: decision entry point publishes final state and returns refreshed flow
+ok 8 - decision entry point publishes final state and returns refreshed flow
+  ---
+  duration_ms: 0.429056
+  type: 'test'
+  ...
+# Subtest: an assigned manager without approval permission remains denied
+ok 9 - an assigned manager without approval permission remains denied
+  ---
+  duration_ms: 0.584053
+  type: 'test'
+  ...
+# Subtest: reserva presupuestaria usa transacción serializable y bloquea partida/período
+ok 10 - reserva presupuestaria usa transacción serializable y bloquea partida/período
+  ---
+  duration_ms: 1.38884
+  type: 'test'
+  ...
+# Subtest: reserva repetida es idempotente y reutiliza fila liberada
+ok 11 - reserva repetida es idempotente y reutiliza fila liberada
+  ---
+  duration_ms: 0.218253
+  type: 'test'
+  ...
+# Subtest: reconcile ajusta únicamente la diferencia del importe
+ok 12 - reconcile ajusta únicamente la diferencia del importe
+  ---
+  duration_ms: 0.203523
+  type: 'test'
+  ...
+# Subtest: resubmit reconcilia presupuesto antes de reiniciar aprobación
+ok 13 - resubmit reconcilia presupuesto antes de reiniciar aprobación
+  ---
+  duration_ms: 0.353444
+  type: 'test'
+  ...
+# Subtest: versionado conserva reservas activas en líneas equivalentes
+ok 14 - versionado conserva reservas activas en líneas equivalentes
+  ---
+  duration_ms: 0.252008
+  type: 'test'
+  ...
+# Subtest: versionado bloquea reservas activas sin correspondencia
+ok 15 - versionado bloquea reservas activas sin correspondencia
+  ---
+  duration_ms: 1.210832
+  type: 'test'
+  ...
+# Subtest: presupuesto mensual y anual suficientes
+ok 16 - presupuesto mensual y anual suficientes
+  ---
+  duration_ms: 6.468057
+  type: 'test'
+  ...
+# Subtest: presupuesto mensual insuficiente conserva la regla actual
+ok 17 - presupuesto mensual insuficiente conserva la regla actual
+  ---
+  duration_ms: 0.578055
+  type: 'test'
+  ...
+# Subtest: sin presupuesto mensual aunque exista anual no anticipa fondos
+ok 18 - sin presupuesto mensual aunque exista anual no anticipa fondos
+  ---
+  duration_ms: 0.595939
+  type: 'test'
+  ...
+# Subtest: excedente anual no es aprobable
+ok 19 - excedente anual no es aprobable
+  ---
+  duration_ms: 0.505053
+  type: 'test'
+  ...
+# Subtest: el motor exige moneda presupuestaria
+ok 20 - el motor exige moneda presupuestaria
+  ---
+  duration_ms: 0.215391
+  type: 'test'
+  ...
+# Subtest: catálogo evita monedas duplicadas
+ok 21 - catálogo evita monedas duplicadas
+  ---
+  duration_ms: 1.131327
+  type: 'test'
+  ...
+# Subtest: catálogo activa y desactiva monedas mediante update
+ok 22 - catálogo activa y desactiva monedas mediante update
+  ---
+  duration_ms: 0.287965
+  type: 'test'
+  ...
+# Subtest: tasa vigente selecciona una sola tasa histórica por par
+ok 23 - tasa vigente selecciona una sola tasa histórica por par
+  ---
+  duration_ms: 0.817747
+  type: 'test'
+  ...
+# Subtest: no permite una tasa entre la misma moneda
+ok 24 - no permite una tasa entre la misma moneda
+  ---
+  duration_ms: 0.349516
+  type: 'test'
+  ...
+# prisma:warn Prisma failed to detect the libssl/openssl version to use, and may not work as expected. Defaulting to "openssl-1.1.x".
+# Please manually install OpenSSL via `apt-get update -y && apt-get install -y openssl` and try installing Prisma again. If you're running Prisma on Docker, add this command to your Dockerfile, or switch to an image that already has OpenSSL installed.
+# Subtest: registro funcional persiste casos y calcula resumen auditable
+ok 25 - registro funcional persiste casos y calcula resumen auditable
+  ---
+  duration_ms: 413.51751
+  type: 'test'
+  ...
+# Subtest: misma moneda usa tasa 1 y no consulta una tasa externa
+ok 26 - misma moneda usa tasa 1 y no consulta una tasa externa
+  ---
+  duration_ms: 8.901783
+  type: 'test'
+  ...
+# Subtest: USD → GTQ
+ok 27 - USD → GTQ
+  ---
+  duration_ms: 0.515449
+  type: 'test'
+  ...
+# Subtest: GTQ → USD
+ok 28 - GTQ → USD
+  ---
+  duration_ms: 0.458531
+  type: 'test'
+  ...
+# Subtest: EUR → GTQ
+ok 29 - EUR → GTQ
+  ---
+  duration_ms: 0.160199
+  type: 'test'
+  ...
+# Subtest: redondea HALF_UP a dos decimales
+ok 30 - redondea HALF_UP a dos decimales
+  ---
+  duration_ms: 0.328308
+  type: 'test'
+  ...
+# Subtest: falla si no existe una tasa vigente
+ok 31 - falla si no existe una tasa vigente
+  ---
+  duration_ms: 0.73303
+  type: 'test'
+  ...
+# [32m[Nest] 2956  - [39m10/06/2026, 8:36:39 PM [32m    LOG[39m [38;5;3m[OcrClientService] [39m[32mOCR request b7040537-1ea2-43b0-8b26-4c36c4f7ab2a started file=invoice.txt bytes=7[39m
+# [32m[Nest] 2956  - [39m10/06/2026, 8:36:39 PM [32m    LOG[39m [38;5;3m[OcrClientService] [39m[32mOCR request b7040537-1ea2-43b0-8b26-4c36c4f7ab2a completed durationMs=30[39m
+# [32m[Nest] 2956  - [39m10/06/2026, 8:36:39 PM [32m    LOG[39m [38;5;3m[OcrClientService] [39m[32mOCR request 771b00e8-cb20-49e4-bf58-cd899fcfdd48 started file=invoice.txt bytes=7[39m
+# Subtest: OCR client uses configured service URL and preserves the response contract
+ok 32 - OCR client uses configured service URL and preserves the response contract
+  ---
+  duration_ms: 32.846783
+  type: 'test'
+  ...
+# [31m[Nest] 2956  - [39m10/06/2026, 8:36:39 PM [31m  ERROR[39m [38;5;3m[OcrClientService] [39m[31mOCR request 771b00e8-cb20-49e4-bf58-cd899fcfdd48 timeout after 10ms[39m
+# Subtest: OCR client aborts requests after the configured timeout
+ok 33 - OCR client aborts requests after the configured timeout
+  ---
+  duration_ms: 12.625766
+  type: 'test'
+  ...
+# Subtest: caso 1 factura con NIT correcto queda aprobada
+ok 34 - caso 1 factura con NIT correcto queda aprobada
+  ---
+  duration_ms: 7.36149
+  type: 'test'
+  ...
+# Subtest: caso 2 factura CF queda rechazada
+ok 35 - caso 2 factura CF queda rechazada
+  ---
+  duration_ms: 0.540573
+  type: 'test'
+  ...
+# Subtest: caso 3 asociación histórica a solicitud no altera empresa detectada por OCR
+ok 36 - caso 3 asociación histórica a solicitud no altera empresa detectada por OCR
+  ---
+  duration_ms: 0.604899
+  type: 'test'
+  ...
+# Subtest: caso 4 NIT no identificado queda pendiente
+ok 37 - caso 4 NIT no identificado queda pendiente
+  ---
+  duration_ms: 0.300713
+  type: 'test'
+  ...
+# Subtest: caso 5 NIT correcto con baja confianza queda pendiente
+ok 38 - caso 5 NIT correcto con baja confianza queda pendiente
+  ---
+  duration_ms: 0.562141
+  type: 'test'
+  ...
+# Subtest: caso 6 recibo con política queda permitido y registra política
+ok 39 - caso 6 recibo con política queda permitido y registra política
+  ---
+  duration_ms: 0.34627
+  type: 'test'
+  ...
+# Subtest: caso 7 recibo sin política queda rechazado
+ok 40 - caso 7 recibo sin política queda rechazado
+  ---
+  duration_ms: 0.386001
+  type: 'test'
+  ...
+# Subtest: caso 8 otro tipo con política queda permitido
+ok 41 - caso 8 otro tipo con política queda permitido
+  ---
+  duration_ms: 0.32047
+  type: 'test'
+  ...
+# Subtest: caso 9 otro tipo sin política queda rechazado
+ok 42 - caso 9 otro tipo sin política queda rechazado
+  ---
+  duration_ms: 0.830251
+  type: 'test'
+  ...
+# Subtest: caso 10 corrección manual de tipo conserva historial inmutable
+ok 43 - caso 10 corrección manual de tipo conserva historial inmutable
+  ---
+  duration_ms: 1.244556
+  type: 'test'
+  ...
+# Subtest: caso 11 comprobante rechazado no es elegible
+ok 44 - caso 11 comprobante rechazado no es elegible
+  ---
+  duration_ms: 0.371338
+  type: 'test'
+  ...
+# Subtest: caso 12 comprobante permitido y revisado queda elegible
+ok 45 - caso 12 comprobante permitido y revisado queda elegible
+  ---
+  duration_ms: 0.203306
+  type: 'test'
+  ...
+# Subtest: caso 13 documento sin solicitud identifica empresa exclusivamente por NIT receptor
+ok 46 - caso 13 documento sin solicitud identifica empresa exclusivamente por NIT receptor
+  ---
+  duration_ms: 0.144499
+  type: 'test'
+  ...
+# Subtest: caso 14 NIT inexistente queda como empresa no identificada
+ok 47 - caso 14 NIT inexistente queda como empresa no identificada
+  ---
+  duration_ms: 0.112451
+  type: 'test'
+  ...
+# Subtest: caso 15 diferencias menores de razón social no rechazan NIT coincidente
+ok 48 - caso 15 diferencias menores de razón social no rechazan NIT coincidente
+  ---
+  duration_ms: 0.14131
+  type: 'test'
+  ...
+# Subtest: caso 16 nunca utiliza la empresa del usuario autenticado
+ok 49 - caso 16 nunca utiliza la empresa del usuario autenticado
+  ---
+  duration_ms: 0.085419
+  type: 'test'
+  ...
+# Subtest: caso 17 corrección manual del NIT reidentifica empresa sin ejecutar OCR
+ok 50 - caso 17 corrección manual del NIT reidentifica empresa sin ejecutar OCR
+  ---
+  duration_ms: 0.165786
+  type: 'test'
+  ...
+# Subtest: caso 18 documento OCR no se asocia directamente a solicitud
+ok 51 - caso 18 documento OCR no se asocia directamente a solicitud
+  ---
+  duration_ms: 0.511973
+  type: 'test'
+  ...
+# Subtest: caso 19 documento técnico conserva asociación directa compatible
+ok 52 - caso 19 documento técnico conserva asociación directa compatible
+  ---
+  duration_ms: 0.16393
+  type: 'test'
+  ...
+# Subtest: caso 20 razón social materialmente distinta genera advertencia, no rechazo
+ok 53 - caso 20 razón social materialmente distinta genera advertencia, no rechazo
+  ---
+  duration_ms: 0.214838
+  type: 'test'
+  ...
+# Subtest: ERROR_OCR is persisted and never becomes PENDIENTE_REVISION
+ok 54 - ERROR_OCR is persisted and never becomes PENDIENTE_REVISION
+  ---
+  duration_ms: 3.980317
+  type: 'test'
+  ...
+# Subtest: successful OCR becomes PENDIENTE_REVISION and stores real confidence
+ok 55 - successful OCR becomes PENDIENTE_REVISION and stores real confidence
+  ---
+  duration_ms: 0.423782
+  type: 'test'
+  ...
+# Subtest: genera tokens criptográficos distintos y almacena sólo su hash
+ok 56 - genera tokens criptográficos distintos y almacena sólo su hash
+  ---
+  duration_ms: 1.553653
+  type: 'test'
+  ...
+# Subtest: acepta una contraseña que cumple la política configurable
+ok 57 - acepta una contraseña que cumple la política configurable
+  ---
+  duration_ms: 0.486737
+  type: 'test'
+  ...
+# Subtest: rechaza contraseña corta
+ok 58 - rechaza contraseña corta
+  ---
+  duration_ms: 6.974146
+  type: 'test'
+  ...
+# Subtest: rechaza contraseña sin complejidad
+ok 59 - rechaza contraseña sin complejidad
+  ---
+  duration_ms: 0.425452
+  type: 'test'
+  ...
+# Subtest: permite desactivar complejidad conservando longitud
+ok 60 - permite desactivar complejidad conservando longitud
+  ---
+  duration_ms: 0.174078
+  type: 'test'
+  ...
+# Subtest: caso 1: reembolso admite cuenta bancaria con moneda correcta
+ok 61 - caso 1: reembolso admite cuenta bancaria con moneda correcta
+  ---
+  duration_ms: 8.703117
+  type: 'test'
+  ...
+# Subtest: caso 2: reembolso rechaza moneda de cuenta incorrecta
+ok 62 - caso 2: reembolso rechaza moneda de cuenta incorrecta
+  ---
+  duration_ms: 0.291364
+  type: 'test'
+  ...
+# Subtest: caso 3: anticipo de viáticos genera desembolso al solicitante
+ok 63 - caso 3: anticipo de viáticos genera desembolso al solicitante
+  ---
+  duration_ms: 0.131556
+  type: 'test'
+  ...
+# Subtest: caso 4: pago a proveedor no requiere cuenta del solicitante
+ok 64 - caso 4: pago a proveedor no requiere cuenta del solicitante
+  ---
+  duration_ms: 0.129541
+  type: 'test'
+  ...
+# Subtest: caso 5: pago a proveedor rechaza moneda distinta de la solicitud
+ok 65 - caso 5: pago a proveedor rechaza moneda distinta de la solicitud
+  ---
+  duration_ms: 0.183723
+  type: 'test'
+  ...
+# Subtest: caso 6: pago de servicio se clasifica como pago directo
+ok 66 - caso 6: pago de servicio se clasifica como pago directo
+  ---
+  duration_ms: 0.252812
+  type: 'test'
+  ...
+# Subtest: caso 7: beneficiario autorizado se clasifica como pago directo
+ok 67 - caso 7: beneficiario autorizado se clasifica como pago directo
+  ---
+  duration_ms: 0.268494
+  type: 'test'
+  ...
+# Subtest: caso 8: confirmación sin comprobante es inválida
+ok 68 - caso 8: confirmación sin comprobante es inválida
+  ---
+  duration_ms: 0.125023
+  type: 'test'
+  ...
+# Subtest: caso 9: sólo una solicitud aprobada es pagable
+ok 69 - caso 9: sólo una solicitud aprobada es pagable
+  ---
+  duration_ms: 0.314112
+  type: 'test'
+  ...
+# Subtest: caso 10: un pago PAGADO previo bloquea duplicidad
+ok 70 - caso 10: un pago PAGADO previo bloquea duplicidad
+  ---
+  duration_ms: 0.331847
+  type: 'test'
+  ...
+# Subtest: caso 11: pago directo PAGADO puede ser base de liquidación
+ok 71 - caso 11: pago directo PAGADO puede ser base de liquidación
+  ---
+  duration_ms: 0.153016
+  type: 'test'
+  ...
+# Subtest: caso 12: el evento de auditoría distingue pago directo de desembolso
+ok 72 - caso 12: el evento de auditoría distingue pago directo de desembolso
+  ---
+  duration_ms: 0.09395
+  type: 'test'
+  ...
+# Subtest: pagos validan estado aprobado, sobrepago y evidencia
+ok 73 - pagos validan estado aprobado, sobrepago y evidencia
+  ---
+  duration_ms: 1.806214
+  type: 'test'
+  ...
+# Subtest: pagos bloquean solicitud y son idempotentes ante concurrencia
+ok 74 - pagos bloquean solicitud y son idempotentes ante concurrencia
+  ---
+  duration_ms: 0.291902
+  type: 'test'
+  ...
+# Subtest: pago conserva moneda y referencia
+ok 75 - pago conserva moneda y referencia
+  ---
+  duration_ms: 0.142467
+  type: 'test'
+  ...
+# Subtest: payment resource access rejects a different company and allows finance in same company
+ok 76 - payment resource access rejects a different company and allows finance in same company
+  ---
+  duration_ms: 2.366302
+  type: 'test'
+  ...
+# Subtest: OCR read permission cannot be used for processing
+ok 77 - OCR read permission cannot be used for processing
+  ---
+  duration_ms: 0.72084
+  type: 'test'
+  ...
+# Subtest: Documents service source uses an explicit safe user projection
+ok 78 - Documents service source uses an explicit safe user projection
+  ---
+  duration_ms: 0.553623
+  type: 'test'
+  ...
+# Subtest: company scope rejects arbitrary company and missing company
+ok 79 - company scope rejects arbitrary company and missing company
+  ---
+  duration_ms: 0.408854
+  type: 'test'
+  ...
+# Subtest: report and export requests reject a foreign company before any query
+ok 80 - report and export requests reject a foreign company before any query
+  ---
+  duration_ms: 1.293767
+  type: 'test'
+  ...
+# Subtest: report and export budget reject a foreign company before any query
+ok 81 - report and export budget reject a foreign company before any query
+  ---
+  duration_ms: 0.431075
+  type: 'test'
+  ...
+# Subtest: report and export approvals reject a foreign company before any query
+ok 82 - report and export approvals reject a foreign company before any query
+  ---
+  duration_ms: 0.736672
+  type: 'test'
+  ...
+# Subtest: report and export policies reject a foreign company before any query
+ok 83 - report and export policies reject a foreign company before any query
+  ---
+  duration_ms: 0.386314
+  type: 'test'
+  ...
+# Subtest: report and export executive reject a foreign company before any query
+ok 84 - report and export executive reject a foreign company before any query
+  ---
+  duration_ms: 0.687351
+  type: 'test'
+  ...
+# Subtest: report and export ocr reject a foreign company before any query
+ok 85 - report and export ocr reject a foreign company before any query
+  ---
+  duration_ms: 0.913017
+  type: 'test'
+  ...
+# Subtest: query and export pass the same authorized company to the repository
+ok 86 - query and export pass the same authorized company to the repository
+  ---
+  duration_ms: 1.043407
+  type: 'test'
+  ...
+# Subtest: denied download never calls storage
+ok 87 - denied download never calls storage
+  ---
+  duration_ms: 0.656724
+  type: 'test'
+  ...
+# Subtest: allowed download accesses storage only after the scoped lookup
+ok 88 - allowed download accesses storage only after the scoped lookup
+  ---
+  duration_ms: 0.540587
+  type: 'test'
+  ...
+# Subtest: OCR process requires its own permission, including privileged role names
+ok 89 - OCR process requires its own permission, including privileged role names
+  ---
+  duration_ms: 0.43132
+  type: 'test'
+  ...
+# Subtest: OCR correct requires its own permission, including privileged role names
+ok 90 - OCR correct requires its own permission, including privileged role names
+  ---
+  duration_ms: 0.344883
+  type: 'test'
+  ...
+# Subtest: OCR confirm requires its own permission, including privileged role names
+ok 91 - OCR confirm requires its own permission, including privileged role names
+  ---
+  duration_ms: 0.469354
+  type: 'test'
+  ...
+# Subtest: OCR metrics without read permission fails before any aggregate
+ok 92 - OCR metrics without read permission fails before any aggregate
+  ---
+  duration_ms: 0.494807
+  type: 'test'
+  ...
+# Subtest: foreign settlement observe is denied before a write
+ok 93 - foreign settlement observe is denied before a write
+  ---
+  duration_ms: 0.345427
+  type: 'test'
+  ...
+# Subtest: foreign settlement reject is denied before a write
+ok 94 - foreign settlement reject is denied before a write
+  ---
+  duration_ms: 0.174246
+  type: 'test'
+  ...
+# Subtest: foreign settlement approve is denied before a write
+ok 95 - foreign settlement approve is denied before a write
+  ---
+  duration_ms: 0.177537
+  type: 'test'
+  ...
+# Subtest: foreign settlement close is denied before a write
+ok 96 - foreign settlement close is denied before a write
+  ---
+  duration_ms: 0.23981
+  type: 'test'
+  ...
+# Subtest: foreign settlement certify is denied before a write
+ok 97 - foreign settlement certify is denied before a write
+  ---
+  duration_ms: 0.187059
+  type: 'test'
+  ...
+# Subtest: traceability rejects foreign entity before fetching its history or changing it
+ok 98 - traceability rejects foreign entity before fetching its history or changing it
+  ---
+  duration_ms: 0.743636
+  type: 'test'
+  ...
+# Subtest: liquidacion exacta queda cuadrada
+ok 99 - liquidacion exacta queda cuadrada
+  ---
+  duration_ms: 13.22109
+  type: 'test'
+  ...
+# Subtest: excedente con devolucion completa queda cuadrada
+ok 100 - excedente con devolucion completa queda cuadrada
+  ---
+  duration_ms: 0.332791
+  type: 'test'
+  ...
+# Subtest: excedente sin devolucion queda pendiente
+ok 101 - excedente sin devolucion queda pendiente
+  ---
+  duration_ms: 0.135702
+  type: 'test'
+  ...
+# Subtest: devolucion parcial conserva diferencia
+ok 102 - devolucion parcial conserva diferencia
+  ---
+  duration_ms: 0.103429
+  type: 'test'
+  ...
+# Subtest: gasto superior queda en exceso
+ok 103 - gasto superior queda en exceso
+  ---
+  duration_ms: 0.211851
+  type: 'test'
+  ...
+# Subtest: comprobante rechazado no es elegible
+ok 104 - comprobante rechazado no es elegible
+  ---
+  duration_ms: 0.208855
+  type: 'test'
+  ...
+# Subtest: comprobante CF no es elegible
+ok 105 - comprobante CF no es elegible
+  ---
+  duration_ms: 0.16578
+  type: 'test'
+  ...
+# Subtest: recibo permitido por politica es elegible
+ok 106 - recibo permitido por politica es elegible
+  ---
+  duration_ms: 0.093264
+  type: 'test'
+  ...
+# Subtest: recibo sin politica no es elegible
+ok 107 - recibo sin politica no es elegible
+  ---
+  duration_ms: 0.247315
+  type: 'test'
+  ...
+# Subtest: comprobante ya liquidado no es elegible
+ok 108 - comprobante ya liquidado no es elegible
+  ---
+  duration_ms: 0.406124
+  type: 'test'
+  ...
+# Subtest: comprobante de otra empresa no es elegible
+ok 109 - comprobante de otra empresa no es elegible
+  ---
+  duration_ms: 0.170541
+  type: 'test'
+  ...
+# Subtest: comprobante sin solicitud directa puede ser elegible
+ok 110 - comprobante sin solicitud directa puede ser elegible
+  ---
+  duration_ms: 0.090126
+  type: 'test'
+  ...
+# Subtest: comprobante no confirmado no es elegible
+ok 111 - comprobante no confirmado no es elegible
+  ---
+  duration_ms: 0.067063
+  type: 'test'
+  ...
+# Subtest: observacion bloquea cierre
+ok 112 - observacion bloquea cierre
+  ---
+  duration_ms: 0.081081
+  type: 'test'
+  ...
+# Subtest: sin aprobacion no puede cerrar
+ok 113 - sin aprobacion no puede cerrar
+  ---
+  duration_ms: 0.0537
+  type: 'test'
+  ...
+# Subtest: solo aprobada y cuadrada puede cerrar
+ok 114 - solo aprobada y cuadrada puede cerrar
+  ---
+  duration_ms: 0.052367
+  type: 'test'
+  ...
+# Subtest: devolucion en validacion queda auditivamente pendiente
+ok 115 - devolucion en validacion queda auditivamente pendiente
+  ---
+  duration_ms: 0.059053
+  type: 'test'
+  ...
+# Subtest: liquidación cerrada no permite modificaciones normales
+ok 116 - liquidación cerrada no permite modificaciones normales
+  ---
+  duration_ms: 0.079806
+  type: 'test'
+  ...
+# prisma:warn Prisma failed to detect the libssl/openssl version to use, and may not work as expected. Defaulting to "openssl-1.1.x".
+# Please manually install OpenSSL via `apt-get update -y && apt-get install -y openssl` and try installing Prisma again. If you're running Prisma on Docker, add this command to your Dockerfile, or switch to an image that already has OpenSSL installed.
+# {
+#   "scenario": "E2E_FINANCIERO_COMPLETO",
+#   "database": [
+#     {
+#       "db": "aprobaciones_qa_20261006"
+#     }
+#   ],
+#   "companyId": "3f0d0732-5652-4795-a094-46585f3188aa",
+#   "requestId": "9d5da400-0cf1-4776-a1a7-ca4b67139539",
+#   "requestStatus": "APROBADA",
+#   "reservationId": "3f1aa082-599c-4088-a8f0-b09534c87a4a",
+#   "reservationStatus": "EXECUTED",
+#   "paymentId": "6e8f7406-ede4-483f-900d-15080a29cc25",
+#   "paymentStatus": "PAGADO",
+#   "documentId": "0fa38b76-587c-48e4-b25a-22fe9e39bc3b",
+#   "usedInSettlement": true,
+#   "settlementId": "43392a19-9b78-458d-82b7-1f6adce3460c",
+#   "code": "LIQ-2026-00454",
+#   "documentsTotal": "10000",
+#   "differenceAmount": "0",
+#   "balanceStatus": "CUADRADA",
+#   "status": "CERRADA",
+#   "certificationStatus": "CERTIFICADA"
+# }
+# Subtest: E2E financiero completo contra PostgreSQL usando fixture RBAC real
+ok 117 - E2E financiero completo contra PostgreSQL usando fixture RBAC real
+  ---
+  duration_ms: 963.397917
+  type: 'test'
+  ...
+# {
+#   "scenario": "E2E_REINTEGRO",
+#   "requestId": "4f836ba1-2c39-4788-9282-c539ef4181db",
+#   "settlementId": "e7755851-38c3-45c3-aeba-b140a067c084",
+#   "refundId": "7030b430-a9f2-4b31-a844-265895530bb3",
+#   "documentsTotal": "8500",
+#   "refundTotal": "1500",
+#   "difference": "0",
+#   "status": "CERRADA",
+#   "certification": "CERTIFICADA"
+# }
+# Subtest: E2E financiero con reintegro real contra PostgreSQL
+ok 118 - E2E financiero con reintegro real contra PostgreSQL
+  ---
+  duration_ms: 766.455629
+  type: 'test'
+  ...
+# {
+#   "scenario": "E2E_INCONSISTENTE",
+#   "requestId": "dea7094e-5d2c-4f14-b985-f29f6967341b",
+#   "settlementId": "e315c8c6-a3a9-4e23-b924-d5dbe53ca039",
+#   "difference": "1500",
+#   "balance": "PENDIENTE_DEVOLUCION",
+#   "refundRejected": "La devoluciÃ³n debe corresponder al saldo pendiente completo: 1500.00.",
+#   "status": "BORRADOR",
+#   "certification": "PENDIENTE"
+# }
+# Subtest: E2E inconsistente rechaza reintegro parcial seg�n regla vigente
+ok 119 - E2E inconsistente rechaza reintegro parcial seg�n regla vigente
+  ---
+  duration_ms: 403.211905
+  type: 'test'
+  ...
+# CONCURRENCY_LIQUIDATION_RUNS [
+#   {
+#     "run": 1,
+#     "requestId": "5d34a2e6-08d3-47bc-9e9d-db9f3dc59f7c",
+#     "results": [
+#       {
+#         "ok": true,
+#         "id": "343fbdca-8b65-4174-9d5f-eeb23f4f1bc4",
+#         "at": 1791319002182
+#       },
+#       {
+#         "ok": false,
+#         "error": "La solicitud ya tiene la liquidaciÃ³n LIQ-2026-00457.",
+#         "at": 1791319002189
+#       }
+#     ],
+#     "rows": [
+#       {
+#         "id": "343fbdca-8b65-4174-9d5f-eeb23f4f1bc4",
+#         "code": "LIQ-2026-00457",
+#         "status": "BORRADOR",
+#         "paymentId": "1adaa8d4-bba8-408d-8c48-a816e65b6ad9"
+#       }
+#     ]
+#   },
+#   {
+#     "run": 2,
+#     "requestId": "2543f21a-aec9-4a5a-af12-6676d52f9f87",
+#     "results": [
+#       {
+#         "ok": true,
+#         "id": "10017176-6acc-4c59-921c-817b51bddeab",
+#         "at": 1791319002591
+#       },
+#       {
+#         "ok": false,
+#         "error": "La solicitud ya tiene la liquidaciÃ³n LIQ-2026-00458.",
+#         "at": 1791319002594
+#       }
+#     ],
+#     "rows": [
+#       {
+#         "id": "10017176-6acc-4c59-921c-817b51bddeab",
+#         "code": "LIQ-2026-00458",
+#         "status": "BORRADOR",
+#         "paymentId": "ed7988ad-ee56-4d1b-a92d-17dc64b92c5a"
+#       }
+#     ]
+#   },
+#   {
+#     "run": 3,
+#     "requestId": "4ad79ff0-7e3f-4022-9142-b5ccf98228b8",
+#     "results": [
+#       {
+#         "ok": true,
+#         "id": "8e54cebe-095f-4901-92fa-19aef95dc371",
+#         "at": 1791319003000
+#       },
+#       {
+#         "ok": false,
+#         "error": "La solicitud ya tiene la liquidaciÃ³n LIQ-2026-00459.",
+#         "at": 1791319002994
+#       }
+#     ],
+#     "rows": [
+#       {
+#         "id": "8e54cebe-095f-4901-92fa-19aef95dc371",
+#         "code": "LIQ-2026-00459",
+#         "status": "BORRADOR",
+#         "paymentId": "0e53adf9-51cc-4b7c-adb7-166e24d88648"
+#       }
+#     ]
+#   }
+# ]
+# Subtest: concurrencia PostgreSQL de creaci�n de liquidaci�n - tres ejecuciones
+ok 120 - concurrencia PostgreSQL de creaci�n de liquidaci�n - tres ejecuciones
+  ---
+  duration_ms: 1159.326735
+  type: 'test'
+  ...
+# CONCURRENCY_REFUND_RUNS [
+#   {
+#     "run": 1,
+#     "settlementId": "c33a0e26-2912-455c-a181-eb8e80a0ee50",
+#     "results": [
+#       {
+#         "ok": true,
+#         "refundId": "e24e2144-405f-4609-ba80-cce7dce8f436",
+#         "at": 1791319003741
+#       },
+#       {
+#         "ok": false,
+#         "error": "Ya existe una devoluciÃ³n pendiente de validaciÃ³n o correcciÃ³n.",
+#         "at": 1791319003711
+#       }
+#     ],
+#     "refundCount": 1,
+#     "total": "1500",
+#     "difference": "0",
+#     "balance": "CUADRADA"
+#   },
+#   {
+#     "run": 2,
+#     "settlementId": "b83661ac-1fa2-4430-a4ce-b87032f3638d",
+#     "results": [
+#       {
+#         "ok": true,
+#         "refundId": "98e0b985-b787-4ad5-a6a5-5594ab812cd4",
+#         "at": 1791319004445
+#       },
+#       {
+#         "ok": false,
+#         "error": "Ya existe una devoluciÃ³n pendiente de validaciÃ³n o correcciÃ³n.",
+#         "at": 1791319004421
+#       }
+#     ],
+#     "refundCount": 1,
+#     "total": "1500",
+#     "difference": "0",
+#     "balance": "CUADRADA"
+#   },
+#   {
+#     "run": 3,
+#     "settlementId": "3cebb701-6864-4fb5-b305-8df7ebdd9f59",
+#     "results": [
+#       {
+#         "ok": true,
+#         "refundId": "d51c17b8-bf45-4fc0-8bb1-48d50c6fca50",
+#         "at": 1791319005017
+#       },
+#       {
+#         "ok": false,
+#         "error": "Ya existe una devoluciÃ³n pendiente de validaciÃ³n o correcciÃ³n.",
+#         "at": 1791319005015
+#       }
+#     ],
+#     "refundCount": 1,
+#     "total": "1500",
+#     "difference": "0",
+#     "balance": "CUADRADA"
+#   }
+# ]
+# Subtest: concurrencia PostgreSQL de reintegros - tres ejecuciones
+ok 121 - concurrencia PostgreSQL de reintegros - tres ejecuciones
+  ---
+  duration_ms: 2105.788121
+  type: 'test'
+  ...
+# CERT_AUDITS_DEBUG 1e813954-16e2-4e57-8ed1-4288a52e314a 1 [
+#   { ok: true, status: 'CERRADA', at: 1791319005730 },
+#   {
+#     ok: false,
+#     error: 'La liquidaciÃ³n debe estar aprobada, cuadrada y sin observaciones.',
+#     at: 1791319005751
+#   }
+# ]
+# CERT_AUDITS_DEBUG 4aad0f43-29e1-4b13-bd79-a9770e44b778 1 [
+#   { ok: true, status: 'CERRADA', at: 1791319006359 },
+#   {
+#     ok: false,
+#     error: 'La liquidaciÃ³n cambiÃ³ de estado mientras se procesaba.',
+#     at: 1791319006355
+#   }
+# ]
+# CERT_AUDITS_DEBUG bae8ea85-5c3b-4806-8274-98755a94fa4c 1 [
+#   { ok: true, status: 'CERRADA', at: 1791319007033 },
+#   {
+#     ok: false,
+#     error: 'La liquidaciÃ³n cambiÃ³ de estado mientras se procesaba.',
+#     at: 1791319007018
+#   }
+# ]
+# CONCURRENCY_CLOSE_RUNS [
+#   {
+#     "run": 1,
+#     "settlementId": "1e813954-16e2-4e57-8ed1-4288a52e314a",
+#     "results": [
+#       {
+#         "ok": true,
+#         "status": "CERRADA",
+#         "at": 1791319005730
+#       },
+#       {
+#         "ok": false,
+#         "error": "La liquidaciÃ³n debe estar aprobada, cuadrada y sin observaciones.",
+#         "at": 1791319005751
+#       }
+#     ],
+#     "finalStatus": "CERRADA",
+#     "certification": "PENDIENTE",
+#     "closeAudits": 1
+#   },
+#   {
+#     "run": 2,
+#     "settlementId": "4aad0f43-29e1-4b13-bd79-a9770e44b778",
+#     "results": [
+#       {
+#         "ok": true,
+#         "status": "CERRADA",
+#         "at": 1791319006359
+#       },
+#       {
+#         "ok": false,
+#         "error": "La liquidaciÃ³n cambiÃ³ de estado mientras se procesaba.",
+#         "at": 1791319006355
+#       }
+#     ],
+#     "finalStatus": "CERRADA",
+#     "certification": "PENDIENTE",
+#     "closeAudits": 1
+#   },
+#   {
+#     "run": 3,
+#     "settlementId": "bae8ea85-5c3b-4806-8274-98755a94fa4c",
+#     "results": [
+#       {
+#         "ok": true,
+#         "status": "CERRADA",
+#         "at": 1791319007033
+#       },
+#       {
+#         "ok": false,
+#         "error": "La liquidaciÃ³n cambiÃ³ de estado mientras se procesaba.",
+#         "at": 1791319007018
+#       }
+#     ],
+#     "finalStatus": "CERRADA",
+#     "certification": "PENDIENTE",
+#     "closeAudits": 1
+#   }
+# ]
+# Subtest: concurrencia PostgreSQL de cierre - tres ejecuciones
+ok 122 - concurrencia PostgreSQL de cierre - tres ejecuciones
+  ---
+  duration_ms: 1934.930055
+  type: 'test'
+  ...
+# CONCURRENCY_CERTIFICATION_RUNS [
+#   {
+#     "run": 1,
+#     "settlementId": "013b84a7-a03c-465b-a56b-aa99b387170b",
+#     "results": [
+#       {
+#         "ok": true,
+#         "status": "CERTIFICADA",
+#         "at": 1791319007742
+#       },
+#       {
+#         "ok": true,
+#         "status": "CERTIFICADA",
+#         "at": 1791319007777
+#       }
+#     ],
+#     "finalState": "CERRADA",
+#     "certification": "CERTIFICADA",
+#     "certificationAudits": 1
+#   },
+#   {
+#     "run": 2,
+#     "settlementId": "704f898c-9af0-4d61-a55d-3fa1bec97216",
+#     "results": [
+#       {
+#         "ok": true,
+#         "status": "CERTIFICADA",
+#         "at": 1791319008451
+#       },
+#       {
+#         "ok": true,
+#         "status": "CERTIFICADA",
+#         "at": 1791319008504
+#       }
+#     ],
+#     "finalState": "CERRADA",
+#     "certification": "CERTIFICADA",
+#     "certificationAudits": 1
+#   },
+#   {
+#     "run": 3,
+#     "settlementId": "c0b82428-c8d9-412e-8904-5fcaf1deb715",
+#     "results": [
+#       {
+#         "ok": true,
+#         "status": "CERTIFICADA",
+#         "at": 1791319009168
+#       },
+#       {
+#         "ok": true,
+#         "status": "CERTIFICADA",
+#         "at": 1791319009182
+#       }
+#     ],
+#     "finalState": "CERRADA",
+#     "certification": "CERTIFICADA",
+#     "certificationAudits": 1
+#   }
+# ]
+# Subtest: concurrencia PostgreSQL de certificaci�n - tres ejecuciones
+ok 123 - concurrencia PostgreSQL de certificaci�n - tres ejecuciones
+  ---
+  duration_ms: 2149.046358
+  type: 'test'
+  ...
+# CONCURRENCY_NUMBERING {
+#   "results": [
+#     {
+#       "ok": true,
+#       "id": "156c87b3-245b-47de-870c-b561fc396484",
+#       "code": "LIQ-2026-00469",
+#       "at": 1791319010606
+#     },
+#     {
+#       "ok": true,
+#       "id": "9094d36e-cb95-4038-add5-ff8bc98d15ed",
+#       "code": "LIQ-2026-00471",
+#       "at": 1791319010711
+#     },
+#     {
+#       "ok": true,
+#       "id": "80dc77d9-c984-4bf1-b34a-23ac0d5e0421",
+#       "code": "LIQ-2026-00472",
+#       "at": 1791319010749
+#     },
+#     {
+#       "ok": true,
+#       "id": "a85caa71-461d-41ba-8531-8345a47b22d9",
+#       "code": "LIQ-2026-00473",
+#       "at": 1791319010774
+#     },
+#     {
+#       "ok": true,
+#       "id": "17da6a68-540d-42cf-92a2-3e28f8744294",
+#       "code": "LIQ-2026-00470",
+#       "at": 1791319010680
+#     }
+#   ],
+#   "rows": [
+#     {
+#       "id": "80dc77d9-c984-4bf1-b34a-23ac0d5e0421",
+#       "code": "LIQ-2026-00472"
+#     },
+#     {
+#       "id": "156c87b3-245b-47de-870c-b561fc396484",
+#       "code": "LIQ-2026-00469"
+#     },
+#     {
+#       "id": "9094d36e-cb95-4038-add5-ff8bc98d15ed",
+#       "code": "LIQ-2026-00471"
+#     },
+#     {
+#       "id": "a85caa71-461d-41ba-8531-8345a47b22d9",
+#       "code": "LIQ-2026-00473"
+#     },
+#     {
+#       "id": "17da6a68-540d-42cf-92a2-3e28f8744294",
+#       "code": "LIQ-2026-00470"
+#     }
+#   ],
+#   "count": 5,
+#   "distinctCodes": 5
+# }
+# CONCURRENCY_NUMBERING {
+#   "results": [
+#     {
+#       "ok": true,
+#       "id": "156c87b3-245b-47de-870c-b561fc396484",
+#       "code": "LIQ-2026-00469",
+#       "at": 1791319010606
+#     },
+#     {
+#       "ok": true,
+#       "id": "9094d36e-cb95-4038-add5-ff8bc98d15ed",
+#       "code": "LIQ-2026-00471",
+#       "at": 1791319010711
+#     },
+#     {
+#       "ok": true,
+#       "id": "80dc77d9-c984-4bf1-b34a-23ac0d5e0421",
+#       "code": "LIQ-2026-00472",
+#       "at": 1791319010749
+#     },
+#     {
+#       "ok": true,
+#       "id": "a85caa71-461d-41ba-8531-8345a47b22d9",
+#       "code": "LIQ-2026-00473",
+#       "at": 1791319010774
+#     },
+#     {
+#       "ok": true,
+#       "id": "17da6a68-540d-42cf-92a2-3e28f8744294",
+#       "code": "LIQ-2026-00470",
+#       "at": 1791319010680
+#     }
+#   ],
+#   "rows": [
+#     {
+#       "id": "80dc77d9-c984-4bf1-b34a-23ac0d5e0421",
+#       "code": "LIQ-2026-00472"
+#     },
+#     {
+#       "id": "156c87b3-245b-47de-870c-b561fc396484",
+#       "code": "LIQ-2026-00469"
+#     },
+#     {
+#       "id": "9094d36e-cb95-4038-add5-ff8bc98d15ed",
+#       "code": "LIQ-2026-00471"
+#     },
+#     {
+#       "id": "a85caa71-461d-41ba-8531-8345a47b22d9",
+#       "code": "LIQ-2026-00473"
+#     },
+#     {
+#       "id": "17da6a68-540d-42cf-92a2-3e28f8744294",
+#       "code": "LIQ-2026-00470"
+#     }
+#   ],
+#   "count": 5,
+#   "distinctCodes": 5
+# }
+# Subtest: numeraci�n PostgreSQL concurrente de cinco liquidaciones
+ok 124 - numeraci�n PostgreSQL concurrente de cinco liquidaciones
+  ---
+  duration_ms: 1584.835005
+  type: 'test'
+  ...
+# CONCURRENCY_DOCUMENT [
+#   {
+#     "run": 1,
+#     "documentId": "eee2e9ac-3e3e-4708-a503-7b84d6dad7a3",
+#     "settlementA": "aa378b8d-ca73-4791-a7be-40f2d3ac5263",
+#     "settlementB": "1f44559f-f05e-4ade-b32c-d1657e78070a",
+#     "results": [
+#       {
+#         "ok": true,
+#         "settlementId": "aa378b8d-ca73-4791-a7be-40f2d3ac5263",
+#         "at": 1791319011523
+#       },
+#       {
+#         "ok": false,
+#         "error": "El comprobante fue seleccionado simultÃ¡neamente en otra liquidaciÃ³n.",
+#         "at": 1791319011497
+#       }
+#     ],
+#     "rows": [
+#       {
+#         "settlementId": "aa378b8d-ca73-4791-a7be-40f2d3ac5263",
+#         "documentId": "eee2e9ac-3e3e-4708-a503-7b84d6dad7a3"
+#       }
+#     ],
+#     "usedInSettlement": true
+#   },
+#   {
+#     "run": 2,
+#     "documentId": "3d6dac0a-6b4b-4728-a8ee-de529b3f88d5",
+#     "settlementA": "8054d7b6-13a9-48c8-8748-1a823a70b52e",
+#     "settlementB": "3c9baf2a-ed1d-484c-b97e-4e25a33b0455",
+#     "results": [
+#       {
+#         "ok": true,
+#         "settlementId": "8054d7b6-13a9-48c8-8748-1a823a70b52e",
+#         "at": 1791319012094
+#       },
+#       {
+#         "ok": false,
+#         "error": "El comprobante fue seleccionado simultÃ¡neamente en otra liquidaciÃ³n.",
+#         "at": 1791319012074
+#       }
+#     ],
+#     "rows": [
+#       {
+#         "settlementId": "8054d7b6-13a9-48c8-8748-1a823a70b52e",
+#         "documentId": "3d6dac0a-6b4b-4728-a8ee-de529b3f88d5"
+#       }
+#     ],
+#     "usedInSettlement": true
+#   },
+#   {
+#     "run": 3,
+#     "documentId": "0ec69625-aee6-4bda-a388-446bdf561244",
+#     "settlementA": "5a502004-d8ac-4792-92b9-5986e0ca36c1",
+#     "settlementB": "ce67a22e-5cf0-4696-b050-b9eb0673e109",
+#     "results": [
+#       {
+#         "ok": true,
+#         "settlementId": "5a502004-d8ac-4792-92b9-5986e0ca36c1",
+#         "at": 1791319012743
+#       },
+#       {
+#         "ok": false,
+#         "error": "Este documento ya estÃ¡ asociado a una liquidaciÃ³n.",
+#         "at": 1791319012709
+#       }
+#     ],
+#     "rows": [
+#       {
+#         "settlementId": "5a502004-d8ac-4792-92b9-5986e0ca36c1",
+#         "documentId": "0ec69625-aee6-4bda-a388-446bdf561244"
+#       }
+#     ],
+#     "usedInSettlement": true
+#   }
+# ]
+# Subtest: asociaci�n documental PostgreSQL concurrente - tres ejecuciones
+ok 125 - asociaci�n documental PostgreSQL concurrente - tres ejecuciones
+  ---
+  duration_ms: 1977.998093
+  type: 'test'
+  ...
+# Subtest: fixture E2E asigna OCR_VIEW_COMPANY por RBAC real
+ok 126 - fixture E2E asigna OCR_VIEW_COMPANY por RBAC real
+  ---
+  duration_ms: 0.623828
+  type: 'test'
+  ...
+# Subtest: numeración de liquidaciones usa lock transaccional
+ok 127 - numeración de liquidaciones usa lock transaccional
+  ---
+  duration_ms: 1.205038
+  type: 'test'
+  ...
+# Subtest: liquidación exige pago PAGADO
+ok 128 - liquidación exige pago PAGADO
+  ---
+  duration_ms: 0.183117
+  type: 'test'
+  ...
+# Subtest: cierre y certificación son condicionales
+ok 129 - cierre y certificación son condicionales
+  ---
+  duration_ms: 3.244851
+  type: 'test'
+  ...
+# Subtest: reintegro concurrente se revalida dentro de transacción
+ok 130 - reintegro concurrente se revalida dentro de transacción
+  ---
+  duration_ms: 0.279041
+  type: 'test'
+  ...
+# Subtest: permite registrar múltiples cuentas bancarias diferentes
+ok 131 - permite registrar múltiples cuentas bancarias diferentes
+  ---
+  duration_ms: 4.842704
+  type: 'test'
+  ...
+# Subtest: valida moneda exacta de solicitud, desembolso y cuenta
+ok 132 - valida moneda exacta de solicitud, desembolso y cuenta
+  ---
+  duration_ms: 0.394272
+  type: 'test'
+  ...
+# Subtest: rechaza cuenta con moneda distinta al desembolso
+ok 133 - rechaza cuenta con moneda distinta al desembolso
+  ---
+  duration_ms: 0.169406
+  type: 'test'
+  ...
+# Subtest: registro manual exige evidencia documental admitida
+ok 134 - registro manual exige evidencia documental admitida
+  ---
+  duration_ms: 0.288125
+  type: 'test'
+  ...
+# Subtest: permite devolución mediante transferencia
+ok 135 - permite devolución mediante transferencia
+  ---
+  duration_ms: 0.193386
+  type: 'test'
+  ...
+# Subtest: permite devolución mediante depósito
+ok 136 - permite devolución mediante depósito
+  ---
+  duration_ms: 0.191694
+  type: 'test'
+  ...
+# Subtest: rechaza devolución sin documento de referencia
+ok 137 - rechaza devolución sin documento de referencia
+  ---
+  duration_ms: 1.53873
+  type: 'test'
+  ...
+# Subtest: devolución pendiente bloquea balance cuadrado
+ok 138 - devolución pendiente bloquea balance cuadrado
+  ---
+  duration_ms: 4.119952
+  type: 'test'
+  ...
+# Subtest: sólo devolución validada completa deja liquidación cuadrada
+ok 139 - sólo devolución validada completa deja liquidación cuadrada
+  ---
+  duration_ms: 1.536856
+  type: 'test'
+  ...
+# Subtest: policy ERROR blocks submit before budget reservation
+ok 140 - policy ERROR blocks submit before budget reservation
+  ---
+  duration_ms: 2.817799
+  type: 'test'
+  ...
+# Subtest: blocking policy does not generate a flow
+ok 141 - blocking policy does not generate a flow
+  ---
+  duration_ms: 0.264102
+  type: 'test'
+  ...
+# Subtest: approval and traceability use one decision service
+ok 142 - approval and traceability use one decision service
+  ---
+  duration_ms: 0.238165
+  type: 'test'
+  ...
+# Subtest: self approval is rejected at decision time
+ok 143 - self approval is rejected at decision time
+  ---
+  duration_ms: 0.123287
+  type: 'test'
+  ...
+# Subtest: self approval is rejected when the flow is generated
+ok 144 - self approval is rejected when the flow is generated
+  ---
+  duration_ms: 0.321294
+  type: 'test'
+  ...
+# Subtest: approval requires an approval permission
+ok 145 - approval requires an approval permission
+  ---
+  duration_ms: 0.155257
+  type: 'test'
+  ...
+# Subtest: approval authority is checked against the configured level
+ok 146 - approval authority is checked against the configured level
+  ---
+  duration_ms: 0.150587
+  type: 'test'
+  ...
+# Subtest: previous approval levels must be complete
+ok 147 - previous approval levels must be complete
+  ---
+  duration_ms: 0.086407
+  type: 'test'
+  ...
+# Subtest: delegation preserves company, self approval and authority constraints
+ok 148 - delegation preserves company, self approval and authority constraints
+  ---
+  duration_ms: 0.564288
+  type: 'test'
+  ...
+# Subtest: idempotency uses conditional step update
+ok 149 - idempotency uses conditional step update
+  ---
+  duration_ms: 0.512759
+  type: 'test'
+  ...
+# Subtest: event bus fails fast for critical effects
+ok 150 - event bus fails fast for critical effects
+  ---
+  duration_ms: 0.140509
+  type: 'test'
+  ...
+# Subtest: event bus isolates non-critical notification failures
+ok 151 - event bus isolates non-critical notification failures
+  ---
+  duration_ms: 0.06425
+  type: 'test'
+  ...
+# Subtest: observations require a comment and preserve status
+ok 152 - observations require a comment and preserve status
+  ---
+  duration_ms: 0.060525
+  type: 'test'
+  ...
+# Subtest: rejections require a comment and close remaining levels
+ok 153 - rejections require a comment and close remaining levels
+  ---
+  duration_ms: 0.053376
+  type: 'test'
+  ...
+# Subtest: resubmit only accepts observed requests
+ok 154 - resubmit only accepts observed requests
+  ---
+  duration_ms: 0.05293
+  type: 'test'
+  ...
+# Subtest: resubmit reevaluates policies before resetting the flow
+ok 155 - resubmit reevaluates policies before resetting the flow
+  ---
+  duration_ms: 0.188341
+  type: 'test'
+  ...
+# Subtest: resubmit resets prior decisions and activates the first level
+ok 156 - resubmit resets prior decisions and activates the first level
+  ---
+  duration_ms: 1.277883
+  type: 'test'
+  ...
+# Subtest: resubmit endpoint requires submit permission
+ok 157 - resubmit endpoint requires submit permission
+  ---
+  duration_ms: 0.215086
+  type: 'test'
+  ...
+# Subtest: delegated target cannot be the requester
+ok 158 - delegated target cannot be the requester
+  ---
+  duration_ms: 0.135572
+  type: 'test'
+  ...
+1..158
+# tests 158
+# suites 0
+# pass 158
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13668.425663

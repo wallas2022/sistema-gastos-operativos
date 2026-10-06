@@ -1,0 +1,47 @@
+{
+  "passed": true,
+  "evidence": [
+    {
+      "case": "APROBAR",
+      "action": "approve",
+      "flowStatus": "APROBADA",
+      "requestStatus": "APROBADA",
+      "pending": 2,
+      "history": [
+        "SOLICITUD_APROBADA"
+      ]
+    },
+    {
+      "case": "RECHAZAR",
+      "action": "reject",
+      "flowStatus": "RECHAZADA",
+      "requestStatus": "RECHAZADA",
+      "pending": 1,
+      "history": [
+        "SOLICITUD_RECHAZADA"
+      ]
+    },
+    {
+      "case": "NIVELES",
+      "action": "approve",
+      "flowStatus": "EN_REVISION",
+      "requestStatus": "PENDIENTE_APROBACION",
+      "pending": 0,
+      "history": [
+        "APROBADOR_ASIGNADO"
+      ]
+    },
+    {
+      "case": "NIVELES",
+      "action": "approve",
+      "flowStatus": "APROBADA",
+      "requestStatus": "APROBADA",
+      "pending": 0,
+      "history": [
+        "APROBADOR_ASIGNADO",
+        "SOLICITUD_APROBADA"
+      ]
+    }
+  ],
+  "pageErrors": []
+}

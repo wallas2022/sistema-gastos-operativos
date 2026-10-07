@@ -1,7 +1,7 @@
 const {PrismaClient}=require('@prisma/client');
 const fs=require('node:fs');
 (async()=>{
-  if(!/^\/aprobaciones_qa_/.test(new URL(process.env.DATABASE_URL).pathname))throw new Error('Este fixture solo admite una base aprobaciones_qa_*');
+  if(!/^\/aprobaciones_(auth_)?qa_/.test(new URL(process.env.DATABASE_URL).pathname))throw new Error('Este fixture solo admite una base aislada aprobaciones_qa_* o aprobaciones_auth_qa_*');
   const p=new PrismaClient();
   try {
     const admin=await p.user.findUniqueOrThrow({where:{email:'admin@demo.com'}});
@@ -10,7 +10,7 @@ const fs=require('node:fs');
     // Give the QA manager the explicit authority required by the existing approval guard.
     // This fixture refuses operational databases and does not alter production roles.
     const role=await p.role.upsert({where:{code:'GERENTE'},update:{},create:{code:'GERENTE',name:'Gerente'}});
-    const permission=await p.permission.upsert({where:{code:'AUTHORIZATION_APPROVE'},update:{active:true},create:{code:'AUTHORIZATION_APPROVE',name:'Aprobar solicitudes asignadas',module:'Aprobaciones',action:'APPROVE',active:true}});
+    const permission=await p.permission.upsert({where:{code:'EXPENSE_REQUEST_APPROVE'},update:{active:true},create:{code:'EXPENSE_REQUEST_APPROVE',name:'Aprobar solicitudes asignadas',module:'Aprobaciones',action:'APPROVE',active:true}});
     await p.rolePermission.upsert({where:{roleId_permissionId:{roleId:role.id,permissionId:permission.id}},update:{},create:{roleId:role.id,permissionId:permission.id}});
     await p.userRole.upsert({where:{userId_roleId:{userId:manager.id,roleId:role.id}},update:{},create:{userId:manager.id,roleId:role.id}});
     // Retire previous fixtures from this dedicated QA inbox so reruns are deterministic.

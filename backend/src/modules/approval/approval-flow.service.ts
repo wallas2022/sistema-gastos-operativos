@@ -21,7 +21,7 @@ export class ApprovalFlowService {
     const flow = await this.findFlowOrFail(id);
     this.ensureCompanyScope(flow, user);
     this.ensureCanView(flow, user);
-    return flow;
+    return { ...flow, decisionAuthorization: this.decisionAuthorization(flow, user) };
   }
 
   async findIdByRequest(requestId: string) {
@@ -39,7 +39,7 @@ export class ApprovalFlowService {
     });
     if (!flow) throw new NotFoundException('La solicitud no tiene un flujo de aprobación.');
     this.ensureCanView(flow, user);
-    return flow;
+    return { ...flow, decisionAuthorization: this.decisionAuthorization(flow, user) };
   }
 
   async getPending(user: any) {
@@ -343,6 +343,18 @@ export class ApprovalFlowService {
     return this.prisma.expenseRequest.findUnique({ where: { id }, include: { items: true, validations: true, traces: { orderBy: { createdAt: 'asc' } }, company: true, currencyRef: true } });
   }
 
+  private decisionAuthorization(flow: any, user: any) {
+    try {
+      this.ensureCompanyScope(flow, user);
+      const current = this.getCurrentStep(flow);
+      this.ensureAssigned(current, user);
+      this.ensureApproverAuthority(flow, current, user);
+      this.ensureDecidable(flow, current);
+      return { allowed: true, reason: null };
+    } catch (error: any) {
+      return { allowed: false, reason: error.message as string };
+    }
+  }
   private getCurrentStep(flow: any) {
     const step = flow.steps.find((candidate: any) => candidate.order === flow.currentStepOrder);
     if (!step) throw new BadRequestException('El flujo no tiene un paso actual procesable.');
@@ -354,8 +366,13 @@ export class ApprovalFlowService {
   }
 
   private ensureApproverAuthority(flow: any, step: any, user: any) {
+    if (!user?.id || user.active === false || user.blocked === true) throw new ForbiddenException('El aprobador no tiene una identidad activa.');
     if (user.role !== 'ADMIN' && !hasPermission(user, 'EXPENSE_REQUEST_APPROVE') && !hasPermission(user, 'AUTHORIZATION_APPROVE')) {
       throw new ForbiddenException('No tiene autoridad para aprobar este flujo.');
+    }
+    // Global read permission does not grant cross-company approval authority.
+    if (flow.entityType === 'EXPENSE_REQUEST' && user.role !== 'ADMIN' && (!user.companyId || user.companyId !== flow.expenseRequest?.companyId)) {
+      throw new ForbiddenException('No puede aprobar solicitudes de otra empresa.');
     }
     if (flow.expenseRequest?.requesterId === user.id) {
       throw new ForbiddenException('El solicitante no puede aprobar su propia solicitud.');
@@ -366,6 +383,10 @@ export class ApprovalFlowService {
   }
 
   private ensureDecidable(flow: any, step: any) {
+    if (step.order !== flow.currentStepOrder) throw new BadRequestException('Solo puede decidirse el nivel activo.');
+    if (flow.entityType === 'EXPENSE_REQUEST' && ![ExpenseRequestStatus.PENDIENTE_APROBACION, ExpenseRequestStatus.OBSERVADA].includes(flow.expenseRequest?.status)) {
+      throw new BadRequestException('La solicitud no se encuentra pendiente de aprobacion.');
+    }
     if (![ApprovalFlowStatus.EN_REVISION, ApprovalFlowStatus.OBSERVADA].includes(flow.status)) throw new BadRequestException(`El flujo ya finalizó con estado ${flow.status}.`);
     if (![ApprovalStepStatus.ASIGNADA, ApprovalStepStatus.EN_REVISION, ApprovalStepStatus.OBSERVADA].includes(step.status)) throw new BadRequestException(`El paso no puede procesarse desde ${step.status}.`);
     const incompletePrevious = flow.steps.some((candidate: any) => candidate.order < step.order && candidate.required && candidate.status !== ApprovalStepStatus.APROBADA);

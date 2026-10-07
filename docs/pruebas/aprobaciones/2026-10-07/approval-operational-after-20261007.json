@@ -1,0 +1,67 @@
+{
+  "code": "SSCGT-SOL-2026-0005",
+  "status": "APROBADA",
+  "flow": {
+    "id": "c2446bdb-bcb1-4fde-9a6d-c25db2e058a6",
+    "entityType": "EXPENSE_REQUEST",
+    "entityId": "a1305a6e-a192-4935-8e05-76028986b287",
+    "expenseRequestId": "a1305a6e-a192-4935-8e05-76028986b287",
+    "status": "APROBADA",
+    "currentStepOrder": null,
+    "generatedAt": "2026-10-06T22:48:04.421Z",
+    "completedAt": "2026-10-07T15:58:25.954Z",
+    "cancelledAt": null,
+    "cancelledByUserId": null,
+    "cancellationReason": null,
+    "createdAt": "2026-10-06T22:48:04.421Z",
+    "updatedAt": "2026-10-07T15:58:25.955Z",
+    "steps": [
+      {
+        "id": "e8585df7-45c9-478b-9be8-743991b041e2",
+        "flowId": "c2446bdb-bcb1-4fde-9a6d-c25db2e058a6",
+        "order": 1,
+        "sourcePolicyRuleId": "976d2f87-ead8-430a-803d-7103c6dbe9e0",
+        "sourcePolicyRuleCode": "POL-004",
+        "approverRoleCode": "GERENTE",
+        "assignedUserId": "831858c1-1431-4606-8089-d7e37a516926",
+        "delegatedFromUserId": null,
+        "status": "APROBADA",
+        "required": true,
+        "assignedAt": "2026-10-06T22:48:04.420Z",
+        "startedAt": null,
+        "decidedAt": "2026-10-07T15:58:25.941Z",
+        "decidedByUserId": "831858c1-1431-4606-8089-d7e37a516926",
+        "comment": null,
+        "createdAt": "2026-10-06T22:48:04.421Z",
+        "updatedAt": "2026-10-07T15:58:25.942Z"
+      }
+    ]
+  },
+  "approvalEvents": [
+    {
+      "id": "4b5c903b-15f3-4d43-a382-c71e8175dc7a",
+      "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+      "event": "SOLICITUD_APROBADA",
+      "description": "Flujo de aprobación completado.",
+      "userName": "Gerente Demo",
+      "fromStatus": "PENDIENTE_APROBACION",
+      "toStatus": "APROBADA",
+      "createdAt": "2026-10-07T15:58:25.980Z"
+    }
+  ],
+  "reservationStatuses": [
+    "EXECUTED"
+  ],
+  "unrelatedFlowsBefore": 445,
+  "unrelatedFlowsAfter": 445,
+  "unrelatedHashBefore": "c27f828dca487ff547c5c0b538e740ddae12ac82966424a14d21d73ec72c4f8b",
+  "unrelatedHashAfter": "c27f828dca487ff547c5c0b538e740ddae12ac82966424a14d21d73ec72c4f8b",
+  "unrelatedUnchanged": true,
+  "approvalGrants": [
+    {
+      "id": "f63a9aaf-c75d-421c-9bce-734f48de748a",
+      "permission": "EXPENSE_REQUEST_APPROVE",
+      "active": true
+    }
+  ]
+}

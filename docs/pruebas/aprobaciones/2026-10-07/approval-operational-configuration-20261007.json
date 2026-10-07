@@ -1,0 +1,50 @@
+{
+  "configuredBy": "5f5aa335-527e-43ac-94ce-b43467028672",
+  "roleId": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+  "roleCode": "GERENTE",
+  "permissionId": "3ad55bc9-16c0-4e30-948c-61d3c6f9effc",
+  "permission": "EXPENSE_REQUEST_APPROVE",
+  "configurationHttp": 201,
+  "assignment": {
+    "id": "f63a9aaf-c75d-421c-9bce-734f48de748a",
+    "roleId": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+    "permissionId": "3ad55bc9-16c0-4e30-948c-61d3c6f9effc",
+    "createdAt": "2026-10-07T15:58:21.893Z",
+    "permission": {
+      "id": "3ad55bc9-16c0-4e30-948c-61d3c6f9effc",
+      "code": "EXPENSE_REQUEST_APPROVE",
+      "name": "Aprobar solicitud",
+      "module": "Solicitudes de gasto",
+      "action": "APPROVE"
+    }
+  },
+  "authenticatedUser": {
+    "id": "831858c1-1431-4606-8089-d7e37a516926",
+    "name": "Gerente Demo",
+    "email": "gerente@demo.com",
+    "role": "GERENTE",
+    "companyId": "9c98ac59-8550-4fbf-b36a-880b50b53788",
+    "managerId": "ad7dc8d8-4e18-4b70-8511-aa83ae44f0d4",
+    "costCenter": "GER-001",
+    "position": "Gerente de Área",
+    "permissions": [
+      "EXPENSE_REQUEST_VIEW_ALL",
+      "EXPENSE_REQUEST_OBSERVE",
+      "LIQUIDATION_APPROVE",
+      "LIQUIDATION_VIEW_ALL",
+      "OCR_VIEW_ALL",
+      "REPORTS_VIEW",
+      "TRACEABILITY_VIEW",
+      "OCR_PROCESS",
+      "EXPENSE_REQUEST_APPROVE"
+    ],
+    "forcePasswordChange": false
+  },
+  "decisionAuthorization": {
+    "allowed": true,
+    "reason": null
+  },
+  "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+  "stepId": "e8585df7-45c9-478b-9be8-743991b041e2",
+  "assignedUserId": "831858c1-1431-4606-8089-d7e37a516926"
+}

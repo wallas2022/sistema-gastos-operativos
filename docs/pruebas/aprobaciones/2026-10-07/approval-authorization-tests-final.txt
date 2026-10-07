@@ -1,0 +1,145 @@
+TAP version 13
+# prisma:warn Prisma failed to detect the libssl/openssl version to use, and may not work as expected. Defaulting to "openssl-1.1.x".
+# Please manually install OpenSSL via `apt-get update -y && apt-get install -y openssl` and try installing Prisma again. If you're running Prisma on Docker, add this command to your Dockerfile, or switch to an image that already has OpenSSL installed.
+# Subtest: assigned approval authorization: seven PostgreSQL regression cases
+    # Subtest: CASE 1 assigned authorized Gerente Demo succeeds
+    ok 1 - CASE 1 assigned authorized Gerente Demo succeeds
+      ---
+      duration_ms: 157.215944
+      type: 'test'
+      ...
+    # Subtest: CASE 2 same-role authorized but unassigned manager rejected
+    ok 2 - CASE 2 same-role authorized but unassigned manager rejected
+      ---
+      duration_ms: 47.623987
+      type: 'test'
+      ...
+    # Subtest: CASE 3 assigned actor without permission rejected
+    ok 3 - CASE 3 assigned actor without permission rejected
+      ---
+      duration_ms: 38.250678
+      type: 'test'
+      ...
+    # Subtest: CASE 4 second level denied early and succeeds after first level
+    ok 4 - CASE 4 second level denied early and succeeds after first level
+      ---
+      duration_ms: 159.535856
+      type: 'test'
+      ...
+    # Subtest: CASE 5 already approved request cannot be approved again
+    ok 5 - CASE 5 already approved request cannot be approved again
+      ---
+      duration_ms: 82.720336
+      type: 'test'
+      ...
+    # Subtest: CASE 6 two simultaneous operations resolve level exactly once
+    ok 6 - CASE 6 two simultaneous operations resolve level exactly once
+      ---
+      duration_ms: 70.875546
+      type: 'test'
+      ...
+    # Subtest: CASE 7 assigned foreign company with global read permission denied
+    ok 7 - CASE 7 assigned foreign company with global read permission denied
+      ---
+      duration_ms: 45.837605
+      type: 'test'
+      ...
+    # Subtest: request terminal state, wrong role and earlier incomplete level rejected
+    ok 8 - request terminal state, wrong role and earlier incomplete level rejected
+      ---
+      duration_ms: 87.651888
+      type: 'test'
+      ...
+    1..8
+ok 1 - assigned approval authorization: seven PostgreSQL regression cases
+  ---
+  duration_ms: 946.524406
+  type: 'test'
+  ...
+# Subtest: request assignment accepts canonical permission
+ok 2 - request assignment accepts canonical permission
+  ---
+  duration_ms: 2.015087
+  type: 'test'
+  ...
+# Subtest: request assignment refuses configured manager without permission before creating flow
+ok 3 - request assignment refuses configured manager without permission before creating flow
+  ---
+  duration_ms: 0.70193
+  type: 'test'
+  ...
+# Subtest: request assignment refuses blocked user or role mismatch
+ok 4 - request assignment refuses blocked user or role mismatch
+  ---
+  duration_ms: 0.321755
+  type: 'test'
+  ...
+# Subtest: settlement assignment does not acquire new request-permission requirement
+ok 5 - settlement assignment does not acquire new request-permission requirement
+  ---
+  duration_ms: 0.173415
+  type: 'test'
+  ...
+# Subtest: pending query excludes settlement flows and preserves personal/company scope
+ok 6 - pending query excludes settlement flows and preserves personal/company scope
+  ---
+  duration_ms: 23.699413
+  type: 'test'
+  ...
+# Subtest: last approval updates request/flow and records trace
+ok 7 - last approval updates request/flow and records trace
+  ---
+  duration_ms: 1.373456
+  type: 'test'
+  ...
+# Subtest: intermediate approval assigns next level without finalizing request
+ok 8 - intermediate approval assigns next level without finalizing request
+  ---
+  duration_ms: 0.294093
+  type: 'test'
+  ...
+# Subtest: rejection updates request/flow and records trimmed mandatory reason
+ok 9 - rejection updates request/flow and records trimmed mandatory reason
+  ---
+  duration_ms: 0.45408
+  type: 'test'
+  ...
+# Subtest: empty rejection, wrong assignee and self approval cannot decide
+ok 10 - empty rejection, wrong assignee and self approval cannot decide
+  ---
+  duration_ms: 0.358215
+  type: 'test'
+  ...
+# Subtest: approve loses concurrent decision without updating request or trace
+ok 11 - approve loses concurrent decision without updating request or trace
+  ---
+  duration_ms: 0.207597
+  type: 'test'
+  ...
+# Subtest: reject loses concurrent decision without updating request or trace
+ok 12 - reject loses concurrent decision without updating request or trace
+  ---
+  duration_ms: 0.13862
+  type: 'test'
+  ...
+# Subtest: decision entry point publishes final state and returns refreshed flow
+ok 13 - decision entry point publishes final state and returns refreshed flow
+  ---
+  duration_ms: 0.411358
+  type: 'test'
+  ...
+# Subtest: an assigned manager without approval permission remains denied
+ok 14 - an assigned manager without approval permission remains denied
+  ---
+  duration_ms: 0.575696
+  type: 'test'
+  ...
+1..14
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1292.244788

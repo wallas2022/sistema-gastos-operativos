@@ -1,0 +1,454 @@
+{
+  "user": {
+    "id": "831858c1-1431-4606-8089-d7e37a516926",
+    "email": "gerente@demo.com",
+    "name": "Gerente Demo",
+    "role": "GERENTE",
+    "companyId": "9c98ac59-8550-4fbf-b36a-880b50b53788",
+    "company": {
+      "id": "9c98ac59-8550-4fbf-b36a-880b50b53788",
+      "code": "SSC-GT",
+      "name": "Servicios Compartidos S.A."
+    },
+    "managerId": "ad7dc8d8-4e18-4b70-8511-aa83ae44f0d4",
+    "costCenter": "GER-001",
+    "position": "Gerente de Área",
+    "active": true,
+    "blocked": false,
+    "credentialVersion": 0,
+    "roles": [
+      {
+        "id": "b3a8e013-0b99-42c7-88a3-9d1dd080c9ae",
+        "userId": "831858c1-1431-4606-8089-d7e37a516926",
+        "roleId": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+        "createdAt": "2026-05-07T20:22:53.996Z",
+        "role": {
+          "id": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+          "code": "GERENTE",
+          "name": "Gerente aprobador",
+          "description": "Usuario responsable de revisar, aprobar, observar o rechazar solicitudes de su equipo.",
+          "active": true,
+          "createdAt": "2026-05-07T20:15:33.646Z",
+          "updatedAt": "2026-05-07T20:15:33.646Z",
+          "permissions": [
+            {
+              "id": "44d67b3c-a2a6-4120-972b-9592ab1196c8",
+              "roleId": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+              "permissionId": "8a4b63b3-9a9a-418e-9929-5601412e80ab",
+              "createdAt": "2026-05-07T21:51:47.626Z",
+              "permission": {
+                "id": "8a4b63b3-9a9a-418e-9929-5601412e80ab",
+                "code": "EXPENSE_REQUEST_VIEW_ALL",
+                "name": "Ver todas las solicitudes",
+                "description": null,
+                "module": "Solicitudes de gasto",
+                "action": "VIEW_ALL",
+                "active": true,
+                "createdAt": "2026-05-07T20:54:29.426Z",
+                "updatedAt": "2026-05-07T20:54:29.426Z"
+              }
+            },
+            {
+              "id": "833e2fda-f28c-4764-9efc-89e2a3a79bad",
+              "roleId": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+              "permissionId": "4e28f96b-7c7b-405e-aecb-519853ec4b18",
+              "createdAt": "2026-05-07T21:51:47.665Z",
+              "permission": {
+                "id": "4e28f96b-7c7b-405e-aecb-519853ec4b18",
+                "code": "EXPENSE_REQUEST_OBSERVE",
+                "name": "Observar solicitud",
+                "description": null,
+                "module": "Solicitudes de gasto",
+                "action": "OBSERVE",
+                "active": true,
+                "createdAt": "2026-05-07T20:56:16.560Z",
+                "updatedAt": "2026-05-07T20:56:16.560Z"
+              }
+            },
+            {
+              "id": "661d879d-cc72-4eb4-bf48-695f70ea0269",
+              "roleId": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+              "permissionId": "6933e7a2-560f-4bbd-9dd3-e56203a81b4b",
+              "createdAt": "2026-05-07T21:51:47.702Z",
+              "permission": {
+                "id": "6933e7a2-560f-4bbd-9dd3-e56203a81b4b",
+                "code": "LIQUIDATION_APPROVE",
+                "name": "Aprobar liquidación",
+                "description": "prueba de descripcion",
+                "module": "Liquidaciones",
+                "action": "APPROVE",
+                "active": true,
+                "createdAt": "2026-05-07T21:39:06.395Z",
+                "updatedAt": "2026-05-07T21:40:34.264Z"
+              }
+            },
+            {
+              "id": "766aeddf-dac2-4588-a68f-464362bfde50",
+              "roleId": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+              "permissionId": "3dec5b38-9ca0-4680-a7b1-6b510e1f9e3f",
+              "createdAt": "2026-05-07T21:51:47.743Z",
+              "permission": {
+                "id": "3dec5b38-9ca0-4680-a7b1-6b510e1f9e3f",
+                "code": "LIQUIDATION_VIEW_ALL",
+                "name": "Ver todas las liquidaciones",
+                "description": null,
+                "module": "Liquidaciones",
+                "action": "VIEW_ALL",
+                "active": true,
+                "createdAt": "2026-05-07T21:38:45.329Z",
+                "updatedAt": "2026-05-07T21:38:45.329Z"
+              }
+            },
+            {
+              "id": "2c753814-139c-4317-a428-0489f796fb05",
+              "roleId": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+              "permissionId": "0c745547-ee4e-4f9f-b1ab-e86e75446438",
+              "createdAt": "2026-05-07T21:51:47.780Z",
+              "permission": {
+                "id": "0c745547-ee4e-4f9f-b1ab-e86e75446438",
+                "code": "OCR_VIEW_ALL",
+                "name": "Ver documentos OCR generales",
+                "description": null,
+                "module": "OCR",
+                "action": "VIEW_ALL",
+                "active": true,
+                "createdAt": "2026-05-07T21:36:50.208Z",
+                "updatedAt": "2026-05-07T21:36:50.208Z"
+              }
+            },
+            {
+              "id": "3c525b49-047a-4ba5-b5f1-abc2924352d0",
+              "roleId": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+              "permissionId": "c939f85b-64c2-497c-885d-d2f4f2ec8bc3",
+              "createdAt": "2026-05-07T21:51:47.816Z",
+              "permission": {
+                "id": "c939f85b-64c2-497c-885d-d2f4f2ec8bc3",
+                "code": "REPORTS_VIEW",
+                "name": "Ver reportes",
+                "description": null,
+                "module": "Reportes",
+                "action": "VIEW",
+                "active": true,
+                "createdAt": "2026-05-07T21:39:50.446Z",
+                "updatedAt": "2026-05-07T21:39:50.446Z"
+              }
+            },
+            {
+              "id": "c43ae190-ec60-4df4-acde-a7dfcdf51f5e",
+              "roleId": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+              "permissionId": "400dec5c-4f46-48bb-bd61-cae082d4ae94",
+              "createdAt": "2026-05-07T21:51:47.860Z",
+              "permission": {
+                "id": "400dec5c-4f46-48bb-bd61-cae082d4ae94",
+                "code": "TRACEABILITY_VIEW",
+                "name": "Ver trazabilidad",
+                "description": null,
+                "module": "Trazabilidad",
+                "action": "VIEW",
+                "active": true,
+                "createdAt": "2026-05-07T21:39:29.789Z",
+                "updatedAt": "2026-05-07T21:39:29.789Z"
+              }
+            },
+            {
+              "id": "97848b8460279360451859b315750d8f",
+              "roleId": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+              "permissionId": "security-ocr-process",
+              "createdAt": "2026-10-05T20:56:58.805Z",
+              "permission": {
+                "id": "security-ocr-process",
+                "code": "OCR_PROCESS",
+                "name": "Procesar y reprocesar OCR",
+                "description": null,
+                "module": "ocr",
+                "action": "PROCESS",
+                "active": true,
+                "createdAt": "2026-10-05T20:56:58.805Z",
+                "updatedAt": "2026-10-05T20:56:58.805Z"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "request": {
+    "id": "a1305a6e-a192-4935-8e05-76028986b287",
+    "code": "SSCGT-SOL-2026-0005",
+    "type": "GASTO_VIAJE",
+    "status": "PENDIENTE_APROBACION",
+    "priority": "NORMAL",
+    "paymentModality": "ANTICIPO_VIATICOS",
+    "intendedBeneficiaryName": null,
+    "intendedBeneficiaryTaxId": null,
+    "requesterId": "d1fc42d4-97d2-4bf6-9688-9c49fbe0b1d9",
+    "requesterName": "Walter Solicitante",
+    "requesterRole": "SOLICITANTE",
+    "companyName": "Servicios Compartidos S.A.",
+    "costCenter": "CC-TI-001",
+    "budgetAccount": "603010.4240.106",
+    "budgetLineId": "838c9a6a-d3e8-4bf7-b681-59d16a0c2991",
+    "budgetPeriodId": "e6c944a1-ab3c-426c-91c7-bde1a73d1e77",
+    "concept": "Viaje operativo para supervisión regional",
+    "justification": "Supervisión operativa planificada.",
+    "destination": "Ciudad de Guatemala",
+    "days": 3,
+    "estimatedDate": "2026-10-09T00:00:00.000Z",
+    "companyId": "9c98ac59-8550-4fbf-b36a-880b50b53788",
+    "currencyId": "bbd8ace2-c993-40be-8a84-64e185fd67e4",
+    "estimatedAmount": "2980",
+    "currency": "GTQ",
+    "exchangeRate": "0.1308900534",
+    "budgetAmount": "390.05",
+    "budgetCurrencyId": "20e35258-b2ca-b4fe-6966-f0e25f33753d",
+    "createdAt": "2026-10-06T22:47:49.560Z",
+    "updatedAt": "2026-10-06T22:48:04.454Z",
+    "countryId": "48b166c3-ea7e-4723-9a83-33ad1c19bdb7",
+    "approvalFlow": {
+      "id": "c2446bdb-bcb1-4fde-9a6d-c25db2e058a6",
+      "entityType": "EXPENSE_REQUEST",
+      "entityId": "a1305a6e-a192-4935-8e05-76028986b287",
+      "expenseRequestId": "a1305a6e-a192-4935-8e05-76028986b287",
+      "status": "EN_REVISION",
+      "currentStepOrder": 1,
+      "generatedAt": "2026-10-06T22:48:04.421Z",
+      "completedAt": null,
+      "cancelledAt": null,
+      "cancelledByUserId": null,
+      "cancellationReason": null,
+      "createdAt": "2026-10-06T22:48:04.421Z",
+      "updatedAt": "2026-10-06T22:48:04.421Z",
+      "steps": [
+        {
+          "id": "e8585df7-45c9-478b-9be8-743991b041e2",
+          "flowId": "c2446bdb-bcb1-4fde-9a6d-c25db2e058a6",
+          "order": 1,
+          "sourcePolicyRuleId": "976d2f87-ead8-430a-803d-7103c6dbe9e0",
+          "sourcePolicyRuleCode": "POL-004",
+          "approverRoleCode": "GERENTE",
+          "assignedUserId": "831858c1-1431-4606-8089-d7e37a516926",
+          "delegatedFromUserId": null,
+          "status": "ASIGNADA",
+          "required": true,
+          "assignedAt": "2026-10-06T22:48:04.420Z",
+          "startedAt": null,
+          "decidedAt": null,
+          "decidedByUserId": null,
+          "comment": null,
+          "createdAt": "2026-10-06T22:48:04.421Z",
+          "updatedAt": "2026-10-06T22:48:04.421Z",
+          "assignedUser": {
+            "id": "831858c1-1431-4606-8089-d7e37a516926",
+            "email": "gerente@demo.com",
+            "name": "Gerente Demo",
+            "role": "GERENTE",
+            "companyId": "9c98ac59-8550-4fbf-b36a-880b50b53788",
+            "active": true,
+            "blocked": false
+          }
+        }
+      ]
+    },
+    "traces": [
+      {
+        "id": "20d10f34-ba1c-475f-b8b4-a723025b172e",
+        "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+        "event": "SOLICITUD_CREADA",
+        "description": "Solicitud SSCGT-SOL-2026-0005 creada como borrador.",
+        "userName": "Walter Solicitante",
+        "fromStatus": null,
+        "toStatus": "BORRADOR",
+        "createdAt": "2026-10-06T22:47:49.560Z"
+      },
+      {
+        "id": "060eb891-c4d4-4010-9111-eb80a5dc721d",
+        "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+        "event": "POLITICA_EVALUADA",
+        "description": "2 polÃ­tica(s) evaluada(s).",
+        "userName": "Walter Solicitante",
+        "fromStatus": "BORRADOR",
+        "toStatus": "BORRADOR",
+        "createdAt": "2026-10-06T22:47:49.682Z"
+      },
+      {
+        "id": "e3d5cf97-7643-46d6-a696-8f544aa54626",
+        "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+        "event": "POLITICA_REQUIERE_APROBACION",
+        "description": "[POL-004] eL USUARIO GERENTE PUEDE APROBAR LA SOLICITUD.",
+        "userName": "Walter Solicitante",
+        "fromStatus": "BORRADOR",
+        "toStatus": "BORRADOR",
+        "createdAt": "2026-10-06T22:47:49.682Z"
+      },
+      {
+        "id": "30c0d511-ae2f-4afb-81d5-009044dc0d18",
+        "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+        "event": "POLITICA_REQUIERE_APROBACION",
+        "description": "[POL-004] eL USUARIO GERENTE PUEDE APROBAR LA SOLICITUD.",
+        "userName": "Walter Solicitante",
+        "fromStatus": "BORRADOR",
+        "toStatus": "BORRADOR",
+        "createdAt": "2026-10-06T22:48:04.267Z"
+      },
+      {
+        "id": "53139101-5436-4b44-b2d7-eda747a3aad7",
+        "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+        "event": "POLITICA_EVALUADA",
+        "description": "2 polÃ­tica(s) evaluada(s).",
+        "userName": "Walter Solicitante",
+        "fromStatus": "BORRADOR",
+        "toStatus": "BORRADOR",
+        "createdAt": "2026-10-06T22:48:04.267Z"
+      },
+      {
+        "id": "20431e1a-fb44-4ccd-947b-174019be5a89",
+        "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+        "event": "PRESUPUESTO_RESERVADO",
+        "description": "Reserva presupuestaria por USD 390.05 (original GTQ 2980.00, tasa 0.1308900534) en 2026-10.",
+        "userName": "Budget Engine",
+        "fromStatus": "BORRADOR",
+        "toStatus": "BORRADOR",
+        "createdAt": "2026-10-06T22:48:04.374Z"
+      },
+      {
+        "id": "7ba87535-223a-45b7-ab45-fd20dbff2ad8",
+        "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+        "event": "FLUJO_GENERADO",
+        "description": "Flujo de 1 nivel(es) generado automáticamente.",
+        "userName": "Walter Solicitante",
+        "fromStatus": "BORRADOR",
+        "toStatus": "BORRADOR",
+        "createdAt": "2026-10-06T22:48:04.446Z"
+      },
+      {
+        "id": "b3bc1b4c-e74e-4f63-8f65-276377627d29",
+        "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+        "event": "APROBADOR_ASIGNADO",
+        "description": "Primer nivel asignado a Gerente Demo.",
+        "userName": "Walter Solicitante",
+        "fromStatus": "BORRADOR",
+        "toStatus": "BORRADOR",
+        "createdAt": "2026-10-06T22:48:04.446Z"
+      },
+      {
+        "id": "51300848-9f24-4b91-ba54-9bb8376fa1da",
+        "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+        "event": "SOLICITUD_ENVIADA_AUTORIZACION",
+        "description": "Solicitud enviada al centro de autorizaciones.",
+        "userName": "Walter Solicitante",
+        "fromStatus": "BORRADOR",
+        "toStatus": "PENDIENTE_APROBACION",
+        "createdAt": "2026-10-06T22:48:04.454Z"
+      }
+    ],
+    "validations": [
+      {
+        "id": "33092ae8-0ddf-459c-8096-7d6ece34924b",
+        "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+        "type": "PRESUPUESTO",
+        "status": "PENDIENTE",
+        "message": "ValidaciÃ³n presupuestaria pendiente de ejecuciÃ³n.",
+        "createdAt": "2026-10-06T22:47:49.560Z"
+      },
+      {
+        "id": "bf48aa64-8af6-498f-84da-2f33949e776c",
+        "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+        "type": "POLITICA:POL-001",
+        "status": "NOT_APPLICABLE",
+        "message": "La regla POL-001 no aplica a la solicitud.",
+        "createdAt": "2026-10-06T22:48:04.261Z"
+      },
+      {
+        "id": "9f7276ba-6063-46d6-ad91-b6d181038af0",
+        "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+        "type": "POLITICA:POL-004",
+        "status": "APPROVAL_REQUIRED",
+        "message": "eL USUARIO GERENTE PUEDE APROBAR LA SOLICITUD.",
+        "createdAt": "2026-10-06T22:48:04.261Z"
+      },
+      {
+        "id": "45ca4431-14c1-4a7c-b078-2512c6dd36d8",
+        "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+        "type": "BUDGET_AVAILABILITY",
+        "status": "AVAILABLE",
+        "message": "Presupuesto anual y mensual disponible.",
+        "createdAt": "2026-10-06T22:48:04.360Z"
+      }
+    ]
+  },
+  "policies": [
+    {
+      "id": "976d2f87-ead8-430a-803d-7103c6dbe9e0",
+      "code": "POL-004",
+      "name": "PAGO SIMPLE",
+      "description": "Esta politica pemite que el jefe o gerente pueda aprobar el gasto.",
+      "field": "AMOUNT",
+      "operator": "LESS_THAN",
+      "comparisonValue": "9999.00",
+      "action": "APPROVAL_REQUIRED",
+      "message": "eL USUARIO GERENTE PUEDE APROBAR LA SOLICITUD.",
+      "priority": 101,
+      "companyId": null,
+      "expenseType": null,
+      "active": true,
+      "validFrom": null,
+      "validTo": null,
+      "deletedAt": null,
+      "createdAt": "2026-08-10T18:00:54.550Z",
+      "updatedAt": "2026-08-10T18:00:54.550Z",
+      "approvalSteps": [
+        {
+          "id": "d6ef6c49-e759-465c-b1ca-2274b7e3300d",
+          "policyRuleId": "976d2f87-ead8-430a-803d-7103c6dbe9e0",
+          "order": 1,
+          "approverRoleId": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+          "approverUserId": "831858c1-1431-4606-8089-d7e37a516926",
+          "required": true,
+          "createdAt": "2026-08-10T18:00:54.550Z",
+          "updatedAt": "2026-08-10T18:00:54.550Z",
+          "approverRole": {
+            "id": "b1455a2e-4db7-4b51-be74-3ee60ba60bd3",
+            "code": "GERENTE",
+            "name": "Gerente aprobador",
+            "description": "Usuario responsable de revisar, aprobar, observar o rechazar solicitudes de su equipo.",
+            "active": true,
+            "createdAt": "2026-05-07T20:15:33.646Z",
+            "updatedAt": "2026-05-07T20:15:33.646Z"
+          },
+          "approverUser": {
+            "id": "831858c1-1431-4606-8089-d7e37a516926",
+            "email": "gerente@demo.com",
+            "role": "GERENTE",
+            "active": true,
+            "blocked": false,
+            "companyId": "9c98ac59-8550-4fbf-b36a-880b50b53788"
+          }
+        }
+      ]
+    }
+  ],
+  "approvalPermissions": [
+    {
+      "id": "3ad55bc9-16c0-4e30-948c-61d3c6f9effc",
+      "code": "EXPENSE_REQUEST_APPROVE",
+      "name": "Aprobar solicitud",
+      "description": null,
+      "module": "Solicitudes de gasto",
+      "action": "APPROVE",
+      "active": true,
+      "createdAt": "2026-05-07T20:55:33.313Z",
+      "updatedAt": "2026-05-07T20:55:33.313Z"
+    },
+    {
+      "id": "6933e7a2-560f-4bbd-9dd3-e56203a81b4b",
+      "code": "LIQUIDATION_APPROVE",
+      "name": "Aprobar liquidación",
+      "description": "prueba de descripcion",
+      "module": "Liquidaciones",
+      "action": "APPROVE",
+      "active": true,
+      "createdAt": "2026-05-07T21:39:06.395Z",
+      "updatedAt": "2026-05-07T21:40:34.264Z"
+    }
+  ]
+}

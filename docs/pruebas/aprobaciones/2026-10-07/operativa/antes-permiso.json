@@ -1,0 +1,10 @@
+{
+  "code": "SSCGT-SOL-2026-0005",
+  "flowId": "c2446bdb-bcb1-4fde-9a6d-c25db2e058a6",
+  "assignedUserId": "831858c1-1431-4606-8089-d7e37a516926",
+  "decisionAuthorization": {
+    "allowed": false,
+    "reason": "No tiene autoridad para aprobar este flujo."
+  },
+  "approveButtonDisabled": true
+}

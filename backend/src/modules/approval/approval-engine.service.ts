@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ApprovalFlowStatus, ApprovalStepStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { hasPermission } from '../auth/permissions.util';
 import {
   ApprovableEntityInput,
   ApprovalPolicyResult,
@@ -61,6 +62,8 @@ export class ApprovalEngineService {
           definition.approverRoleId,
           entity.companyId,
           entity.requesterId,
+          entity.entityType === 'EXPENSE_REQUEST',
+          definition.approverRole?.code,
         );
         configuredSteps.push({
           sourcePolicyRuleId: rule.id,
@@ -135,6 +138,8 @@ export class ApprovalEngineService {
     approverRoleId: string | null,
     companyId?: string | null,
     requesterId?: string,
+    requestApproval = false,
+    approverRoleCode?: string,
   ) {
     if (approverUserId) {
       const user = await this.prisma.user.findFirst({
@@ -142,6 +147,7 @@ export class ApprovalEngineService {
       });
       if (!user) throw new BadRequestException('El aprobador configurado está inactivo o no existe.');
       if (requesterId && user.id === requesterId) throw new BadRequestException('El solicitante no puede ser designado como aprobador.');
+      if (requestApproval) await this.ensureRequestApprover(user.id, companyId, approverRoleCode);
       return user.id;
     }
     if (!approverRoleId) {
@@ -163,9 +169,28 @@ export class ApprovalEngineService {
       );
     }
     if (requesterId && assignment.userId === requesterId) throw new BadRequestException('El solicitante no puede ser designado como aprobador.');
+    if (requestApproval) await this.ensureRequestApprover(assignment.userId, companyId, approverRoleCode);
     return assignment.userId;
   }
 
+  private async ensureRequestApprover(userId: string, companyId?: string | null, roleCode?: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { roles: { where: { role: { active: true } }, include: { role: { include: { permissions: { include: { permission: true } } } } } } },
+    });
+    if (!user || !user.active || user.blocked) throw new BadRequestException('El aprobador configurado no esta activo o esta bloqueado.');
+    const actor = {
+      id: user.id,
+      role: user.roles[0]?.role.code || user.role,
+      permissions: user.roles.flatMap((entry) => entry.role.permissions.filter((item) => item.permission.active).map((item) => item.permission.code)),
+    };
+    if (actor.role !== 'ADMIN' && (!companyId || user.companyId !== companyId)) throw new BadRequestException('El aprobador debe pertenecer a la empresa de la solicitud.');
+    if (roleCode && actor.role !== roleCode && actor.role !== 'ADMIN') throw new BadRequestException('El aprobador no tiene el rol del nivel configurado.');
+    // EXPENSE_REQUEST_APPROVE is canonical; preserve the existing compatibility permission.
+    if (!hasPermission(actor, 'EXPENSE_REQUEST_APPROVE') && !hasPermission(actor, 'AUTHORIZATION_APPROVE')) {
+      throw new BadRequestException('El aprobador configurado carece del permiso para aprobar solicitudes.');
+    }
+  }
   private flowInclude() {
     return {
       steps: {

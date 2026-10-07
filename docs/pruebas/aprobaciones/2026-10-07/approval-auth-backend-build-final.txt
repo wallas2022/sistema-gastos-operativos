@@ -1,0 +1,7 @@
+
+> typecheck
+> tsc --noEmit --incremental false
+
+
+> build
+> nest build

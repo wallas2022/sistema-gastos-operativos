@@ -1,0 +1,57 @@
+{
+  "existing": {
+    "code": "SSCGT-SOL-2026-0005",
+    "requestId": "a1305a6e-a192-4935-8e05-76028986b287",
+    "verifiedInPriorRun": true
+  },
+  "fresh": {
+    "code": "SSCGT-SOL-2026-0006",
+    "requestId": "10e7919e-7d8c-428c-9b89-af1fe615088b",
+    "flowId": "55e9dd1a-c96f-435f-a2b4-cf8e92cee700",
+    "stepId": "2af83bb2-ad72-4e46-ac5e-3f9818ac5d77",
+    "assignedUserId": "831858c1-1431-4606-8089-d7e37a516926",
+    "authenticatedUserId": "831858c1-1431-4606-8089-d7e37a516926",
+    "permission": [
+      "EXPENSE_REQUEST_APPROVE",
+      "LIQUIDATION_APPROVE"
+    ],
+    "requestStatus": "APROBADA",
+    "flowStatus": "APROBADA",
+    "stepStatus": "APROBADA",
+    "pendingBefore": 5,
+    "pendingAfter": 4,
+    "history": [
+      {
+        "id": "d20b017a-d554-4c08-a0bb-b5a5a143e85f",
+        "requestId": "10e7919e-7d8c-428c-9b89-af1fe615088b",
+        "event": "FLUJO_GENERADO",
+        "description": "Flujo de 1 nivel(es) generado automáticamente.",
+        "userName": "Walter Solicitante",
+        "fromStatus": "BORRADOR",
+        "toStatus": "BORRADOR",
+        "createdAt": "2026-10-07T15:35:05.389Z"
+      },
+      {
+        "id": "20fc8a14-7865-46e3-964e-748820636b6e",
+        "requestId": "10e7919e-7d8c-428c-9b89-af1fe615088b",
+        "event": "APROBADOR_ASIGNADO",
+        "description": "Primer nivel asignado a Gerente Demo.",
+        "userName": "Walter Solicitante",
+        "fromStatus": "BORRADOR",
+        "toStatus": "BORRADOR",
+        "createdAt": "2026-10-07T15:35:05.389Z"
+      },
+      {
+        "id": "66ddcfe3-ac7c-4c33-bf38-fc80c30d62fc",
+        "requestId": "10e7919e-7d8c-428c-9b89-af1fe615088b",
+        "event": "SOLICITUD_APROBADA",
+        "description": "Flujo de aprobación completado.",
+        "userName": "Gerente Demo",
+        "fromStatus": "PENDIENTE_APROBACION",
+        "toStatus": "APROBADA",
+        "createdAt": "2026-10-07T15:35:09.526Z"
+      }
+    ]
+  },
+  "errors": []
+}

@@ -51,6 +51,7 @@ export interface ApprovalExpenseSummary {
 }
 
 export interface ApprovalFlow {
+  decisionAuthorization?: { allowed: boolean; reason: string | null };
   id: string;
   entityType: string;
   entityId: string;

@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: la matriz visual contempla los seis roles reales
+ok 1 - la matriz visual contempla los seis roles reales
+  ---
+  duration_ms: 3.038726
+  type: 'test'
+  ...
+# Subtest: seguridad reutiliza permisos SECURITY existentes
+ok 2 - seguridad reutiliza permisos SECURITY existentes
+  ---
+  duration_ms: 0.197329
+  type: 'test'
+  ...
+# Subtest: sidebar permite colapsar y persiste preferencia y grupos
+ok 3 - sidebar permite colapsar y persiste preferencia y grupos
+  ---
+  duration_ms: 0.245358
+  type: 'test'
+  ...
+# Subtest: sidebar accesible incluye etiquetas, foco, aria-expanded y Escape
+ok 4 - sidebar accesible incluye etiquetas, foco, aria-expanded y Escape
+  ---
+  duration_ms: 0.146552
+  type: 'test'
+  ...
+# Subtest: layout móvil implementa apertura y cierre del menú
+ok 5 - layout móvil implementa apertura y cierre del menú
+  ---
+  duration_ms: 0.138007
+  type: 'test'
+  ...
+# Subtest: protección visual y breadcrumbs se aplican centralmente
+ok 6 - protección visual y breadcrumbs se aplican centralmente
+  ---
+  duration_ms: 0.157455
+  type: 'test'
+  ...
+# Subtest: router conserva página 404
+ok 7 - router conserva página 404
+  ---
+  duration_ms: 0.184446
+  type: 'test'
+  ...
+# Subtest: unknown routes including unknown descendants are denied by default
+ok 8 - unknown routes including unknown descendants are denied by default
+  ---
+  duration_ms: 0.639223
+  type: 'test'
+  ...
+# Subtest: document read permissions and direct detail routes match
+ok 9 - document read permissions and direct detail routes match
+  ---
+  duration_ms: 0.570758
+  type: 'test'
+  ...
+# Subtest: report routes require REPORTS_VIEW and compatible role
+ok 10 - report routes require REPORTS_VIEW and compatible role
+  ---
+  duration_ms: 0.642352
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 616.698292
